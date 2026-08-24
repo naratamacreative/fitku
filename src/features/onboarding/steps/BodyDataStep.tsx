@@ -3,7 +3,9 @@ import { Button } from '../../../shared/components/Button'
 import type { StepProps } from '../onboarding.types'
 
 export function BodyDataStep({ draft, onChange, onNext }: StepProps) {
-  const isValid = draft.gender && draft.age && draft.heightCm && draft.weightKg
+  // Truthy checks alone let a negative number through (e.g. age: -5 is
+  // truthy) and produce a nonsense TDEE — require positive values.
+  const isValid = Boolean(draft.gender) && (draft.age ?? 0) > 0 && (draft.heightCm ?? 0) > 0 && (draft.weightKg ?? 0) > 0
 
   return (
     <div className="flex h-full flex-col gap-3">
@@ -29,8 +31,12 @@ export function BodyDataStep({ draft, onChange, onNext }: StepProps) {
       <input
         type="number"
         inputMode="numeric"
+        min="1"
         value={draft.age ?? ''}
-        onChange={(e) => onChange({ age: Number(e.target.value) || undefined })}
+        onChange={(e) => {
+          const n = Number(e.target.value)
+          onChange({ age: n > 0 ? n : undefined })
+        }}
         placeholder="25"
         className="rounded-2xl border-[1.5px] border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-accent"
       />
@@ -39,8 +45,12 @@ export function BodyDataStep({ draft, onChange, onNext }: StepProps) {
       <input
         type="number"
         inputMode="numeric"
+        min="1"
         value={draft.heightCm ?? ''}
-        onChange={(e) => onChange({ heightCm: Number(e.target.value) || undefined })}
+        onChange={(e) => {
+          const n = Number(e.target.value)
+          onChange({ heightCm: n > 0 ? n : undefined })
+        }}
         placeholder="170"
         className="rounded-2xl border-[1.5px] border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-accent"
       />
@@ -49,8 +59,12 @@ export function BodyDataStep({ draft, onChange, onNext }: StepProps) {
       <input
         type="number"
         inputMode="decimal"
+        min="1"
         value={draft.weightKg ?? ''}
-        onChange={(e) => onChange({ weightKg: Number(e.target.value) || undefined })}
+        onChange={(e) => {
+          const n = Number(e.target.value)
+          onChange({ weightKg: n > 0 ? n : undefined })
+        }}
         placeholder="70"
         className="rounded-2xl border-[1.5px] border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-accent"
       />
