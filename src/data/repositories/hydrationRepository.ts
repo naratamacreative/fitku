@@ -16,11 +16,16 @@ class DexieHydrationRepository implements HydrationRepository {
 
   async increment(userId: string, date: string): Promise<number> {
     const key = `${userId}:${date}`
-    const current = await db.hydrationLogs.get(key)
-    const glasses = Math.min(GLASS_TARGET, (current?.glasses ?? 0) + 1)
-    const record: HydrationLog = { key, userId, date, glasses }
-    await db.hydrationLogs.put(record)
-    return glasses
+    // Wrapped in a transaction: the read-then-write was previously two
+    // separate awaits, so a fast double-tap could read the same starting
+    // value twice and lose an increment (classic non-atomic read-modify-write).
+    return db.transaction('rw', db.hydrationLogs, async () => {
+      const current = await db.hydrationLogs.get(key)
+      const glasses = Math.min(GLASS_TARGET, (current?.glasses ?? 0) + 1)
+      const record: HydrationLog = { key, userId, date, glasses }
+      await db.hydrationLogs.put(record)
+      return glasses
+    })
   }
 }
 
