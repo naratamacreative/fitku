@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Sora", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", system-ui, sans-serif;
+
+  --color-bg: var(--fk-bg);
+  --color-surface: var(--fk-surface);
+  --color-surface-2: var(--fk-surface-2);
+  --color-ink: var(--fk-ink);
+  --color-ink-dim: var(--fk-ink-dim);
+  --color-line: var(--fk-line);
+  --color-accent: var(--fk-accent);
+  --color-accent-ink: var(--fk-accent-ink);
+  --color-accent-soft: var(--fk-accent-soft);
+  --color-pro: var(--fk-pro);
+  --color-pro-ink: var(--fk-pro-ink);
+  --color-pro-soft: var(--fk-pro-soft);
+}
+
+/* FitKu default theme: warm light — deliberately NOT tied to prefers-color-scheme.
+   Dark is opt-in only, toggled by adding .dark on <html> (see ThemeContext). */
+:root {
+  --fk-bg: #f6f4ef;
+  --fk-surface: #ffffff;
+  --fk-surface-2: #efebe2;
+  --fk-ink: #26241f;
+  --fk-ink-dim: #756d60;
+  --fk-line: #e1dbcc;
+  --fk-accent: #1c7a68;
+  --fk-accent-ink: #ffffff;
+  --fk-accent-soft: #e1f1eb;
+  --fk-pro: #b9791a;
+  --fk-pro-ink: #2a1b04;
+  --fk-pro-soft: #fbedd3;
+}
+
+.dark {
+  --fk-bg: #15140f;
+  --fk-surface: #1e1c16;
+  --fk-surface-2: #262319;
+  --fk-ink: #efeae0;
+  --fk-ink-dim: #a79d8a;
+  --fk-line: #37331f;
+  --fk-accent: #56d6bb;
+  --fk-accent-ink: #0b2420;
+  --fk-accent-soft: #1c332c;
+  --fk-pro: #e7ae4e;
+  --fk-pro-ink: #241704;
+  --fk-pro-soft: #382a11;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
