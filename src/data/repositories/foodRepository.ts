@@ -13,7 +13,10 @@ class DexieFoodRepository implements FoodRepository {
   async ensureSeeded(): Promise<void> {
     const count = await db.foods.count()
     if (count === 0) {
-      await db.foods.bulkAdd(indonesianFoodsSeed)
+      // bulkPut (not bulkAdd): safe if this races with itself (e.g. React
+      // StrictMode double-invoking effects in dev) since re-inserting the
+      // same fixed-id rows is a no-op instead of a duplicate-key error.
+      await db.foods.bulkPut(indonesianFoodsSeed)
     }
   }
 
