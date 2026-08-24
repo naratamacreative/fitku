@@ -8,15 +8,17 @@ export function CalorieRing({ consumed, target }: CalorieRingProps) {
 
   return (
     <div
-      className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full"
-      style={{ background: `conic-gradient(var(--color-accent) ${pct}%, var(--color-line) ${pct}% 100%)` }}
+      className="relative mx-auto flex h-32 w-32 shrink-0 items-center justify-center rounded-full shadow-soft"
+      style={{
+        background: `conic-gradient(from -90deg, var(--fk-primary) 0%, var(--fk-accent) ${pct}%, var(--fk-line) ${pct}% 100%)`,
+      }}
     >
-      <div className="absolute inset-2 rounded-full bg-surface" />
+      <div className="absolute inset-[11px] rounded-full bg-surface" />
       <div className="relative flex flex-col items-center">
-        <span className="font-display text-base font-bold tabular-nums text-ink">
+        <span className="font-display text-xl font-extrabold tabular-nums text-ink">
           {consumed.toLocaleString('id-ID')}
         </span>
-        <span className="text-[9px] text-ink-dim">/ {target.toLocaleString('id-ID')} kkal</span>
+        <span className="text-[9.5px] text-ink-dim">/ {target.toLocaleString('id-ID')} kkal</span>
       </div>
     </div>
   )

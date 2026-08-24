@@ -10,44 +10,61 @@
   --color-ink: var(--fk-ink);
   --color-ink-dim: var(--fk-ink-dim);
   --color-line: var(--fk-line);
+
+  --color-primary: var(--fk-primary);
   --color-accent: var(--fk-accent);
   --color-accent-ink: var(--fk-accent-ink);
   --color-accent-soft: var(--fk-accent-soft);
+  --color-success: var(--fk-success);
+  --color-success-soft: var(--fk-success-soft);
   --color-pro: var(--fk-pro);
   --color-pro-ink: var(--fk-pro-ink);
   --color-pro-soft: var(--fk-pro-soft);
 }
 
-/* FitKu default theme: warm light — deliberately NOT tied to prefers-color-scheme.
-   Dark is opt-in only, toggled by adding .dark on <html> (see ThemeContext). */
+/* FitKu Premium theme: warm white + teal/violet gradient, deliberately NOT tied
+   to prefers-color-scheme. Light is the permanent default; dark is opt-in only,
+   toggled by adding .dark on <html> (see ThemeContext). */
 :root {
-  --fk-bg: #f6f4ef;
+  --fk-bg: #faf8f4;
   --fk-surface: #ffffff;
-  --fk-surface-2: #efebe2;
-  --fk-ink: #26241f;
-  --fk-ink-dim: #756d60;
-  --fk-line: #e1dbcc;
-  --fk-accent: #1c7a68;
+  --fk-surface-2: #f3f0e9;
+  --fk-ink: #1e2333;
+  --fk-ink-dim: #6b7280;
+  --fk-line: #e9e4d8;
+
+  --fk-primary: #0d9488;
+  --fk-accent: #7c3aed;
   --fk-accent-ink: #ffffff;
-  --fk-accent-soft: #e1f1eb;
-  --fk-pro: #b9791a;
+  --fk-accent-soft: #ede4fd;
+  --fk-success: #16a34a;
+  --fk-success-soft: #e3f6e9;
+  --fk-pro: #c9971f;
   --fk-pro-ink: #2a1b04;
-  --fk-pro-soft: #fbedd3;
+  --fk-pro-soft: #faf0d9;
+
+  --fk-shadow: 0 1px 2px rgba(30, 35, 51, 0.05), 0 18px 34px -20px rgba(30, 35, 51, 0.22);
 }
 
 .dark {
-  --fk-bg: #15140f;
-  --fk-surface: #1e1c16;
-  --fk-surface-2: #262319;
-  --fk-ink: #efeae0;
-  --fk-ink-dim: #a79d8a;
-  --fk-line: #37331f;
-  --fk-accent: #56d6bb;
+  --fk-bg: #12141c;
+  --fk-surface: #1b1e29;
+  --fk-surface-2: #222536;
+  --fk-ink: #edeef3;
+  --fk-ink-dim: #9aa0ae;
+  --fk-line: #2e3242;
+
+  --fk-primary: #2dd4bf;
+  --fk-accent: #a78bfa;
   --fk-accent-ink: #0b2420;
-  --fk-accent-soft: #1c332c;
-  --fk-pro: #e7ae4e;
+  --fk-accent-soft: #2a2440;
+  --fk-success: #4ade80;
+  --fk-success-soft: #163524;
+  --fk-pro: #f5c451;
   --fk-pro-ink: #241704;
   --fk-pro-soft: #382a11;
+
+  --fk-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 18px 34px -20px rgba(0, 0, 0, 0.6);
 }
 
 html,
@@ -61,4 +78,29 @@ body {
   color: var(--color-ink);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Signature teal->violet gradient: primary actions, rings, FAB, AI Coach. */
+.grad-hero {
+  background-image: linear-gradient(135deg, var(--fk-primary) 0%, var(--fk-accent) 100%);
+}
+/* Gold->violet gradient reserved for Premium-only moments. */
+.grad-premium {
+  background-image: linear-gradient(120deg, var(--fk-pro) 0%, var(--fk-accent) 100%);
+}
+.text-grad-hero {
+  background-image: linear-gradient(135deg, var(--fk-primary) 0%, var(--fk-accent) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.shadow-soft {
+  box-shadow: var(--fk-shadow);
+}
+/* Two-layer trick for a gradient border with a solid-color interior. */
+.border-grad-hero {
+  border: 2px solid transparent;
+  background-image: linear-gradient(var(--fk-surface), var(--fk-surface)), linear-gradient(135deg, var(--fk-primary) 0%, var(--fk-accent) 100%);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
 }

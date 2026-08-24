@@ -18,41 +18,58 @@ export function ResultMoment() {
   const weeks = estimateWeeksToGoal(user.weightKg, user.targetWeightKg, user.goal)
 
   return (
-    <div className="mx-auto flex h-dvh max-w-md flex-col bg-surface-2 px-5 pt-8 pb-6">
+    <div className="mx-auto flex h-dvh max-w-md flex-col bg-bg px-5 pt-8 pb-6">
       <div className="flex flex-1 flex-col gap-3">
-        <div className="flex justify-between rounded-2xl bg-surface px-4 py-3">
-          <span className="text-xs text-ink-dim">Kondisi sekarang</span>
-          <span className="text-sm font-semibold tabular-nums text-ink">{user.weightKg} kg</span>
+        <p className="mt-1 text-center font-display text-base font-bold text-ink">Rencana kamu sudah siap 🎉</p>
+
+        <div className="flex items-center justify-center gap-2.5">
+          <div className="rounded-2xl bg-surface px-4 py-2.5 text-center shadow-soft">
+            <p className="font-display text-lg font-bold tabular-nums text-ink">{user.weightKg}kg</p>
+            <p className="text-[10px] text-ink-dim">Sekarang</p>
+          </div>
+          <span className="text-grad-hero font-display text-lg font-extrabold">→</span>
+          <div className="rounded-2xl bg-surface px-4 py-2.5 text-center shadow-soft">
+            <p className="font-display text-lg font-bold tabular-nums text-ink">{user.targetWeightKg}kg</p>
+            <p className="text-[10px] text-ink-dim">Target</p>
+          </div>
         </div>
-        <div className="flex justify-between rounded-2xl bg-surface px-4 py-3">
-          <span className="text-xs text-ink-dim">Target realistis</span>
-          <span className="text-sm font-semibold tabular-nums text-ink">{user.targetWeightKg} kg</span>
+        {weeks && weeks > 0 && (
+          <p className="-mt-1 text-center text-[11px] font-bold text-accent">dalam ~{weeks} minggu</p>
+        )}
+
+        <div className="mt-1 flex gap-2.5">
+          <div className="flex-1 rounded-2xl bg-surface px-3 py-3 text-center shadow-soft">
+            <p className="font-display text-xl font-bold tabular-nums text-ink">
+              {user.targetCalories.toLocaleString('id-ID')}
+            </p>
+            <p className="text-[10px] text-ink-dim">kkal/hari</p>
+          </div>
+          <div className="flex-1 rounded-2xl bg-surface px-3 py-3 text-center shadow-soft">
+            <p className="font-display text-xl font-bold tabular-nums text-ink">{user.targetProtein}g</p>
+            <p className="text-[10px] text-ink-dim">protein/hari</p>
+          </div>
         </div>
 
-        <div className="py-3 text-center">
-          <p className="text-[11px] uppercase tracking-wide text-ink-dim">Target harian kalori</p>
-          <p className="mt-1 font-display text-5xl font-bold tabular-nums text-accent">
-            {user.targetCalories.toLocaleString('id-ID')}
-          </p>
-          <p className="mt-1 text-xs text-ink-dim">
-            kkal · protein <b className="tabular-nums text-ink">{user.targetProtein}g</b>
-          </p>
+        <div className="relative mx-auto mt-1 flex h-[84px] w-[84px] items-center justify-center rounded-full grad-hero">
+          <div className="absolute inset-[9px] rounded-full bg-bg" />
+          <span className="relative text-center text-[10px] leading-tight text-ink-dim">
+            Progress
+            <br />
+            dimulai
+            <br />
+            hari ini
+          </span>
         </div>
 
         <p className="text-center text-xs leading-relaxed text-ink-dim">
-          {weeks && weeks > 0 ? (
-            <>
-              Estimasi <b className="text-ink">~{weeks} minggu</b> untuk {GOAL_LABEL[user.goal]}, dengan defisit
-              bertahap &amp; aktivitas yang kamu pilih.
-              <br />
-            </>
-          ) : null}
           Langkah pertama: <b className="text-ink">catat makananmu berikutnya.</b>
+          <br />
+          {weeks && weeks > 0 ? <>Estimasi untuk {GOAL_LABEL[user.goal]}, dengan defisit bertahap.</> : null}
         </p>
 
         <div className="mt-auto flex items-center justify-between gap-3 rounded-2xl bg-pro-soft px-4 py-2.5">
           <span className="text-xs text-pro-ink">
-            <b className="font-bold text-pro">PRO</b> rencana makan otomatis &amp; riwayat penuh
+            <b className="font-bold text-pro">PRO</b> AI Coach lebih pintar &amp; menu personal
           </span>
           <span className="text-pro-ink">›</span>
         </div>

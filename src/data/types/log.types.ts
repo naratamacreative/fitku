@@ -22,6 +22,13 @@ export interface WeightEntry {
 
 export type NewWeightEntry = Omit<WeightEntry, 'id' | 'createdAt'>
 
+export interface HydrationLog {
+  key: string // `${userId}:${date}`
+  userId: string
+  date: string // YYYY-MM-DD
+  glasses: number
+}
+
 export type SubscriptionPlan = 'free' | 'pro_monthly' | 'pro_annual' | 'pro_lifetime'
 
 export interface SubscriptionStatus {

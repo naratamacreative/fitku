@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { subscriptionRepository } from '../../data/repositories/subscriptionRepository'
 import { AppShell } from '../../shared/components/AppShell'
 import { useAppState } from '../../shared/context/AppStateContext'
@@ -104,6 +105,9 @@ export function Settings() {
             <span className="text-ink-dim">Plan aktif</span>
             <span className="text-ink">{PLAN_LABEL[plan] ?? plan}</span>
           </div>
+          <Link to="/premium" className="mt-2 block text-sm font-semibold text-accent">
+            Lihat FitKu Premium
+          </Link>
         </section>
       </div>
     </AppShell>

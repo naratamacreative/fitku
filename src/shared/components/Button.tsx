@@ -8,8 +8,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASSES: Record<Variant, string> = {
-  primary: 'bg-accent text-accent-ink',
-  pro: 'bg-pro text-pro-ink',
+  primary: 'grad-hero text-white shadow-soft',
+  pro: 'grad-premium text-white shadow-soft',
   ghost: 'bg-transparent text-ink-dim font-medium shadow-none',
 }
 

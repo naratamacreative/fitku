@@ -1,4 +1,4 @@
-import type { FoodLog } from '../data/types/food.types'
+import type { Food, FoodLog } from '../data/types/food.types'
 import type { User } from '../data/types/user.types'
 
 export interface DailyTotals {
@@ -45,6 +45,86 @@ export function calculateStreak(loggedDatesDesc: string[]): number {
     cursor += 1
   }
   return streak
+}
+
+export interface MealSuggestion {
+  food: Food
+  mealLabel: string
+}
+
+const MAIN_CATEGORIES = new Set(['lauk', 'nasi_karbo', 'sup_kuah', 'sayur'])
+
+/**
+ * Menu Hari Ini: a main dish (region-tagged Indonesian dish preferred) sized to
+ * the remaining calorie budget, plus a light camilan if budget allows. Simple
+ * rule-based filtering over the seed catalogue — not a real recommender.
+ */
+export function suggestMealPlan(remainingCalories: number, foods: Food[]): MealSuggestion[] {
+  if (remainingCalories <= 0 || foods.length === 0) return []
+
+  const mains = foods
+    .filter((f) => MAIN_CATEGORIES.has(f.category) && f.calories <= remainingCalories)
+    .sort((a, b) => Number(!!b.region) - Number(!!a.region) || b.calories - a.calories)
+  const main = mains[0]
+  if (!main) return []
+
+  const suggestions: MealSuggestion[] = [{ food: main, mealLabel: 'Makan malam' }]
+  const leftover = remainingCalories - main.calories
+  const snack = foods
+    .filter((f) => f.category === 'camilan' && f.calories <= leftover && f.id !== main.id)
+    .sort((a, b) => a.calories - b.calories)[0]
+  if (snack) suggestions.push({ food: snack, mealLabel: 'Camilan' })
+
+  return suggestions
+}
+
+export interface DailyCoaching {
+  analisa: string
+  insight: string
+  action: string
+}
+
+/** Daily Coaching: Analisa -> Insight -> Action, auto-generated from today's data. Rule-based, no LLM call. */
+export function generateDailyCoaching(user: User, totals: DailyTotals, streak: number): DailyCoaching {
+  if (totals.count === 0) {
+    return {
+      analisa: 'Belum ada makanan tercatat hari ini.',
+      insight: 'Insight baru muncul setelah ada catatan — pola makanmu belum terbaca.',
+      action: 'Catat satu makanan sekarang, mulai dari yang sudah kamu makan hari ini.',
+    }
+  }
+
+  const proteinRemaining = Math.round(user.targetProtein - totals.protein)
+  const calorieRemaining = Math.round(user.targetCalories - totals.calories)
+
+  const analisa =
+    streak >= 2
+      ? `Kamu konsisten tracking ${streak} hari berturut-turut, dengan ${totals.count} makanan tercatat hari ini.`
+      : `Ada ${totals.count} makanan tercatat hari ini.`
+
+  let insight: string
+  let action: string
+  if (calorieRemaining < 0) {
+    insight = 'Kalori hari ini sudah melewati target — polanya kelihatan dari catatanmu.'
+    action = `Kurangi porsi di makan berikutnya sekitar ${Math.min(300, Math.abs(calorieRemaining))} kkal.`
+  } else if (proteinRemaining > 15) {
+    insight = 'Kekurangan protein jadi pola yang paling sering muncul dibanding kekurangan lain.'
+    action = `Tambahkan sumber protein (telur/ayam/tempe) sekitar ${proteinRemaining}g di makan berikutnya.`
+  } else {
+    insight = 'Kalori dan protein hari ini sudah cukup seimbang.'
+    action = 'Pertahankan pola makan seperti ini sampai akhir hari.'
+  }
+
+  return { analisa, insight, action }
+}
+
+/** Templated follow-up reply for the Coach chat thread — not a real LLM call. */
+export function generateCoachReply(user: User, totals: DailyTotals): string {
+  const proteinRemaining = Math.round(user.targetProtein - totals.protein)
+  if (proteinRemaining > 15) {
+    return `Berdasarkan catatanmu, protein masih kurang ${proteinRemaining}g hari ini — itu biasanya penyebab utama progress terasa lambat. Ikuti Action di atas dan cek lagi 3-4 hari ya.`
+  }
+  return 'Progress kadang melambat sementara, itu normal. Tetap ikuti Action di Daily Coaching di atas, dan cek lagi dalam beberapa hari.'
 }
 
 export function generateCoachInsight(user: User, totals: DailyTotals): string {
