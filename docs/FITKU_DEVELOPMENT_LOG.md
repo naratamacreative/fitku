@@ -1344,3 +1344,41 @@ Tidak ada — keempat fix diuji end-to-end langsung di browser dengan skenario y
 
 ### 10. Next Step
 Tidak ada pekerjaan lanjutan yang direncanakan sendiri untuk keempat item ini — sudah selesai dan terverifikasi. Item lain di luar scope (Auth, Payment/Mayar.id KYC, AI Coach LLM, P3) tetap pending sesuai instruksi eksplisit user, dibahas terpisah.
+
+---
+
+## 2026-08-27 (lanjutan 2) — Bugfix Urgent: 404 saat Refresh di fitku.fit (Vercel)
+
+### 1. Tanggal
+2026-08-27
+
+### 2. Tujuan
+User melaporkan: FitKu sudah live di **fitku.fit (hosting: Vercel)** — informasi baru, sebelumnya persiapan deploy yang tercatat di project ini (`netlify.toml`, `.netlify/`) mengasumsikan Netlify sebagai platform. Bug: refresh browser di route selain root (`/progress`, `/settings`, `/tracker`, dst) menghasilkan `404: NOT_FOUND` dari Vercel.
+
+### 3. Root Cause
+FitKu adalah SPA murni client-side routing (`BrowserRouter` dari `react-router-dom`, dikonfirmasi di `src/App.tsx`) — semua path selain `/` HANYA ada di JavaScript, tidak ada file fisik di server. Vercel, tanpa konfigurasi rewrite, mencoba mencari file/route `/progress` secara langsung di server saat browser melakukan HTTP GET (yang terjadi persis saat refresh) dan gagal karena memang tidak ada file seperti itu — beda dengan navigasi via klik link di dalam app (yang ditangani React Router di client, tidak pernah hit server). Root cause ini SAMA PERSIS dengan yang sudah diantisipasi sebelumnya lewat `netlify.toml`'s `[[redirects]] from="/*" to="/index.html" status=200` — tapi karena hosting aktual ternyata Vercel (bukan Netlify), rule itu tidak pernah berlaku di produksi.
+
+### 4. Keputusan yang diambil
+Dibuat `vercel.json` di root project berisi `rewrites` yang mengarahkan SEMUA path (`/(.*)`) ke `/` — persis skema/konten yang diinstruksikan user, konfigurasi standar Vercel untuk SPA client-side routing. Tidak ada perubahan lain di luar file ini pada pass ini (murni deploy-config, bukan kode aplikasi).
+
+### 5. Catatan penting yang ditemukan (di luar scope fix ini, dilaporkan bukan dieksekusi)
+`netlify.toml` juga berisi security headers produksi (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy — lihat [[fitku-security-status]], "MVP security hardening... complete") yang HANYA berlaku kalau hosting-nya Netlify. Karena hosting aktual adalah Vercel, header-header keamanan tersebut **kemungkinan besar TIDAK aktif di fitku.fit saat ini** — `vercel.json` yang baru dibuat pass ini HANYA berisi `rewrites`, belum ada `headers`. Ini di luar scope permintaan user ("Fix: Buat file vercel.json... rewrites" — spesifik untuk bug 404), jadi TIDAK ditambahkan tanpa diminta, tapi perlu di-flag eksplisit sebagai gap keamanan produksi yang terpisah dari bug 404 ini.
+
+### 6. Implementasi
+Satu file baru: `vercel.json` (root project), isi persis seperti yang diinstruksikan user.
+
+### 7. File yang berubah
+`vercel.json` (baru). Tidak ada file lain disentuh.
+
+### 8. Dampak terhadap data/schema
+Tidak ada — murni file konfigurasi platform hosting, tidak menyentuh kode aplikasi maupun data.
+
+### 9. Testing yang benar-benar dilakukan (tested by Alig)
+- **Build**: `npm run build` — 0 TypeScript error, build production sukses (tidak terpengaruh, `vercel.json` di luar pipeline Vite/tsc).
+- **Verifikasi di fitku.fit setelah redeploy**: BELUM dilakukan pada pass ini — deploy ke Vercel terjadi otomatis setelah push (di luar kendali langsung sesi ini, butuh waktu build+propagasi di sisi Vercel). User yang akan memverifikasi langsung (`fitku.fit/progress` lalu refresh) setelah redeploy Vercel selesai, sesuai instruksi eksplisit user di poin verifikasi.
+
+### 10. Bug yang belum diverifikasi
+Perbaikan 404 belum dikonfirmasi visual di production (fitku.fit) pada pass ini — root cause dan solusi standar Vercel sudah pasti benar secara teknis (pola `rewrites` ini adalah solusi resmi Vercel untuk SPA), tapi konfirmasi akhir menunggu user cek langsung setelah redeploy.
+
+### 11. Next Step
+Menunggu konfirmasi user setelah Vercel redeploy selesai — refresh di `fitku.fit/progress` (atau route lain) harus tetap menampilkan halaman yang benar, bukan 404. Terpisah: gap security headers di Vercel (poin 5) belum ditangani — perlu keputusan/instruksi eksplisit user kalau mau ditambahkan `headers` ke `vercel.json` mereplikasi yang sudah ada di `netlify.toml`.
