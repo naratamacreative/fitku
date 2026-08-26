@@ -1,0 +1,214 @@
+{
+  "meta": {
+    "name": "FitKu Landing Page",
+    "version": "1.0.0",
+    "purpose": "Landing page khusus traffic Meta Ads & TikTok Ads",
+    "locale": "id-ID",
+    "lastUpdated": "2026-08-25",
+    "sourceWireframe": "https://claude.ai/code/artifact/31ee044f-f377-42ac-9622-c350b4cc851f"
+  },
+  "theme": {
+    "colors": {
+      "teal": "#0D9488",
+      "tealSoft": "#E1F1EE",
+      "violet": "#7C3AED",
+      "violetSoft": "#F1EBFD",
+      "gold": "#C9971F",
+      "goldSoft": "#FAF1DE",
+      "success": "#16A34A",
+      "bg": "#FAF8F4",
+      "surface": "#FFFFFF",
+      "surface2": "#F3F0E9",
+      "ink": "#1E2333",
+      "inkDim": "#6B7280",
+      "line": "#E9E4D8"
+    },
+    "colorsDark": {
+      "teal": "#2DD4BF",
+      "tealSoft": "#16332C",
+      "violet": "#A78BFA",
+      "violetSoft": "#2A2140",
+      "gold": "#E7AE4E",
+      "goldSoft": "#362A10",
+      "success": "#4ADE80",
+      "bg": "#15140F",
+      "surface": "#1E1C16",
+      "surface2": "#262319",
+      "ink": "#EFEAE0",
+      "inkDim": "#A79D8A",
+      "line": "#37331F"
+    },
+    "fonts": {
+      "display": "Sora, sans-serif",
+      "body": "'Plus Jakarta Sans', sans-serif"
+    },
+    "note": "Token sama persis dengan FitKu Premium design system (frozen). Landing page ini file terpisah dan tidak import CSS app utama — token di-duplikasi di landing.css supaya folder ini portable."
+  },
+  "ctaFlow": {
+    "primary": {
+      "id": "cta-primary",
+      "label": "Coba Gratis Sekarang",
+      "action": "navigate",
+      "target": "/onboarding",
+      "description": "Klik CTA utama (Hero + Final CTA) langsung ke onboarding app FitKu. Tidak perlu signup/akun dulu karena arsitektur FitKu local-first (Dexie/IndexedDB)."
+    },
+    "premium": {
+      "id": "cta-premium",
+      "label": "Mulai Premium",
+      "action": "navigate",
+      "target": "/waitlist",
+      "description": "PENTING: route ke halaman waitlist/email-capture, BUKAN payment form. Real payment processing belum boleh diaktifkan sampai Auth + Backend entitlement + Payment verification + Device/session management + Privacy/legal documents selesai (hard rule FitKu security status). Klik ini merepresentasikan niat upgrade (upgrade intent), bukan transaksi."
+    },
+    "secondary": {
+      "id": "cta-secondary",
+      "label": "Lihat cara kerjanya dulu",
+      "action": "scroll",
+      "target": "#solusi",
+      "description": "Scroll halus ke section Solusi, untuk user yang belum siap klik CTA utama."
+    }
+  },
+  "tracking": {
+    "providers": ["meta-pixel", "tiktok-pixel"],
+    "events": [
+      { "name": "PageView", "trigger": "onLoad", "firesOn": "always", "params": [] },
+      { "name": "ViewContent", "trigger": "onSectionVisible", "firesOn": "each-section", "params": ["section_id"], "note": "Fire sekali per section id (IntersectionObserver, threshold 0.5)." },
+      { "name": "Lead", "trigger": "onClick", "firesOn": "cta-primary", "params": ["cta_id", "section_id"] },
+      { "name": "UpgradeIntent", "trigger": "onClick", "firesOn": "cta-premium", "params": ["cta_id", "section_id"], "note": "Custom event, BUKAN 'Purchase' atau 'Subscribe' standar Meta/TikTok — belum ada transaksi nyata yang terjadi, memakai event standar akan salah lapor ke ad platform." }
+    ]
+  },
+  "sections": [
+    {
+      "id": "hero",
+      "order": 1,
+      "type": "Hero",
+      "component": "HeroSection",
+      "headline": "Bingung Mulai Diet dari Mana?",
+      "subheadline": "FitKu bantu kamu punya rencana makan yang sesuai tubuh dan kebiasaan makan orang Indonesia — bukan sekadar hitung kalori.",
+      "cta": "primary",
+      "socialProof": {
+        "text": "Dipercaya orang Indonesia yang mulai hidup lebih sehat",
+        "flag": "PENDING: isi angka asli setelah ada data user, jangan pakai angka karangan"
+      },
+      "image": { "assetId": "hero-photo", "placement": "background-right", "aspectRatio": "4:5" },
+      "psychology": "Stop-scroll <1 detik dari feed iklan — wajah manusia + headline masalah spesifik. 'Ini orang seperti saya' membangun trust instan sebelum user baca detail.",
+      "trackingEvents": ["ViewContent:hero", "Lead:cta-primary"]
+    },
+    {
+      "id": "masalah",
+      "order": 2,
+      "type": "Problem",
+      "component": "ProblemSection",
+      "eyebrow": "KAMU TIDAK SENDIRI",
+      "headline": "Bukan Kamu yang Gagal Diet",
+      "body": "Kamu cuma belum punya panduan yang paham makanan sehari-harimu — nasi, ayam, sambal — bukan menu diet ala luar negeri yang bikin bingung dan gampang menyerah.",
+      "image": { "assetId": "meja-makan-indonesia", "placement": "top", "aspectRatio": "16:10" },
+      "psychology": "Relatability lewat objek familiar (makanan), bukan akting ekspresi wajah. Copy rule: tidak menyalahkan user — framing 'belum punya panduan', bukan 'kamu kurang disiplin'.",
+      "trackingEvents": ["ViewContent:masalah"]
+    },
+    {
+      "id": "solusi",
+      "order": 3,
+      "type": "Solution",
+      "component": "SolutionSection",
+      "eyebrow": "KENAPA FITKU BEDA",
+      "headline": "FitKu Ngerti Makanan Indonesia",
+      "checklist": [
+        { "title": "Personal calorie goal", "desc": "Dihitung dari tubuh & targetmu, bukan angka generik" },
+        { "title": "Menu Hari Ini", "desc": "Saran makanan Indonesia sesuai sisa kalorimu" },
+        { "title": "AI Diet Coach", "desc": "Ngobrol harian, bukan cuma catat angka" },
+        { "title": "Makanan Indonesia", "desc": "Porsi centong, potong, piring — bukan gram asing" }
+      ],
+      "image": { "assetId": "makanan-app-sanding", "placement": "top", "aspectRatio": "16:10" },
+      "psychology": "Bukti konkret differensiasi lewat foto makanan asli + screenshot fitur asli berdampingan, bukan ilustrasi.",
+      "trackingEvents": ["ViewContent:solusi"]
+    },
+    {
+      "id": "ai-coach",
+      "order": 4,
+      "type": "AICoach",
+      "component": "AICoachSection",
+      "eyebrow": "LEBIH DARI SEKADAR APLIKASI",
+      "headline": "Punya Teman yang Selalu Mengingatkan",
+      "subheadline": "Bukan cuma teknologi — AI Coach FitKu ngobrol sama kamu tiap hari, kayak temen yang beneran perhatian sama progressmu.",
+      "chatExample": { "who": "AI Coach", "message": "Hari ini protein kamu masih kurang. Coba tambahkan telur atau ayam saat makan malam. 🙂" },
+      "image": { "assetId": "tangan-phone", "placement": "top", "aspectRatio": "4:5" },
+      "psychology": "Jual 'punya teman yang membimbing', BUKAN 'teknologi AI canggih'. Foto close-up tangan+phone, konteks santai, bukan foto teknologi/robot.",
+      "trackingEvents": ["ViewContent:ai-coach"]
+    },
+    {
+      "id": "hasil",
+      "order": 5,
+      "type": "Results",
+      "component": "ResultsSection",
+      "eyebrow": "BUKAN TRANSFORMASI EKSTREM",
+      "headline": "Progress Kecil, Perubahan Besar",
+      "body": "Bukan soal turun drastis dalam semalam. FitKu bantu kamu konsisten — sampai suatu hari kamu sadar semuanya terasa lebih mudah: pakaian favorit muat lagi, naik tangga nggak ngos-ngosan.",
+      "image": { "assetId": "aktivitas-santai", "placement": "top", "aspectRatio": "4:5" },
+      "psychology": "Diletakkan sebelum harga — user harus percaya hasilnya dulu baru siap lihat angka. BUKAN before-after, bukan transformasi ekstrem.",
+      "trackingEvents": ["ViewContent:hasil"]
+    },
+    {
+      "id": "premium-offer",
+      "order": 6,
+      "type": "PremiumOffer",
+      "component": "PremiumOfferSection",
+      "eyebrow": "UNTUK KAMU YANG SERIUS",
+      "headline": "Punya Coach Pribadi, Bukan Cuma Aplikasi",
+      "valueStack": [
+        { "name": "AI Diet Coaching Personal", "value": 249000, "currency": "IDR" },
+        { "name": "Daily Movement Plan", "value": 199000, "currency": "IDR" }
+      ],
+      "valueStackTotal": 448000,
+      "valueStackNote": "Hanya 2 item yang genuinely Premium-exclusive. Jangan tambah item ketiga tanpa validasi eksplisit bahwa fitur itu benar-benar tidak tersedia gratis (contoh kasus yang sudah ditolak: 'Menu Personal & Guidance' duplikat dengan fitur gratis 'Menu Hari Ini').",
+      "priceReveal": { "oldPriceMonthly": 99000, "newPriceMonthly": 49000, "currency": "IDR" },
+      "tagline": "Dapatkan coach pribadi dengan harga secangkir kopi.",
+      "image": { "assetId": "lifestyle-premium", "placement": "middle", "aspectRatio": "16:10" },
+      "cta": "premium",
+      "trackingEvents": ["ViewContent:premium-offer", "UpgradeIntent:cta-premium"]
+    },
+    {
+      "id": "pricing",
+      "order": 7,
+      "type": "Pricing",
+      "component": "PricingSection",
+      "eyebrow": "PILIH PAKETMU",
+      "headline": "Pilih Paketmu",
+      "plans": [
+        { "id": "1-bulan", "name": "1 BULAN", "oldPrice": 99000, "newPrice": 49000, "featured": false },
+        { "id": "3-bulan", "name": "3 BULAN", "oldPrice": 297000, "newPrice": 119000, "featured": true, "ribbon": "PALING POPULER" },
+        { "id": "12-bulan", "name": "12 BULAN", "oldPrice": 1188000, "newPrice": 399000, "featured": false }
+      ],
+      "footnote": "Harga peluncuran untuk early adopter.",
+      "cta": "premium",
+      "trackingEvents": ["ViewContent:pricing"]
+    },
+    {
+      "id": "faq",
+      "order": 8,
+      "type": "FAQ",
+      "component": "FAQSection",
+      "headline": "Pertanyaan yang Sering Ditanyakan",
+      "items": [
+        { "q": "Apakah cocok untuk pemula?", "a": "Ya — onboarding FitKu dirancang seperti sesi pertama dengan personal trainer, bukan form rumit." },
+        { "q": "Apakah makanan Indonesia tersedia?", "a": "Database FitKu berisi puluhan makanan Indonesia dengan porsi yang biasa kamu pakai — centong, potong, piring." },
+        { "q": "Apakah harus olahraga?", "a": "Tidak wajib. Daily Movement Plan itu bonus Premium opsional — fokus utama FitKu tetap di pola makan." },
+        { "q": "Apakah bisa berhenti kapan saja?", "a": "Bisa, tanpa kontrak jangka panjang." },
+        { "q": "Apakah data saya aman?", "a": "Datamu tersimpan langsung di perangkatmu sendiri, tidak dikirim ke server manapun." }
+      ],
+      "psychology": "Diletakkan setelah harga untuk membereskan objection terakhir tepat sebelum CTA final, bukan di awal saat user belum invested.",
+      "trackingEvents": ["ViewContent:faq"]
+    },
+    {
+      "id": "final-cta",
+      "order": 9,
+      "type": "FinalCTA",
+      "component": "FinalCTASection",
+      "headline": "Mulai Perjalanan Diet yang Lebih Mudah Hari Ini",
+      "cta": "primary",
+      "secondaryCta": "secondary",
+      "image": { "assetId": "senyum-forward", "placement": "top", "aspectRatio": "4:5" },
+      "psychology": "Bookend visual dengan foto Hero (senyum, menghadap depan/horizon — kesan awal perjalanan baru).",
+      "trackingEvents": ["ViewContent:final-cta", "Lead:cta-primary"]
+    }
+  ]
+}

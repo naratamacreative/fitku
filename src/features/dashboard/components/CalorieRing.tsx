@@ -8,7 +8,7 @@ export function CalorieRing({ consumed, target }: CalorieRingProps) {
 
   return (
     <div
-      className="relative mx-auto flex h-32 w-32 shrink-0 items-center justify-center rounded-full shadow-soft"
+      className="relative mx-auto flex h-32 w-32 shrink-0 items-center justify-center rounded-full shadow-soft transition-[background] duration-500 ease-out"
       style={{
         background: `conic-gradient(from -90deg, var(--fk-primary) 0%, var(--fk-accent) ${pct}%, var(--fk-line) ${pct}% 100%)`,
       }}

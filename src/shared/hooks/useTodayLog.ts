@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { foodLogRepository } from '../../data/repositories/foodLogRepository'
+import { foodLogRepository, type FoodLogUpdate } from '../../data/repositories/foodLogRepository'
 import type { FoodLog, NewFoodLog } from '../../data/types/food.types'
 import { aggregateLogs, todayIso, type DailyTotals } from '../../domain/nutrition'
 
@@ -38,7 +38,15 @@ export function useTodayLog(userId: string | undefined) {
     [refresh],
   )
 
+  const updateLog = useCallback(
+    async (id: string, changes: FoodLogUpdate) => {
+      await foodLogRepository.update(id, changes)
+      await refresh()
+    },
+    [refresh],
+  )
+
   const totals: DailyTotals = aggregateLogs(logs)
 
-  return { logs, totals, loading, addLog, removeLog, refresh }
+  return { logs, totals, loading, addLog, removeLog, updateLog, refresh }
 }

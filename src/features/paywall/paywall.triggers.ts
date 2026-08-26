@@ -24,8 +24,11 @@ export const PAYWALL_TRIGGERS = {
   },
 } as const
 
+// Prices match the approved 3-tier (49rb / 119rb / 399rb) — see FitKu V2 Competitive
+// Blueprint §13. Plan ids are kept stable (schema/type change is out of P0 scope);
+// only their display name/price/recommended flag changed.
 export const PRO_PLANS = [
-  { id: 'pro_monthly', name: 'Bulanan', priceLabel: '49rb', recommended: false },
-  { id: 'pro_annual', name: 'Tahunan', priceLabel: '399rb', recommended: true },
-  { id: 'pro_lifetime', name: 'Founder', priceLabel: '499rb', recommended: false },
+  { id: 'pro_monthly', name: '1 Bulan', priceLabel: '49rb', recommended: false },
+  { id: 'pro_annual', name: '3 Bulan', priceLabel: '119rb', recommended: true },
+  { id: 'pro_lifetime', name: '12 Bulan', priceLabel: '399rb', recommended: false },
 ] as const

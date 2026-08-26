@@ -1,0 +1,17 @@
+{
+  "name": "fitku-landing-page",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portable FitKu landing page for Meta/TikTok Ads traffic. Self-contained: drop this folder into any React+TS+Vite project.",
+  "type": "module",
+  "main": "src/index.ts",
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}

@@ -1,4 +1,5 @@
 import { db } from '../db'
+import { generateId } from '../../shared/lib/id'
 import type { NewWeightEntry, WeightEntry } from '../types/log.types'
 
 export interface WeightRepository {
@@ -21,7 +22,7 @@ class DexieWeightRepository implements WeightRepository {
   async add(entry: NewWeightEntry): Promise<WeightEntry> {
     const record: WeightEntry = {
       ...entry,
-      id: crypto.randomUUID(),
+      id: generateId(),
       createdAt: new Date().toISOString(),
     }
     await db.weightHistory.add(record)

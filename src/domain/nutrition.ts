@@ -1,4 +1,4 @@
-import type { Food, FoodLog } from '../data/types/food.types'
+import type { FoodLog } from '../data/types/food.types'
 import type { User } from '../data/types/user.types'
 
 export interface DailyTotals {
@@ -47,36 +47,10 @@ export function calculateStreak(loggedDatesDesc: string[]): number {
   return streak
 }
 
-export interface MealSuggestion {
-  food: Food
-  mealLabel: string
-}
-
-const MAIN_CATEGORIES = new Set(['lauk', 'nasi_karbo', 'sup_kuah', 'sayur'])
-
-/**
- * Menu Hari Ini: a main dish (region-tagged Indonesian dish preferred) sized to
- * the remaining calorie budget, plus a light camilan if budget allows. Simple
- * rule-based filtering over the seed catalogue — not a real recommender.
- */
-export function suggestMealPlan(remainingCalories: number, foods: Food[]): MealSuggestion[] {
-  if (remainingCalories <= 0 || foods.length === 0) return []
-
-  const mains = foods
-    .filter((f) => MAIN_CATEGORIES.has(f.category) && f.calories <= remainingCalories)
-    .sort((a, b) => Number(!!b.region) - Number(!!a.region) || b.calories - a.calories)
-  const main = mains[0]
-  if (!main) return []
-
-  const suggestions: MealSuggestion[] = [{ food: main, mealLabel: 'Makan malam' }]
-  const leftover = remainingCalories - main.calories
-  const snack = foods
-    .filter((f) => f.category === 'camilan' && f.calories <= leftover && f.id !== main.id)
-    .sort((a, b) => a.calories - b.calories)[0]
-  if (snack) suggestions.push({ food: snack, mealLabel: 'Camilan' })
-
-  return suggestions
-}
+// "Menu Hari Ini" (suggestMealPlan) was removed: it deterministically picked
+// the highest-calorie region-tagged dish plus the cheapest fitting camilan,
+// so it surfaced the same 1-2 foods for nearly every user/budget — not a
+// real recommendation, closer to a hardcoded placeholder.
 
 export interface DailyCoaching {
   analisa: string

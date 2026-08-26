@@ -29,6 +29,14 @@ export interface HydrationLog {
   glasses: number
 }
 
+export interface DailyNote {
+  key: string // `${userId}:${date}`
+  userId: string
+  date: string // YYYY-MM-DD
+  text: string
+  updatedAt: string
+}
+
 export type SubscriptionPlan = 'free' | 'pro_monthly' | 'pro_annual' | 'pro_lifetime'
 
 export interface SubscriptionStatus {

@@ -1,4 +1,5 @@
 import { db } from '../db'
+import { generateId } from '../../shared/lib/id'
 import type { NewUser, User } from '../types/user.types'
 
 export interface UserRepository {
@@ -16,7 +17,7 @@ class DexieUserRepository implements UserRepository {
     const now = new Date().toISOString()
     const record: User = {
       ...user,
-      id: crypto.randomUUID(),
+      id: generateId(),
       createdAt: now,
       updatedAt: now,
     }

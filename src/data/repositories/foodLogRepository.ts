@@ -1,10 +1,14 @@
 import { db } from '../db'
+import { generateId } from '../../shared/lib/id'
 import type { FoodLog, NewFoodLog } from '../types/food.types'
+
+export type FoodLogUpdate = Partial<Omit<FoodLog, 'id' | 'userId' | 'createdAt'>>
 
 export interface FoodLogRepository {
   getByDate(userId: string, date: string): Promise<FoodLog[]>
   getByDateRange(userId: string, fromDate: string, toDate: string): Promise<FoodLog[]>
   add(log: NewFoodLog): Promise<FoodLog>
+  update(id: string, changes: FoodLogUpdate): Promise<void>
   delete(id: string): Promise<void>
   recentFoodIds(userId: string, limit?: number): Promise<string[]>
   loggedDates(userId: string, limit?: number): Promise<string[]>
@@ -26,11 +30,15 @@ class DexieFoodLogRepository implements FoodLogRepository {
   async add(log: NewFoodLog): Promise<FoodLog> {
     const record: FoodLog = {
       ...log,
-      id: crypto.randomUUID(),
+      id: generateId(),
       createdAt: new Date().toISOString(),
     }
     await db.foodLogs.add(record)
     return record
+  }
+
+  async update(id: string, changes: FoodLogUpdate): Promise<void> {
+    await db.foodLogs.update(id, changes)
   }
 
   async delete(id: string): Promise<void> {
@@ -41,6 +49,8 @@ class DexieFoodLogRepository implements FoodLogRepository {
     const logs = await db.foodLogs.where('userId').equals(userId).reverse().sortBy('createdAt')
     const seen = new Set<string>()
     for (const log of logs) {
+      // Quick Add entries have no foodId — nothing to resurface as a "recent food".
+      if (!log.foodId) continue
       seen.add(log.foodId)
       if (seen.size >= limit) break
     }

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitKu — Aplikasi Diet Coach AI untuk Orang Indonesia</title>
+
+    <!-- Google Fonts: Sora (700, 800) & Plus Jakarta Sans (400-700) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --bg: #FAF8F4;
+            --surface: #FFFFFF;
+            --surface-2: #F3F0E9;
+            --ink: #1E2333;
+            --ink-dim: #6B7280;
+            --line: #E9E4D8;
+            --teal: #0D9488;
+            --teal-soft: #E1F1EE;
+            --violet: #7C3AED;
+            --violet-soft: #F1EBFD;
+            --gold: #C9971F;
+            --gold-soft: #FAF1DE;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--ink);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Sora', sans-serif;
+        }
+
+        .btn-main {
+            background: linear-gradient(135deg, var(--teal), var(--violet));
+        }
+
+        .btn-gold {
+            background: linear-gradient(120deg, var(--gold), var(--violet));
+        }
+
+        .img-placeholder {
+            border: 1.5px dashed var(--line);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            background-color: var(--surface-2);
+        }
+    </style>
+
+    <!-- Meta Pixel & TikTok Pixel Code Placeholder -->
+    <!-- Meta Pixel Code Placeholder: <script>...</script> -->
+    <!-- TikTok Pixel Code Placeholder: <script>...</script> -->
+    <script>
+        // Dummy tracking function placeholder
+        function trackEvent(eventName, data) {
+            console.log("Tracked Event:", eventName, data);
+        }
+    </script>
+</head>
+<body class="antialiased">
+
+    <!-- Container Utama: Mobile-First Single Column (~460px centered) -->
+    <main class="max-w-[460px] mx-auto min-h-screen bg-[var(--bg)] border-x border-[var(--line)] shadow-sm px-5 py-8 space-y-12">
+
+        <!-- SECTION 1 — HERO -->
+        <section class="space-y-6 pt-4">
+            <h1 class="text-3xl font-extrabold tracking-tight text-[var(--ink)] leading-tight">
+                Bingung Mulai Diet dari Mana?
+            </h1>
+            <p class="text-[var(--ink-dim)] text-base leading-relaxed">
+                FitKu bantu kamu punya rencana makan yang sesuai tubuh dan kebiasaan makan orang Indonesia — bukan sekadar hitung kalori.
+            </p>
+
+            <div>
+                <a href="/onboarding" onclick="trackEvent('Lead', {location: 'hero'})" class="block w-full text-center py-4 px-6 rounded-xl text-white font-bold text-base btn-main shadow-lg shadow-teal-900/10 transition-transform active:scale-[0.98]">
+                    Coba Gratis Sekarang →
+                </a>
+            </div>
+
+            <div class="text-sm font-medium text-[var(--ink)]">
+                ⭐⭐⭐⭐⭐ Dipercaya orang Indonesia yang mulai hidup lebih sehat
+            </div>
+
+            <!-- IMG PLACEHOLDER: hero-woman -->
+            <div class="img-placeholder flex flex-col items-center justify-center gap-2 min-h-[160px]">
+                <span class="text-3xl">📷</span>
+                <p class="text-xs italic text-[var(--ink-dim)]">wanita Indonesia 25–35 tahun, casual, memegang smartphone, ekspresi percaya diri natural.</p>
+            </div>
+        </section>
+
+        <hr class="border-[var(--line)]">
+
+        <!-- SECTION 2 — MASALAH -->
+        <section class="space-y-4">
+            <span class="text-xs font-bold tracking-widest text-[var(--teal)] uppercase">KAMU TIDAK SENDIRI</span>
+            <h2 class="text-2xl font-extrabold text-[var(--ink)]">Bukan Kamu yang Gagal Diet</h2>
+            <p class="text-[var(--ink-dim)] text-sm leading-relaxed">
+                Kamu cuma belum punya panduan yang paham makanan sehari-harimu — nasi, ayam, sambal — bukan menu diet ala luar negeri yang bikin bingung dan gampang menyerah.
+            </p>
+
+            <!-- IMG PLACEHOLDER: problem-table -->
+            <div class="img-placeholder flex flex-col items-center justify-center gap-2 min-h-[140px]">
+                <span class="text-3xl">📷</span>
+                <p class="text-xs italic text-[var(--ink-dim)]">meja makan rumahan Indonesia (nasi, ayam, sambal), tanpa orang.</p>
+            </div>
+        </section>
+
+        <hr class="border-[var(--line)]">
+
+        <!-- SECTION 3 — SOLUSI -->
+        <section id="solusi" class="space-y-5">
+            <span class="text-xs font-bold tracking-widest text-[var(--teal)] uppercase">KENAPA FITKU BEDA</span>
+            <h2 class="text-2xl font-extrabold text-[var(--ink)]">FitKu Ngerti Makanan Indonesia</h2>
+
+            <!-- IMG PLACEHOLDER: app-screenshot-menu -->
+            <div class="img-placeholder flex flex-col items-center justify-center gap-2 min-h-[140px]">
+                <span class="text-3xl">📷</span>
+                <p class="text-xs italic text-[var(--ink-dim)]">Screenshot asli fitur Menu Hari Ini dari app FitKu — belum tersedia, isi manual nanti</p>
+            </div>
+
+            <ul class="space-y-3 text-sm text-[var(--ink)]">
+                <li class="flex items-start gap-3">
+                    <span class="text-[var(--teal)] font-bold">✓</span>
+                    <span><strong>Personal calorie goal</strong> — Dihitung dari tubuh & targetmu, bukan angka generik</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-[var(--teal)] font-bold">✓</span>
+                    <span><strong>Menu Hari Ini</strong> — Saran makanan Indonesia sesuai sisa kalorimu</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-[var(--teal)] font-bold">✓</span>
+                    <span><strong>AI Diet Coach</strong> — Ngobrol harian, bukan cuma catat angka</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-[var(--teal)] font-bold">✓</span>
+                    <span><strong>Makanan Indonesia</strong> — Porsi centong, potong, piring — bukan gram asing</span>
+                </li>
+            </ul>
+        </section>
+
+        <hr class="border-[var(--line)]">
+
+        <!-- SECTION 4 — PERSONAL AI COACH -->
+        <section class="space-y-4">
+            <span class="text-xs font-bold tracking-widest text-[var(--teal)] uppercase">LEBIH DARI SEKADAR APLIKASI</span>
+            <h2 class="text-2xl font-extrabold text-[var(--ink)]">Punya Teman yang Selalu Mengingatkan</h2>
+            <p class="text-[var(--ink-dim)] text-sm leading-relaxed">
+                Bukan cuma teknologi — AI Coach FitKu ngobrol sama kamu tiap hari, kayak temen yang beneran perhatian sama progressmu.
+            </p>
+
+            <!-- Chat Bubble Contoh -->
+            <div class="bg-gradient-to-r from-[var(--teal-soft)] to-[var(--violet-soft)] p-4 rounded-2xl border border-[var(--line)] text-sm space-y-1">
+                <p class="font-bold text-[var(--teal)] text-xs">AI Coach</p>
+                <p class="text-[var(--ink)]">"Hari ini protein kamu masih kurang. Coba tambahkan telur atau ayam saat makan malam. 🙂"</p>
+            </div>
+
+            <!-- IMG PLACEHOLDER: ai-coach-hand -->
+            <div class="img-placeholder flex flex-col items-center justify-center gap-2 min-h-[140px]">
+                <span class="text-3xl">📷</span>
+                <p class="text-xs italic text-[var(--ink-dim)]">close-up tangan memegang smartphone, konteks santai (rumah/kafe), tanpa wajah.</p>
+            </div>
+        </section>
+
+        <hr class="border-[var(--line)]">
+
+        <!-- SECTION 5 — HASIL -->
+        <section class="space-y-4">
+            <span class="text-xs font-bold tracking-widest text-[var(--teal)] uppercase">BUKAN TRANSFORMASI EKSTREM</span>
+            <h2 class="text-2xl font-extrabold text-[var(--ink)]">Progress Kecil, Perubahan Besar</h2>
+            <p class="text-[var(--ink-dim)] text-sm leading-relaxed">
+                Bukan soal turun drastis dalam semalam. FitKu bantu kamu konsisten — sampai suatu hari kamu sadar semuanya terasa lebih mudah: pakaian favorit muat lagi, naik tangga nggak ngos-ngosan.
+            </p>
+
+            <!-- IMG PLACEHOLDER: lifestyle-progress -->
+            <div class="img-placeholder flex flex-col items-center justify-center gap-2 min-h-[140px]">
+                <span class="text-3xl">📷</span>
+                <p class="text-xs italic text-[var(--ink-dim)]">orang jalan pagi/beraktivitas santai dengan percaya diri. JANGAN before-after, JANGAN transformasi ekstrem/gym.</p>
+            </div>
+        </section>
+
+        <hr class="border-[var(--line)]">
+
+        <!-- SECTION 6 — PREMIUM OFFER -->
+        <section class="bg-[var(--surface)] border border-[var(--line)] rounded-3xl p-6 space-y-5 shadow-sm">
+            <span class="text-xs font-bold tracking-widest text-[var(--gold)] uppercase">UNTUK KAMU YANG SERIUS</span>
+            <h2 class="text-2xl font-extrabold text-[var(--ink)]">Punya Coach Pribadi, Bukan Cuma Aplikasi</h2>
+
+            <!-- Value Stack Card -->
+            <div class="bg-[var(--surface-2)] p-4 rounded-xl space-y-2 text-sm">
+                <div class="flex justify-between items-center text-[var(--ink)]">
+                    <span>🤖 AI Diet Coaching Personal</span>
+                    <span class="font-semibold">Rp249.000</span>
+                </div>
+                <div class="flex justify-between items-center text-[var(--ink)]">
+                    <span>🏃 Daily Movement Plan</span>
+                    <span class="font-semibold">Rp199.000</span>
+                </div>
+                <hr class="border-[var(--line)] my-1">
+                <div class="flex justify-between items-center font-bold text-[var(--ink)]">
+                    <span>Total Value:</span>
+                    <span class="text-[var(--gold)]">Rp448.000+</span>
+                </div>
+            </div>
+
+            <!-- IMG PLACEHOLDER: premium-moment -->
+            <div class="img-placeholder flex flex-col items-center justify-center gap-2 min-h-[140px]">
+                <span class="text-3xl">📷</span>
+                <p class="text-xs italic text-[var(--ink-dim)]">momen sehari-hari dengan pencahayaan golden-hour hangat, aksen gold, premium tapi understated (bukan mewah berlebihan).</p>
+            </div>
+
+            <div class="text-center space-y-1">
+                <div class="text-sm text-[var(--ink-dim)]">
+                    <span class="line-through">Rp99.000</span>
+                </div>
+                <div class="text-3xl font-extrabold text-[var(--ink)]">
+                    Rp49.000<span class="text-sm font-normal text-[var(--ink-dim)]">/bulan</span>
+                </div>
+                <p class="text-xs text-[var(--ink-dim)] italic pt-1">Dapatkan coach pribadi dengan harga secangkir kopi.</p>
+            </div>
+
+            <div>
+                <a href="/waitlist" onclick="trackEvent('UpgradeIntent', {plan: 'premium_offer'})" class="block w-full text-center py-4 px-6 rounded-xl text-white font-bold text-base btn-gold shadow-md transition-transform active:scale-[0.98]">
+                    Mulai Premium
+                </a>
+            </div>
+        </section>
+
+        <hr class="border-[var(--line)]">
+
+        <!-- SECTION 7 — PRICING -->
+        <section class="space-y-5">
+            <span class="text-xs font-bold tracking-widest text-[var(--teal)] uppercase">PILIH PAKETMU</span>
+            <h2 class="text-2xl font-extrabold text-[var(--ink)]">Pilih Paketmu</h2>
+
+            <div class="space-y-4">
+                <!-- Paket 1 Bulan -->
+                <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-5 flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-sm text-[var(--ink)]">1 BULAN</p>
+                        <p class="text-xs text-[var(--ink-dim)] line-through mt-0.5">Rp99.000</p>
+                        <p class="text-lg font-extrabold text-[var(--ink)]">Rp49.000</p>
+                    </div>
+                    <a href="/waitlist" onclick="trackEvent('UpgradeIntent', {plan: '1_bulan'})" class="py-2.5 px-4 rounded-xl btn-gold text-white font-bold text-xs shadow-sm transition-transform active:scale-[0.98]">
+                        Mulai Premium
+                    </a>
+                </div>
+
+                <!-- Paket 3 Bulan (Highlighted & Popular) -->
+                <div class="bg-[var(--surface)] border-2 border-[var(--gold)] rounded-2xl p-5 relative shadow-sm">
+                    <div class="absolute -top-3 right-4 bg-[var(--gold)] text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        ⭐ PALING POPULER
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-sm text-[var(--ink)]">3 BULAN</p>
+                            <p class="text-xs text-[var(--ink-dim)] line-through mt-0.5">Rp297.000</p>
+                            <p class="text-lg font-extrabold text-[var(--ink)]">Rp119.000</p>
+                        </div>
+                        <a href="/waitlist" onclick="trackEvent('UpgradeIntent', {plan: '3_bulan'})" class="py-2.5 px-4 rounded-xl btn-gold text-white font-bold text-xs shadow-sm transition-transform active:scale-[0.98]">
+                            Mulai Premium
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Paket 12 Bulan -->
+                <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-5 flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-sm text-[var(--ink)]">12 BULAN</p>
+                        <p class="text-xs text-[var(--ink-dim)] line-through mt-0.5">Rp1.188.000</p>
+                        <p class="text-lg font-extrabold text-[var(--ink)]">Rp399.000</p>
+                    </div>
+                    <a href="/waitlist" onclick="trackEvent('UpgradeIntent', {plan: '12_bulan'})" class="py-2.5 px-4 rounded-xl btn-gold text-white font-bold text-xs shadow-sm transition-transform active:scale-[0.98]">
+                        Mulai Premium
+                    </a>
+                </div>
+            </div>
+
+            <p class="text-center text-xs text-[var(--ink-dim)] pt-1">Harga peluncuran untuk early adopter.</p>
+        </section>
+
+        <hr class="border-[var(--line)]">
+
+        <!-- SECTION 8 — FAQ -->
+        <section class="space-y-4">
+            <h2 class="text-2xl font-extrabold text-[var(--ink)]">Pertanyaan yang Sering Ditanyakan</h2>
+
+            <div class="space-y-3">
+                <details class="bg-[var(--surface)] border border-[var(--line)] rounded-xl p-4 group">
+                    <summary class="font-bold text-sm text-[var(--ink)] cursor-pointer list-none flex justify-between items-center">
+                        Apakah cocok untuk pemula?
+                        <span class="text-xs text-[var(--ink-dim)] group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <p class="text-xs text-[var(--ink-dim)] mt-2 leading-relaxed">
+                        Ya — onboarding FitKu dirancang seperti sesi pertama dengan personal trainer, bukan form rumit.
+                    </p>
+                </details>
+
+                <details class="bg-[var(--surface)] border border-[var(--line)] rounded-xl p-4 group">
+                    <summary class="font-bold text-sm text-[var(--ink)] cursor-pointer list-none flex justify-between items-center">
+                        Apakah makanan Indonesia tersedia?
+                        <span class="text-xs text-[var(--ink-dim)] group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <p class="text-xs text-[var(--ink-dim)] mt-2 leading-relaxed">
+                        Database FitKu berisi puluhan makanan Indonesia dengan porsi yang biasa kamu pakai — centong, potong, piring.
+                    </p>
+                </details>
+
+                <details class="bg-[var(--surface)] border border-[var(--line)] rounded-xl p-4 group">
+                    <summary class="font-bold text-sm text-[var(--ink)] cursor-pointer list-none flex justify-between items-center">
+                        Apakah harus olahraga?
+                        <span class="text-xs text-[var(--ink-dim)] group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <p class="text-xs text-[var(--ink-dim)] mt-2 leading-relaxed">
+                        Tidak wajib. Daily Movement Plan itu bonus Premium opsional — fokus utama FitKu tetap di pola makan.
+                    </p>
+                </details>
+
+                <details class="bg-[var(--surface)] border border-[var(--line)] rounded-xl p-4 group">
+                    <summary class="font-bold text-sm text-[var(--ink)] cursor-pointer list-none flex justify-between items-center">
+                        Apakah bisa berhenti kapan saja?
+                        <span class="text-xs text-[var(--ink-dim)] group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <p class="text-xs text-[var(--ink-dim)] mt-2 leading-relaxed">
+                        Bisa, tanpa kontrak jangka panjang.
+                    </p>
+                </details>
+
+                <details class="bg-[var(--surface)] border border-[var(--line)] rounded-xl p-4 group">
+                    <summary class="font-bold text-sm text-[var(--ink)] cursor-pointer list-none flex justify-between items-center">
+                        Apakah data saya aman?
+                        <span class="text-xs text-[var(--ink-dim)] group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <p class="text-xs text-[var(--ink-dim)] mt-2 leading-relaxed">
+                        Datamu tersimpan langsung di perangkatmu sendiri, tidak dikirim ke server manapun.
+                    </p>
+                </details>
+            </div>
+        </section>
+
+        <hr class="border-[var(--line)]">
+
+        <!-- SECTION 9 — FINAL CTA -->
+        <section class="space-y-6 text-center pb-6">
+            <!-- IMG PLACEHOLDER: final-cta-bookend -->
+            <div class="img-placeholder flex flex-col items-center justify-center gap-2 min-h-[140px]">
+                <span class="text-3xl">📷</span>
+                <p class="text-xs italic text-[var(--ink-dim)]">orang tersenyum genuine menghadap ke depan/horizon — idealnya gaya visual sama dengan foto di Section 1 (bookend).</p>
+            </div>
+
+            <h2 class="text-2xl font-extrabold text-[var(--ink)] leading-tight">
+                Mulai Perjalanan Diet yang Lebih Mudah Hari Ini
+            </h2>
+
+            <div class="space-y-3">
+                <a href="/onboarding" onclick="trackEvent('Lead', {location: 'final_cta'})" class="block w-full py-4 px-6 rounded-xl text-white font-bold text-base btn-gold shadow-lg transition-transform active:scale-[0.98]">
+                    Mulai Gratis
+                </a>
+                <div>
+                    <a href="#solusi" class="text-sm font-semibold text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors underline underline-offset-4">
+                        Lihat cara kerjanya dulu
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>

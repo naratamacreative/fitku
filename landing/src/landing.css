@@ -1,0 +1,120 @@
+/*
+  Self-contained styles for the FitKu landing page.
+  Tokens are duplicated from FitKu's frozen "Premium" design system (not imported
+  from the main app) so this folder stays portable on its own.
+*/
+:root {
+  --lp-bg: #faf8f4;
+  --lp-surface: #ffffff;
+  --lp-surface-2: #f3f0e9;
+  --lp-ink: #1e2333;
+  --lp-ink-dim: #6b7280;
+  --lp-line: #e9e4d8;
+  --lp-teal: #0d9488;
+  --lp-teal-soft: #e1f1ee;
+  --lp-violet: #7c3aed;
+  --lp-violet-soft: #f1ebfd;
+  --lp-gold: #c9971f;
+  --lp-gold-soft: #faf1de;
+  --lp-shadow: 0 1px 2px rgba(30, 35, 51, 0.05), 0 18px 34px -20px rgba(30, 35, 51, 0.22);
+  --lp-grad-hero: linear-gradient(135deg, var(--lp-teal) 0%, var(--lp-violet) 100%);
+  --lp-grad-gold: linear-gradient(120deg, var(--lp-gold) 0%, var(--lp-violet) 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --lp-bg: #15140f;
+    --lp-surface: #1e1c16;
+    --lp-surface-2: #262319;
+    --lp-ink: #efeae0;
+    --lp-ink-dim: #a79d8a;
+    --lp-line: #37331f;
+    --lp-teal: #2dd4bf;
+    --lp-teal-soft: #16332c;
+    --lp-violet: #a78bfa;
+    --lp-violet-soft: #2a2140;
+    --lp-gold: #e7ae4e;
+    --lp-gold-soft: #362a10;
+    --lp-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 18px 34px -20px rgba(0, 0, 0, 0.6);
+  }
+}
+:root[data-theme='dark'] {
+  --lp-bg: #15140f;
+  --lp-surface: #1e1c16;
+  --lp-surface-2: #262319;
+  --lp-ink: #efeae0;
+  --lp-ink-dim: #a79d8a;
+  --lp-line: #37331f;
+  --lp-teal: #2dd4bf;
+  --lp-teal-soft: #16332c;
+  --lp-violet: #a78bfa;
+  --lp-violet-soft: #2a2140;
+  --lp-gold: #e7ae4e;
+  --lp-gold-soft: #362a10;
+  --lp-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 18px 34px -20px rgba(0, 0, 0, 0.6);
+}
+
+.lp-root {
+  background: var(--lp-bg);
+  color: var(--lp-ink);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.lp-root * { box-sizing: border-box; }
+
+.lp-page { max-width: 460px; margin: 0 auto; background: var(--lp-surface); }
+
+.lp-section { border-top: 1px solid var(--lp-line); padding: 46px 28px 40px; }
+.lp-section:first-child { border-top: none; padding-top: 20px; }
+
+.lp-eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lp-ink-dim); margin-bottom: 8px; }
+
+.lp-headline { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 24px; line-height: 1.2; margin: 0 0 10px; text-wrap: balance; }
+.lp-sub { font-size: 14px; color: var(--lp-ink-dim); line-height: 1.55; margin-bottom: 16px; }
+.lp-body { font-size: 13.5px; color: var(--lp-ink); line-height: 1.65; margin-bottom: 14px; }
+.lp-center { text-align: center; }
+
+.lp-photo-slot { border: 1.5px dashed var(--lp-line); border-radius: 16px; padding: 20px; text-align: center; background: var(--lp-surface-2); margin: 14px 0; overflow: hidden; }
+.lp-photo-slot.lp-tall { padding: 42px 20px; }
+.lp-photo-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; }
+.lp-photo-slot .lp-cam { font-size: 22px; margin-bottom: 6px; }
+.lp-photo-slot .lp-cap { font-size: 11.5px; color: var(--lp-ink-dim); line-height: 1.5; font-style: italic; }
+
+.lp-btn { display: block; text-align: center; background: var(--lp-grad-hero); color: #fff; font-weight: 700; font-size: 14px; padding: 14px; border-radius: 14px; box-shadow: 0 10px 20px -10px rgba(124, 58, 237, 0.4); text-decoration: none; border: none; cursor: pointer; width: 100%; }
+.lp-btn.lp-gold { background: var(--lp-grad-gold); }
+.lp-btn.lp-ghost { background: transparent; color: var(--lp-ink-dim); font-weight: 600; font-size: 12.5px; box-shadow: none; padding: 8px; }
+
+.lp-social-proof { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--lp-gold); font-weight: 700; margin-top: 10px; justify-content: center; }
+.lp-social-proof .lp-flag { font-size: 9px; font-weight: 700; color: var(--lp-ink-dim); background: var(--lp-surface-2); padding: 2px 7px; border-radius: 20px; margin-left: 4px; }
+
+.lp-checklist { display: flex; flex-direction: column; gap: 9px; margin: 14px 0; }
+.lp-check-row { display: flex; gap: 10px; align-items: flex-start; background: var(--lp-surface); border-radius: 12px; padding: 11px 13px; box-shadow: var(--lp-shadow); }
+.lp-check-mark { width: 20px; height: 20px; border-radius: 50%; background: var(--lp-teal-soft); color: var(--lp-teal); font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex: none; }
+.lp-check-row b { font-size: 13px; }
+.lp-check-row span.lp-d { display: block; font-size: 11.5px; color: var(--lp-ink-dim); margin-top: 1px; }
+
+.lp-chat-bubble { background: linear-gradient(120deg, var(--lp-teal-soft), var(--lp-violet-soft)); border-radius: 15px; border-bottom-left-radius: 4px; padding: 12px 14px; font-size: 12.5px; line-height: 1.5; margin: 12px 0; }
+.lp-chat-bubble .lp-who { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--lp-violet); display: block; margin-bottom: 4px; }
+
+.lp-value-card { background: var(--lp-surface); border-radius: 16px; padding: 4px; box-shadow: var(--lp-shadow); margin: 14px 0; }
+.lp-value-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--lp-line); }
+.lp-value-row:last-child { border-bottom: none; }
+.lp-value-row .lp-name { font-size: 12.5px; font-weight: 600; }
+.lp-value-row .lp-val { font-size: 12.5px; color: var(--lp-ink-dim); }
+.lp-value-total { display: flex; justify-content: space-between; padding: 13px 14px; background: var(--lp-surface-2); border-radius: 0 0 14px 14px; font-weight: 800; font-size: 14px; }
+
+.lp-price-reveal { text-align: center; margin: 18px 0; }
+.lp-price-reveal .lp-old { font-size: 14px; color: var(--lp-ink-dim); text-decoration: line-through; }
+.lp-price-reveal .lp-new { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 30px; color: var(--lp-gold); }
+.lp-price-reveal .lp-unit { font-size: 12px; color: var(--lp-ink-dim); }
+
+.lp-plan-stack { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+.lp-plan { position: relative; background: var(--lp-surface); border: 1.5px solid var(--lp-line); border-radius: 14px; padding: 12px 14px; box-shadow: var(--lp-shadow); }
+.lp-plan.lp-featured { border-color: transparent; background: linear-gradient(var(--lp-surface), var(--lp-surface)) padding-box, var(--lp-grad-gold) border-box; border: 2px solid transparent; }
+.lp-plan .lp-ribbon { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--lp-grad-gold); color: #fff; font-size: 9px; font-weight: 800; padding: 3px 11px; border-radius: 20px; white-space: nowrap; }
+.lp-plan .lp-pname { font-size: 11px; color: var(--lp-ink-dim); font-weight: 700; }
+.lp-plan .lp-pold { font-size: 11px; color: var(--lp-ink-dim); text-decoration: line-through; }
+.lp-plan .lp-pnew { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 19px; }
+
+.lp-faq-item { background: var(--lp-surface); border-radius: 12px; padding: 13px 15px; box-shadow: var(--lp-shadow); margin-bottom: 9px; }
+.lp-faq-item .lp-q { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.lp-faq-item .lp-a { font-size: 12px; color: var(--lp-ink-dim); line-height: 1.5; }

@@ -20,10 +20,13 @@ export interface Food {
   region?: string
 }
 
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
 export interface FoodLog {
   id: string
   userId: string
-  foodId: string
+  // null for Quick Add entries — there's no matching Food record to snapshot from.
+  foodId: string | null
   date: string // YYYY-MM-DD
   servings: number
   // Snapshot at time of logging so later edits to `foods` never rewrite history.
@@ -32,6 +35,9 @@ export interface FoodLog {
   carbs: number
   fat: number
   foodName: string
+  // Optional: logs created before this field existed have no mealType. Treat
+  // `undefined` as "uncategorized" at read time — never backfill/guess it.
+  mealType?: MealType
   createdAt: string
 }
 

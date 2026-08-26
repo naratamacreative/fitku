@@ -45,6 +45,16 @@ function bmr({ gender, age, heightCm, weightKg }: TdeeInput): number {
   return gender === 'male' ? base + 5 : base - 161
 }
 
+/** Recomputes fat/carb targets for an already-decided calorie+protein pair — same 25%-fat/remainder-carb split as `calculateTdee`, used when a target is adjusted without redoing the full profile calculation. */
+export function recalculateMacrosForCalories(targetCalories: number, targetProtein: number): { targetFat: number; targetCarbs: number } {
+  const proteinCalories = targetProtein * 4
+  const fatCalories = targetCalories * 0.25
+  const targetFat = Math.round(fatCalories / 9)
+  const carbCalories = targetCalories - proteinCalories - fatCalories
+  const targetCarbs = Math.round(Math.max(carbCalories, 0) / 4)
+  return { targetFat, targetCarbs }
+}
+
 export function calculateTdee(input: TdeeInput): TdeeResult {
   const bmrValue = bmr(input)
   const maintenanceCalories = Math.round(bmrValue * ACTIVITY_MULTIPLIER[input.activityLevel])

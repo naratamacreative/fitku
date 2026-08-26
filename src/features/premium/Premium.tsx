@@ -6,11 +6,18 @@ import { Button } from '../../shared/components/Button'
 import { useAppState } from '../../shared/context/AppStateContext'
 import { PRO_PLANS } from '../paywall/paywall.triggers'
 
+// These 4 are real and actually gated via useProAccess() — see AiCoach.tsx
+// (Weekly Insight mendalam, Target Adaptif, Tren Skor) and CalorieTab.tsx /
+// WeightTab.tsx (Riwayat & grafik penuh). Every new user gets full access to
+// all 4 during the 7-day trial (see domain/entitlement.ts), then they lock.
+// Replaces the earlier 4-benefit list (Chat lanjutan, Menu personal harian,
+// Riwayat unlimited, Analisa progress mendalam) that was never actually
+// enforced anywhere — see the P0 audit note in git history for that finding.
 const BENEFITS = [
-  'Chat lanjutan dengan AI Coach',
-  'Menu personal harian',
-  'Riwayat & grafik unlimited',
-  'Analisa progress mendalam',
+  'Weekly Insight mendalam — analisa pola 30 hari, bukan cuma 7',
+  'Riwayat & grafik kalori dan berat badan tanpa batas',
+  'Target kalori adaptif berdasarkan tren berat aktualmu',
+  'Skor harian dengan tren & korelasi kebiasaan',
 ]
 
 export function Premium() {
@@ -34,7 +41,7 @@ export function Premium() {
       <div className="flex flex-col gap-3">
         <div className="grad-premium rounded-2xl px-4 py-5 text-center text-white">
           <p className="font-display text-lg font-extrabold">FitKu Premium</p>
-          <p className="text-[11px] opacity-90">Coach personal, tanpa batas</p>
+          <p className="text-[11px] opacity-90">FitKu yang makin memahami kamu</p>
         </div>
 
         {activated ? (

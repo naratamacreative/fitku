@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "note": "Prompt siap pakai untuk Gemini (atau AI image generator lain). assetId sesuai id di asset-manifest.json. Setelah digenerate, taruh hasilnya di path 'finalPath' masing-masing asset lalu ubah status ke 'ready' di asset-manifest.json — ImageSlot.tsx otomatis render foto asli begitu status berubah.",
+  "prompts": [
+    {
+      "assetId": "hero-photo",
+      "usedInSection": "hero",
+      "aspectRatio": "4:5",
+      "prompt": "Candid lifestyle photo of an Indonesian woman in her late 20s, wearing a casual olive t-shirt, sitting by a sunlit window at home, looking at her smartphone with a warm confident smile, natural soft morning light, shallow depth of field, shot on 50mm lens, realistic skin texture, warm teal-and-neutral color grading, portrait orientation, editorial lifestyle photography style",
+      "negativePrompt": "posed stock photo, gym setting, fitness model, extreme makeup, text overlay, logo, watermark, illustration, 3D render, plastic skin",
+      "notes": "Foto paling penting (hero) — jadi first impression dari iklan. Cek hasil generate beberapa kali, pilih yang paling natural, hindari yang terlihat 'AI banget'."
+    },
+    {
+      "assetId": "meja-makan-indonesia",
+      "usedInSection": "masalah",
+      "aspectRatio": "16:10",
+      "prompt": "Overhead 45-degree shot of a modest Indonesian home dining table: steamed white rice, grilled chicken (ayam bakar), a small bowl of sambal, sliced cucumber and tomato, simple woven placemat, warm natural window light, soft shadows, authentic home-cooked styling (not restaurant plating), landscape orientation",
+      "negativePrompt": "restaurant plating, fine dining, hands, people, text, logo, illustration",
+      "notes": "Fokus makanan saja, tanpa wajah/tangan — relatability lewat objek familiar, bukan akting ekspresi."
+    },
+    {
+      "assetId": "makanan-app-sanding",
+      "usedInSection": "solusi",
+      "aspectRatio": "16:10",
+      "prompt": null,
+      "negativePrompt": null,
+      "notes": "TIDAK bisa di-AI-gen — asset ini WAJIB screenshot ASLI fitur 'Menu Hari Ini' dari app FitKu (bukan mockup buatan), supaya klaim di landing page jujur. Ambil screenshot langsung dari app, sandingkan dengan foto makanan Indonesia asli (bisa pakai hasil generate dari prompt 'meja-makan-indonesia' di atas, atau foto lain yang relevan)."
+    },
+    {
+      "assetId": "tangan-phone",
+      "usedInSection": "ai-coach",
+      "aspectRatio": "4:5",
+      "prompt": "Close-up photo of a hand holding a smartphone at a slight angle, screen showing a soft teal-and-violet gradient chat bubble interface (blurred, not readable text), background is a blurred cozy home or cafe setting, warm natural light, shallow depth of field, realistic skin tone and subtle phone screen reflection, portrait orientation",
+      "negativePrompt": "visible face, brand logo on phone, readable app text, robotic/futuristic styling, illustration",
+      "notes": "Jangan tampilkan wajah — fokus tangan dan phone, konteks santai bukan teknologi/robot futuristik."
+    },
+    {
+      "assetId": "aktivitas-santai",
+      "usedInSection": "hasil",
+      "aspectRatio": "4:5",
+      "prompt": "Lifestyle photo of an Indonesian person in casual sporty clothes walking briskly on a neighborhood street or park path in early morning light, genuine relaxed smile, soft golden morning light, shallow depth of field background, realistic photography, portrait orientation",
+      "negativePrompt": "gym, weightlifting, extreme fitness, before-after composite, dramatic muscle definition, text, logo",
+      "notes": "BUKAN before-after, BUKAN transformasi ekstrem — jaga tone santai sesuai psikologi section Hasil."
+    },
+    {
+      "assetId": "lifestyle-premium",
+      "usedInSection": "premium-offer",
+      "aspectRatio": "16:10",
+      "prompt": "Warm golden-hour lifestyle photo of a person enjoying a quiet everyday moment — sitting on a balcony with a cup of tea, or preparing a simple healthy meal at home — soft golden backlight, warm amber and muted gold tones, cozy understated mood, landscape orientation, realistic photography",
+      "negativePrompt": "luxury mansion, opulent styling, jewelry, sports car, text, logo, illustration",
+      "notes": "Premium tapi understated — hindari visual mewah berlebihan yang tidak relevan dengan produk diet/kesehatan."
+    },
+    {
+      "assetId": "senyum-forward",
+      "usedInSection": "final-cta",
+      "aspectRatio": "4:5",
+      "prompt": "Portrait of an Indonesian person smiling genuinely, facing forward toward the camera, soft outdoor background with a slightly blurred horizon, warm late-afternoon light, sense of optimism and new beginning, realistic editorial photography style, portrait orientation",
+      "negativePrompt": "studio backdrop, stock photo pose, text, logo, illustration",
+      "notes": "Idealnya subjek/gaya konsisten dengan hero-photo supaya jadi bookend visual (section 1 dan section 9)."
+    }
+  ]
+}

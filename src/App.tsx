@@ -2,12 +2,14 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-d
 import { AiCoach } from './features/ai-coach/AiCoach'
 import { Dashboard } from './features/dashboard/Dashboard'
 import { FoodTracker } from './features/food-tracker/FoodTracker'
+import { Hydration } from './features/hydration/Hydration'
 import { OnboardingFlow } from './features/onboarding/OnboardingFlow'
 import { Premium } from './features/premium/Premium'
+import { Progress } from './features/progress/Progress'
 import { ResultMoment } from './features/result-moment/ResultMoment'
+import { EditProfile } from './features/settings/EditProfile'
 import { Settings } from './features/settings/Settings'
 import { Welcome } from './features/welcome/Welcome'
-import { WeightTracker } from './features/weight-tracker/WeightTracker'
 import { AppStateProvider, useAppState } from './shared/context/AppStateContext'
 import { ThemeProvider } from './shared/context/ThemeContext'
 
@@ -42,10 +44,26 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/hydration"
+        element={
+          <Gate>
+            <Hydration />
+          </Gate>
+        }
+      />
+      <Route
         path="/progress"
         element={
           <Gate>
-            <WeightTracker />
+            <Progress />
+          </Gate>
+        }
+      />
+      <Route
+        path="/settings/profile"
+        element={
+          <Gate>
+            <EditProfile />
           </Gate>
         }
       />
