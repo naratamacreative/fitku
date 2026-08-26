@@ -9,6 +9,8 @@ export interface AdaptiveTargetResult {
   currentCalories: number
   suggestedCalories: number | null
   adjustmentKcal: number
+  /** True while a just-applied adjustment is still in its cooldown window — see COOLDOWN_DAYS. */
+  onCooldown: boolean
 }
 
 const LOOKBACK_DAYS = 30
@@ -17,6 +19,9 @@ const KCAL_PER_KG = 7700
 const MAX_ADJUSTMENT_KCAL = 300
 const MIN_TARGET_CALORIES = 1200
 const MEANINGFUL_GAP_KG_PER_WEEK = 0.15
+// A rolling window, not calendar-week-aligned, so "applied Saturday" doesn't reset on Monday —
+// the weight trend genuinely needs about this long to reflect a calorie-target change at all.
+const COOLDOWN_DAYS = 7
 
 function expectedWeeklyRateKg(goal: Goal): number {
   if (goal === 'lose_weight') return -0.5
@@ -45,9 +50,30 @@ function clampAdjustment(kcal: number): number {
  *
  * `weightEntriesLookback` must already be filtered to the last LOOKBACK_DAYS and sorted ascending.
  */
-export function analyzeAdaptiveTarget(user: User, weightEntriesLookback: WeightEntry[]): AdaptiveTargetResult {
+export function analyzeAdaptiveTarget(
+  user: User,
+  weightEntriesLookback: WeightEntry[],
+  now: Date = new Date(),
+): AdaptiveTargetResult {
   const currentCalories = user.targetCalories
   const expected = expectedWeeklyRateKg(user.goal)
+
+  if (user.lastAdaptiveTargetAppliedAt) {
+    const daysSinceApplied = daysBetween(user.lastAdaptiveTargetAppliedAt, now.toISOString())
+    if (daysSinceApplied < COOLDOWN_DAYS) {
+      const daysLeft = COOLDOWN_DAYS - daysSinceApplied
+      return {
+        hasEnoughData: true,
+        message: `Kamu baru menerapkan penyesuaian target ${daysSinceApplied <= 0 ? 'hari ini' : `${daysSinceApplied} hari lalu`}. FitKu akan evaluasi progres lagi dalam ${daysLeft} hari supaya tren beratmu sempat kebaca dulu.`,
+        actualWeeklyRateKg: 0,
+        expectedWeeklyRateKg: expected,
+        currentCalories,
+        suggestedCalories: null,
+        adjustmentKcal: 0,
+        onCooldown: true,
+      }
+    }
+  }
 
   if (weightEntriesLookback.length < 2) {
     return {
@@ -58,6 +84,7 @@ export function analyzeAdaptiveTarget(user: User, weightEntriesLookback: WeightE
       currentCalories,
       suggestedCalories: null,
       adjustmentKcal: 0,
+      onCooldown: false,
     }
   }
 
@@ -74,6 +101,7 @@ export function analyzeAdaptiveTarget(user: User, weightEntriesLookback: WeightE
       currentCalories,
       suggestedCalories: null,
       adjustmentKcal: 0,
+      onCooldown: false,
     }
   }
 
@@ -91,6 +119,7 @@ export function analyzeAdaptiveTarget(user: User, weightEntriesLookback: WeightE
         currentCalories,
         suggestedCalories: null,
         adjustmentKcal: 0,
+        onCooldown: false,
       }
     }
     const adjustmentKcal = clampAdjustment((-actualWeeklyRateKg * KCAL_PER_KG) / 7 / 2) // half-correction, gentle
@@ -103,6 +132,7 @@ export function analyzeAdaptiveTarget(user: User, weightEntriesLookback: WeightE
       currentCalories,
       suggestedCalories: suggestedCalories === currentCalories ? null : suggestedCalories,
       adjustmentKcal,
+      onCooldown: false,
     }
   }
 
@@ -121,6 +151,7 @@ export function analyzeAdaptiveTarget(user: User, weightEntriesLookback: WeightE
       currentCalories,
       suggestedCalories: null,
       adjustmentKcal: 0,
+      onCooldown: false,
     }
   }
 
@@ -146,5 +177,6 @@ export function analyzeAdaptiveTarget(user: User, weightEntriesLookback: WeightE
     currentCalories,
     suggestedCalories: suggestedCalories === currentCalories ? null : suggestedCalories,
     adjustmentKcal,
+    onCooldown: false,
   }
 }

@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { exerciseRepository } from '../../data/repositories/exerciseRepository'
 import { foodLogRepository } from '../../data/repositories/foodLogRepository'
 import { foodReportRepository } from '../../data/repositories/foodReportRepository'
 import { foodRepository } from '../../data/repositories/foodRepository'
 import { hydrationRepository } from '../../data/repositories/hydrationRepository'
 import { noteRepository } from '../../data/repositories/noteRepository'
-import type { ExerciseLog } from '../../data/types/exercise.types'
 import type { Food, FoodLog } from '../../data/types/food.types'
 import type { FoodReportReason } from '../../data/types/foodReport.types'
 import { calculateDailyScore } from '../../domain/dailyScore'
@@ -16,6 +14,7 @@ import { AppShell } from '../../shared/components/AppShell'
 import { useAppState } from '../../shared/context/AppStateContext'
 import { useProAccess } from '../../shared/hooks/useProAccess'
 import { usePaywallTrigger } from '../../shared/hooks/usePaywallTrigger'
+import { useTodayExercise } from '../../shared/hooks/useTodayExercise'
 import { useTodayLog } from '../../shared/hooks/useTodayLog'
 import { useWeightHistory } from '../../shared/hooks/useWeightHistory'
 import { ExerciseSheet, type ExerciseFormValues } from './components/ExerciseSheet'
@@ -43,9 +42,9 @@ export function Dashboard() {
   const { latest, deltaKg } = useWeightHistory(user?.id)
   const { streak: paywallStreak, shouldShowPaywall, dismiss } = usePaywallTrigger(user?.id)
   const proAccess = useProAccess()
+  const { logs: todayExercise, addExercise } = useTodayExercise(user?.id)
   const [streak, setStreak] = useState(0)
   const [glasses, setGlasses] = useState(0)
-  const [todayExercise, setTodayExercise] = useState<ExerciseLog[]>([])
   const [allFoods, setAllFoods] = useState<Food[]>([])
   const [editingLog, setEditingLog] = useState<FoodLog | null>(null)
   const [noteDraft, setNoteDraft] = useState('')
@@ -60,7 +59,6 @@ export function Dashboard() {
     foodLogRepository.loggedDates(user.id).then((dates) => setStreak(calculateStreak(dates)))
     hydrationRepository.getForDate(user.id, todayIso()).then(setGlasses)
     noteRepository.getForDate(user.id, todayIso()).then(setNoteDraft)
-    exerciseRepository.getByDate(user.id, todayIso()).then(setTodayExercise)
   }, [user, totals.count])
 
   useEffect(() => {
@@ -129,9 +127,7 @@ export function Dashboard() {
   }
 
   const handleSaveExercise = async (values: ExerciseFormValues) => {
-    await exerciseRepository.add({ userId: user.id, date: todayIso(), ...values })
-    const refreshed = await exerciseRepository.getByDate(user.id, todayIso())
-    setTodayExercise(refreshed)
+    await addExercise({ userId: user.id, date: todayIso(), ...values })
     setShowExerciseSheet(false)
   }
 

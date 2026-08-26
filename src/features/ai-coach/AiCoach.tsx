@@ -106,7 +106,12 @@ export function AiCoach() {
     if (!adaptiveTarget?.suggestedCalories) return
     setApplyingTarget(true)
     const { targetFat, targetCarbs } = recalculateMacrosForCalories(adaptiveTarget.suggestedCalories, user.targetProtein)
-    await userRepository.update(user.id, { targetCalories: adaptiveTarget.suggestedCalories, targetFat, targetCarbs })
+    await userRepository.update(user.id, {
+      targetCalories: adaptiveTarget.suggestedCalories,
+      targetFat,
+      targetCarbs,
+      lastAdaptiveTargetAppliedAt: new Date().toISOString(),
+    })
     await refreshUser()
     setApplyingTarget(false)
     setTargetApplied(true)

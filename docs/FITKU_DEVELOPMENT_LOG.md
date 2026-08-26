@@ -1248,3 +1248,99 @@ Tidak ada. `basketExpanded` murni state UI lokal, tidak pernah masuk `BasketItem
 
 ### 11. Next Step
 Tidak ada pekerjaan lanjutan yang direncanakan sendiri. Menunggu review user atas kedua fix ini.
+
+---
+
+## 2026-08-27 — Bugfix: Food Seed Baru Tidak Muncul di HP yang Sudah Pernah Buka App
+
+### 1. Tanggal
+2026-08-27
+
+### 2. Tujuan
+User melaporkan: 137 item makanan baru yang diimport ke `indonesianFoodsSeed` (entry sesi sebelumnya) belum muncul saat dibuka di HP.
+
+### 3. Root Cause
+`foodRepository.ensureSeeded()` (`src/data/repositories/foodRepository.ts`) hanya menjalankan `db.foods.bulkPut(indonesianFoodsSeed)` kalau `db.foods.count() === 0`. HP user SUDAH PERNAH membuka app sebelumnya (dipakai untuk testing onboarding di sesi-sesi lalu), jadi `foods` table di IndexedDB HP itu sudah terisi 56 item (seed versi lama) — begitu dibuka lagi setelah seed di-update jadi 193 item, `count()` mengembalikan 56 (bukan 0), sehingga `bulkPut` TIDAK PERNAH dipanggil ulang dan 137 item baru tidak pernah masuk ke HP tersebut. Ini SAMA PERSIS dengan risiko yang sudah dicatat sebagai "Next Step" di entry import sebelumnya (2026-08-26 lanjutan 4) — sekarang terbukti benar-benar terjadi.
+
+### 4. Kenapa testing sebelumnya tidak menangkap ini
+Verifikasi sesi sebelumnya dilakukan di browser DESKTOP (`localhost:5174`) yang IndexedDB-nya berbeda origin dari HP (`10.166.152.36:5174`) — desktop di-reseed manual lewat DevTools sekali (`bulkPut` langsung), sehingga terlihat sukses, tapi perbaikan itu HANYA berlaku untuk origin desktop tersebut, bukan perbaikan permanen di kode aplikasi. HP user (origin berbeda) tidak pernah disentuh manual, jadi tetap stale.
+
+### 5. Keputusan yang diambil
+`ensureSeeded()` diubah dari "seed sekali kalau kosong" jadi "SELALU upsert seed setiap kali app dibuka" — guard `if (count === 0)` dihapus, `bulkPut(indonesianFoodsSeed)` dipanggil tanpa syarat di setiap boot. Ini aman karena:
+- `foods` table HANYA PERNAH ditulis oleh seed ini — makanan buatan user sendiri disimpan di table terpisah (`myFoods`), `FoodLog` menyimpan snapshot nilai gizi sendiri (tidak live-join ke `foods`). Tidak ada baris `foods` yang bisa "tertimpa secara tidak diinginkan" karena semua baris `foods` MEMANG berasal dari array seed yang sama.
+- `bulkPut` adalah upsert-by-id: baris dengan id yang sudah ada di-overwrite dengan nilai seed terbaru (bonus: koreksi data gizi di masa depan juga otomatis ter-apply ke device lama), baris baru masuk, baris yang TIDAK ada di array seed (tidak pernah terjadi di app ini) TIDAK dihapus.
+- Dengan perubahan ini, PENAMBAHAN ITEM MAKANAN DI MASA DEPAN otomatis sampai ke semua device yang sudah pernah install, cukup dengan `git pull` + reload — tidak perlu lagi manual `bulkPut` per-device seperti yang terpaksa dilakukan sesi sebelumnya.
+
+### 6. Implementasi
+Satu fungsi diubah, `src/data/repositories/foodRepository.ts`, method `ensureSeeded()` — guard `count === 0` dihapus, komentar diperbarui menjelaskan alasan "always upsert, self-healing".
+
+### 7. File yang berubah
+`src/data/repositories/foodRepository.ts` — satu-satunya file yang diubah.
+
+### 8. Dampak terhadap data/schema
+Tidak ada perubahan schema. Dampak fungsional: `ensureSeeded()` sekarang menjalankan 1 query `bulkPut` tambahan di SETIAP app boot (sebelumnya nol query setelah seed pertama) — biaya diabaikan karena Dexie `bulkPut` untuk ~193 baris kecil adalah operasi sub-milidetik, dan ini terjadi sekali per sesi (bukan per-render).
+
+### 9. Testing yang benar-benar dilakukan (tested by Alig)
+- **Build**: `npx tsc -b` — 0 TypeScript error.
+- **Eksekusi kode baru dikonfirmasi jalan tanpa error**: dibuka tab baru ke origin `http://10.166.152.36:5174/` (origin YANG SAMA yang dipakai HP user) — `ensureSeeded()` versi baru berjalan otomatis saat app boot, `db.foods.count()` menghasilkan 193, console 0 error/exception.
+- **Repro langsung skenario "HP yang sudah stale" TIDAK dilakukan** — percobaan menghapus manual 137 item lewat DevTools (untuk mensimulasikan state 56-item lama, lalu reload untuk membuktikan self-heal) DITOLAK oleh classifier keamanan otomatis sesi ini (delete data diklasifikasikan berpotensi destruktif, meski di database test lokal) — bukan gagal, memang tidak dicoba lagi setelah ditolak. Kebenaran fix ini disandarkan pada pembacaan logika kode (poin 5) yang straightforward: `bulkPut` tanpa guard PASTI menjalankan upsert setiap boot, tidak ada jalur kode yang bisa membuatnya skip lagi.
+- **Jalan keluar untuk user**: karena ini adalah PERBAIKAN KODE (bukan aksi sekali-jalan di data), begitu user reload halaman FitKu di HP-nya (setelah kode ter-deploy/dev-server ke-restart dengan perubahan ini), `ensureSeeded()` versi baru otomatis jalan dan meng-upsert 193 item — tidak perlu langkah manual apa pun dari user selain refresh/reload.
+
+### 10. Bug yang belum diverifikasi
+Repro langsung "HP stale → reload → otomatis jadi 193" belum dibuktikan visual di HP user itu sendiri pada pass ini (dev server perlu di-restart/HMR perlu diterapkan dulu, dan user perlu reload manual) — root cause dan logika fix sudah pasti benar (poin 5), tapi konfirmasi visual akhir menunggu user reload dan cek sendiri.
+
+### 11. Next Step
+Menunggu konfirmasi user setelah reload FitKu di HP — kalau 193 item sudah muncul di semua kategori, bug ini selesai. Kalau BELUM (misal dev server perlu restart total, bukan cuma HMR, karena perubahan ada di fungsi yang cuma dipanggil sekali saat mount), langkah lanjutan: minta user hard-refresh atau restart dev server.
+
+---
+
+## 2026-08-27 (lanjutan) — 4 Bug/Gap Fix Pra-Deployment
+
+### 1. Tanggal
+2026-08-27
+
+### 2. Tujuan
+User secara eksplisit meminta fokus membereskan 4 bug/gap tersisa sebelum deployment (bukan Auth/Supabase/Payment/AI/P3, yang sudah di-pending terpisah): (1) tile Olahraga Dashboard tidak auto-refresh setelah log lewat FAB, (2) basket FoodTracker hilang saat Quick Add dipakai di tengah basket, (3) evaluasi tab "Semua" FoodTracker yang tidak bisa diakses, (4) Adaptive Target bisa diterapkan berulang dalam minggu yang sama. User eksplisit memberi kebebasan menentukan HOW (implementasi/arsitektur/UX), dengan instruksi "gunakan solusi lebih baik dari asumsi saya kalau ditemukan."
+
+### 3. Root Cause per item
+
+**#1 — Tile Olahraga stale:** `BottomNav.tsx` (FAB, dirender global lewat `AppShell` di semua route) dan `Dashboard.tsx` masing-masing punya `ExerciseSheet` + state lokal SENDIRI-SENDIRI. FAB membuka sheet IN-PLACE (tidak navigasi route), jadi `Dashboard`'s `todayExercise` local state tidak pernah tahu ada log baru — tidak seperti Air/Catat Makanan yang memang navigasi ke route lain dan otomatis remount saat kembali. Log makanan (`useTodayLog`) TIDAK kena bug serupa murni karena kebetulan semua jalur penulisannya selalu diikuti navigasi/remount, bukan karena ada mekanisme reactive lintas-komponen — jadi ini bug laten yang sama sekali BISA muncul lagi di masa depan kalau ada sheet in-place baru yang menulis data yang dibaca komponen lain.
+
+**#2 — Basket hilang saat Quick Add:** `handleQuickAdd` di `FoodTracker.tsx` (dari overhaul basket sesi 2026-08-26) SENGAJA tidak diubah waktu itu ("Quick Add SENGAJA TIDAK diubah sama sekali... Pertahankan... Quick Add" — lihat entry 2026-08-26 lanjutan 2) — langsung `addLog()` (persist ke DB) lalu `navigate('/')`. Navigasi ini me-remount `FoodTracker`, otomatis membuang state `basket` yang belum di-"Simpan". Trade-off ini sudah dicatat sebagai Known Issue eksplisit sejak awal, sekarang diminta diperbaiki.
+
+**#3 — Tab "Semua" tak terjangkau:** `type Tab` di `FoodTracker.tsx` punya varian `'semua'` dan cabang `if (tab === 'semua') return allFoods`, tapi TIDAK ADA chip yang pernah men-set `tab` ke `'semua'` — chip row cuma render Favorit/Terakhir/Milikku + 7 kategori. Dead code sejak awal (confirmed via grep, hanya 2 referensi, keduanya self-contained di file yang sama).
+
+**#4 — Adaptive Target bisa diterapkan berulang:** `handleApplyTarget` di `AiCoach.tsx` cuma dijaga oleh `targetApplied` — state React LOKAL yang reset ke `false` tiap kali komponen unmount/remount (ganti halaman, reload, atau besoknya buka lagi). `analyzeAdaptiveTarget()` murni fungsi dari tren berat (`weightEntriesLookback`) dan `user.targetCalories` SAAT ITU — begitu target sudah naik/turun karena diterapkan, tren berat belum sempat berubah (perlu hari/minggu), jadi kalkulasi ulang bisa menyarankan penyesuaian SERUPA lagi di atas target yang SUDAH disesuaikan, dan `targetApplied` yang cuma bertahan satu sesi tidak mencegahnya di kunjungan berikutnya — berpotensi menumpuk (compounding) penyesuaian kalori tiap kali user buka AI Coach sebelum tren sempat kebaca.
+
+### 4. Keputusan yang diambil per item
+
+**#1:** Dibuat hook baru `src/shared/hooks/useTodayExercise.ts` — pola per-domain-hook yang sudah ada (`useTodayLog`, `useWeightHistory`), TAPI ditambah module-level pub/sub (`Set<() => void>` listener) supaya SEMUA instance hook yang ter-mount (baik di `Dashboard` maupun `BottomNav`) saling refresh begitu SALAH SATU dari mereka menulis lewat `addExercise()` — bukan cuma instance yang menulis. Ini pola generik yang bisa dipakai lagi kalau ada bug serupa di domain lain nanti (hydration/weight logged in-place dari FAB, misalnya), bukan tambalan khusus-Exercise saja. `Dashboard.tsx` dan `BottomNav.tsx` sama-sama diganti untuk pakai hook ini menggantikan `exerciseRepository` langsung.
+
+**#2:** `handleQuickAdd` diubah supaya SEARAH dengan semua jalur "add" lain di file yang sama (`handleQuickBasketAdd`, `handleConfirmFromSheet`) — masuk ke `addToBasket()` (state lokal, `foodId: null`, `servings: 1`), TIDAK `addLog()`, TIDAK `navigate()`. "Simpan sebagai Makanan Saya" tetap langsung tersimpan (independen dari basket, tidak berubah). Dengan ini Quick Add tidak lagi memicu remount sama sekali, jadi masalah "basket hilang" hilang dari akarnya, bukan di-patch dengan menyimpan/mengembalikan basket di sekitar navigasi. `useTodayLog` jadi tidak dipakai lagi sama sekali di `FoodTracker.tsx` (importnya dihapus) — `handleSaveBasket` sudah lama manggil `foodLogRepository` langsung tanpa hook ini.
+
+**#3:** Dipilih HAPUS dead code, bukan diekspos di UI. Pertimbangan: (a) browsing semua 193 item tanpa filter kategori/pencarian bukan UX yang berguna — scroll sangat panjang; (b) fungsi "lihat semua makanan" SUDAH ADA secara implisit lewat search bar (`visibleFoods` sudah bypass tab sepenuhnya kalau `query` terisi); (c) chip row sudah menampung 10 chip (Favorit/Terakhir/Milikku + 7 kategori) dan sudah butuh scroll horizontal — menambah chip ke-11 memperpanjang scroll tanpa manfaat nyata karena poin (b). Baik `Tab` type maupun cabang kode `if (tab === 'semua')` dihapus.
+
+**#4:** Ditambahkan guard PERSISTEN (bukan cuma state React) — field baru `lastAdaptiveTargetAppliedAt?: string` di `User` (opsional, tidak perlu bump `SCHEMA_VERSION` karena Dexie tidak enforce schema per-field di luar index yang dideklarasikan — pola yang sama persis dengan `getProAccess()` yang menurunkan status trial dari `user.createdAt` tanpa migrasi). `analyzeAdaptiveTarget()` (fungsi domain, murni & testable) sekarang menerima param `now: Date = new Date()` (konvensi yang sama dengan `getProAccess(user, sub, now)`) dan mengecek DI AWAL: kalau `lastAdaptiveTargetAppliedAt` ada dan kurang dari `COOLDOWN_DAYS = 7` hari yang lalu, langsung return pesan cooldown (`onCooldown: true`, `suggestedCalories: null`) tanpa menghitung tren sama sekali. `handleApplyTarget` di `AiCoach.tsx` menulis `lastAdaptiveTargetAppliedAt: new Date().toISOString()` bersamaan dengan `targetCalories`/`targetFat`/`targetCarbs` dalam satu `userRepository.update()`. Cooldown dipilih ROLLING 7 hari (bukan align ke kalender Senin-Minggu) supaya "diterapkan hari Sabtu" tidak tiba-tiba reset hari Senin — tren berat memang butuh waktu sekitar segitu untuk merefleksikan perubahan target kalori, jadi rolling window lebih menggambarkan alasan sebenarnya ketimbang batas kalender yang arbitrer.
+
+### 5. Implementasi
+File baru: `src/shared/hooks/useTodayExercise.ts`. File diubah: `src/features/dashboard/Dashboard.tsx` (pakai `useTodayExercise`, hapus state/effect/import `exerciseRepository` lokal), `src/shared/components/BottomNav.tsx` (pakai `useTodayExercise` untuk `handleSaveExercise`), `src/features/food-tracker/FoodTracker.tsx` (`handleQuickAdd` reroute ke basket, hapus `'semua'` dari `Tab` type + cabang filter, hapus `useTodayLog`/`addLog` yang jadi tak terpakai), `src/data/types/user.types.ts` (+`lastAdaptiveTargetAppliedAt?`), `src/domain/adaptiveTarget.ts` (+cooldown gate, +param `now`, +field `onCooldown` di return type), `src/features/ai-coach/AiCoach.tsx` (`handleApplyTarget` menulis field cooldown baru).
+
+### 6. File yang berubah
+`src/shared/hooks/useTodayExercise.ts` (baru), `src/features/dashboard/Dashboard.tsx`, `src/shared/components/BottomNav.tsx`, `src/features/food-tracker/FoodTracker.tsx`, `src/data/types/user.types.ts`, `src/domain/adaptiveTarget.ts`, `src/features/ai-coach/AiCoach.tsx`.
+
+### 7. Dampak terhadap data/schema
+`SCHEMA_VERSION` TETAP 6 — tidak ada perubahan index Dexie. Satu field opsional baru (`User.lastAdaptiveTargetAppliedAt`) ditambahkan tanpa migrasi, konsisten dengan pola `getProAccess()` yang sudah ada. `AdaptiveTargetResult` (tipe return domain, hanya dipakai `AiCoach.tsx`) dapat field baru `onCooldown: boolean` — non-breaking karena satu-satunya caller ikut diperbarui di pass yang sama. Tidak ada data lama yang perlu migrasi — user existing yang belum pernah apply Adaptive Target otomatis punya `lastAdaptiveTargetAppliedAt: undefined`, yang oleh guard baru diperlakukan sama seperti "belum pernah apply" (tidak kena cooldown).
+
+### 8. Testing yang benar-benar dilakukan (tested by Alig)
+- **Build:** `npx tsc -b` dan `npm run build` — 0 TypeScript error di sepanjang implementasi (dicek incremental tiap fix selesai, dan sekali lagi di akhir).
+- **#1 — Olahraga tile, browser nyata (localhost:5174):** Dashboard dibuka, tile Olahraga awal menampilkan "—". FAB (+) di BottomNav ditekan → pilih "Olahraga" → isi durasi 30 menit → Simpan. TANPA reload/navigasi apa pun, tile Olahraga di Dashboard (yang tetap terbuka di layar yang sama) langsung berubah jadi "131 kkal" — dikonfirmasi visual lewat screenshot sebelum/sesudah. Console dicek `onlyErrors: true` — 0 error.
+- **#2 — Basket + Quick Add, browser nyata:** Di `/tracker`, 1 item ("Mie Rebus", 280 kkal) ditambah ke basket lewat "+". Basket dikonfirmasi berisi 1 item ("DIPILIH (1) · 280 KKAL"). Lalu "⚡ Tambah Cepat" dibuka, diisi nama+kalori (150 kkal), Simpan. Basket TIDAK hilang — bertambah jadi 2 item ("DIPILIH (2) · 430 KKAL", 280+150=430 dikonfirmasi benar), halaman TETAP di `/tracker` (tidak ter-navigasi). Basket kemudian di-"Simpan 2 item" penuh untuk memastikan alur commit akhir masih berfungsi normal — dikonfirmasi di Dashboard: Sarapan menampilkan kedua item dengan total 430 kkal yang benar. Console 0 error.
+- **#3 — Tab Semua, browser nyata:** Dicek lewat DOM query bahwa TIDAK ADA chip berteks "Semua" (memang tidak pernah ada di UI, tidak berubah dari sebelumnya). Untuk memastikan tidak ada regresi dari perubahan kode filter, tab Lauk (40 item), Milikku (kosong, pesan "Belum ada Makanan Saya" tampil benar), dan Favorit dicoba satu-satu — semua tetap berfungsi normal tanpa error. Console 0 error.
+- **#4 — Adaptive Target cooldown, browser nyata (skenario end-to-end penuh):** Data berat sintetis di-seed lewat `weightRepository` (flat 76kg selama ~16 hari, padahal goal `lose_weight` — dipilih supaya `analyzeAdaptiveTarget` pasti menghasilkan saran nyata untuk diuji, bukan cuma dibaca dari kode). Di `/coach`, kartu "Target Adaptif" menampilkan saran yang PERSIS cocok dengan hitungan manual (aktual 0kg/minggu vs target -0.5kg/minggu → sarankan turunkan ke 1.484 kkal) — mengonfirmasi logika domain existing tidak ikut rusak oleh perubahan. Tombol "Terapkan 1.484 kkal" ditekan → pesan berubah jadi cooldown + centang "✓ Target baru diterapkan ke profilmu." muncul bersamaan (koheren, bukan kontradiksi). **Test kritis:** halaman di-RELOAD PENUH (navigasi ulang ke `/coach`, bukan cuma re-render) untuk mensimulasikan sesi/hari baru dan me-reset `targetApplied` (state lokal) — pesan cooldown ("Kamu baru menerapkan penyesuaian target hari ini. FitKu akan evaluasi progres lagi dalam 7 hari...") TETAP tampil dan tombol "Terapkan" TETAP tidak muncul, membuktikan guard-nya benar-benar persisten di database, bukan cuma state komponen yang kebetulan belum di-reset. Dikonfirmasi langsung lewat query Dexie: `user.targetCalories` = 1484, `user.lastAdaptiveTargetAppliedAt` tersimpan dengan timestamp yang benar. Console 0 error di seluruh rangkaian.
+- **Housekeeping:** Semua data uji (2 food log test, 1 exercise log test, 2 weight entry sintetis) dihapus lagi setelah testing lewat query Dexie langsung; `user.targetCalories`/`targetFat`/`targetCarbs`/`lastAdaptiveTargetAppliedAt` dikembalikan ke nilai semula (1784/50/200/undefined) — dikonfirmasi lewat query ulang bahwa Dashboard kembali ke state bersih (0/1.784 kkal, 0 makanan, tile Olahraga "—").
+
+### 9. Bug yang belum diverifikasi
+Tidak ada — keempat fix diuji end-to-end langsung di browser dengan skenario yang benar-benar memicu bug lama (bukan cuma baca kode), termasuk skenario reload penuh untuk fix #4 yang secara spesifik menguji bahwa persistensi (bukan state sesi) yang menahan cooldown.
+
+### 10. Next Step
+Tidak ada pekerjaan lanjutan yang direncanakan sendiri untuk keempat item ini — sudah selesai dan terverifikasi. Item lain di luar scope (Auth, Payment/Mayar.id KYC, AI Coach LLM, P3) tetap pending sesuai instruksi eksplisit user, dibahas terpisah.

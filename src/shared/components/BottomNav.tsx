@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { exerciseRepository } from '../../data/repositories/exerciseRepository'
 import { todayIso } from '../../domain/nutrition'
 import { ExerciseSheet, type ExerciseFormValues } from '../../features/dashboard/components/ExerciseSheet'
 import { useAppState } from '../context/AppStateContext'
+import { useTodayExercise } from '../hooks/useTodayExercise'
 
 function HomeIcon() {
   return (
@@ -120,6 +120,7 @@ function NavItem({
 
 export function BottomNav() {
   const { user } = useAppState()
+  const { addExercise } = useTodayExercise(user?.id)
   const navigate = useNavigate()
   const [dialOpen, setDialOpen] = useState(false)
   // Kept mounted slightly past dialOpen=false so the closing transition can play instead of the menu just vanishing.
@@ -148,7 +149,7 @@ export function BottomNav() {
 
   const handleSaveExercise = async (values: ExerciseFormValues) => {
     if (!user) return
-    await exerciseRepository.add({ userId: user.id, date: todayIso(), ...values })
+    await addExercise({ userId: user.id, date: todayIso(), ...values })
     setShowExerciseSheet(false)
   }
 

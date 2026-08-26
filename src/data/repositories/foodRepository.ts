@@ -11,13 +11,13 @@ export interface FoodRepository {
 
 class DexieFoodRepository implements FoodRepository {
   async ensureSeeded(): Promise<void> {
-    const count = await db.foods.count()
-    if (count === 0) {
-      // bulkPut (not bulkAdd): safe if this races with itself (e.g. React
-      // StrictMode double-invoking effects in dev) since re-inserting the
-      // same fixed-id rows is a no-op instead of a duplicate-key error.
-      await db.foods.bulkPut(indonesianFoodsSeed)
-    }
+    // Always upsert (not just when empty): `foods` is written ONLY by this seed —
+    // MyFood/FoodLog live in separate tables — so re-running bulkPut on every boot
+    // is purely additive/self-healing. This is what lets a catalog update (e.g. new
+    // items added to indonesianFoodsSeed) reach a device that was already seeded
+    // from an older build, without the user having to clear IndexedDB by hand.
+    // bulkPut (not bulkAdd) is also safe against StrictMode's double-invoked effects.
+    await db.foods.bulkPut(indonesianFoodsSeed)
   }
 
   async all(): Promise<Food[]> {

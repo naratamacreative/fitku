@@ -26,6 +26,9 @@ export interface User {
   targetProtein: number
   targetCarbs: number
   targetFat: number
+  // Set when the user taps "Terapkan" on an Adaptive Target suggestion (AI Coach) —
+  // gates re-suggesting/re-applying another adjustment within the cooldown window.
+  lastAdaptiveTargetAppliedAt?: string
   createdAt: string
   updatedAt: string
 }

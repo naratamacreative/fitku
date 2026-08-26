@@ -13,13 +13,12 @@ import { AppShell } from '../../shared/components/AppShell'
 import { Button } from '../../shared/components/Button'
 import { Chip } from '../../shared/components/Chip'
 import { useAppState } from '../../shared/context/AppStateContext'
-import { useTodayLog } from '../../shared/hooks/useTodayLog'
 import { generateId } from '../../shared/lib/id'
 import { PortionSheet } from './components/PortionSheet'
 import { QuickAddSheet, type QuickAddValues } from './components/QuickAddSheet'
 import { ReportFoodSheet } from './components/ReportFoodSheet'
 
-type Tab = 'favorit' | 'terakhir' | 'milikku' | 'semua' | FoodCategory
+type Tab = 'favorit' | 'terakhir' | 'milikku' | FoodCategory
 
 interface BasketItem {
   key: string
@@ -189,7 +188,6 @@ const CATEGORY_TABS: { value: FoodCategory; label: string }[] = [
 
 export function FoodTracker() {
   const { user } = useAppState()
-  const { addLog } = useTodayLog(user?.id)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const mealParam = searchParams.get('meal')
@@ -254,7 +252,6 @@ export function FoodTracker() {
       return frequentIds.map((id) => foodsById.get(id)).filter((f): f is Food => !!f && !reportedIds.has(f.id))
     if (tab === 'terakhir') return recentIds.map((id) => foodsById.get(id)).filter((f): f is Food => !!f)
     if (tab === 'milikku') return []
-    if (tab === 'semua') return allFoods
     return allFoods.filter((f) => f.category === tab)
   }, [query, tab, allFoods, foodsById, frequentIds, recentIds, reportedIds])
 
@@ -366,19 +363,19 @@ export function FoodTracker() {
     navigate('/')
   }
 
+  /** Quick Add now feeds the basket like every other add path — it used to persist +
+   * navigate straight away, which silently wiped out whatever was already in the basket. */
   const handleQuickAdd = async (values: QuickAddValues) => {
     if (!user) return
-    await addLog({
-      userId: user.id,
-      foodId: null,
-      date: todayIso(),
-      servings: 1,
+    addToBasket({
+      name: values.name,
       calories: values.calories,
       protein: values.protein,
       carbs: values.carbs,
       fat: values.fat,
-      foodName: values.name,
+      servings: 1,
       mealType: values.mealType,
+      foodId: null,
     })
     if (values.saveToMyFoods) {
       const saved = await myFoodRepository.add({
@@ -394,7 +391,6 @@ export function FoodTracker() {
       setMyFoods((prev) => [saved, ...prev])
     }
     setQuickAddOpen(false)
-    navigate('/', { replace: true })
   }
 
   const handleDeleteMyFood = async (id: string) => {
