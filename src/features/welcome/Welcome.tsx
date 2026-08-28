@@ -1,33 +1,40 @@
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../../shared/components/Button'
+import { useTheme } from '../../shared/context/ThemeContext'
 
 const BENEFITS = ['Rencana kalori personal', 'Menu & porsi ala Indonesia', 'Coaching harian dari AI']
 
 export function Welcome() {
   const navigate = useNavigate()
+  const { theme } = useTheme()
 
   return (
     <div className="mx-auto flex h-dvh max-w-md flex-col bg-bg px-5 pt-10 pb-6">
       <div className="flex flex-1 flex-col items-center gap-1.5 text-center">
-        <div className="relative mt-2 flex h-[100px] w-[100px] items-center justify-center rounded-full">
+        <div className="relative mt-2 flex w-full items-center justify-center">
           <div
-            className="absolute -inset-4 rounded-full opacity-40"
+            className="absolute h-[132px] w-[132px] rounded-full opacity-40"
             style={{
               background:
                 'radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--fk-primary) 35%, transparent), transparent 62%)',
             }}
           />
-          {/* Official brand icon mark only — the combined lockup PNGs (icon+wordmark+tagline)
-              are too low-res (194×62 for the dark variant) to render the tagline text
-              without visible pixelation, so the wordmark/tagline below stay as real DOM
-              text (already the correct "Sora" brand typeface, theme-adaptive, always crisp)
-              and only the icon graphic — which has no fine text detail to break — uses the
-              official asset. The icon's own colors (teal/purple/navy) read fine on both
-              light and dark backgrounds, so no separate dark variant is needed for it. */}
-          <img src="/brand/fitku-icon-transparent.png" alt="" className="relative h-[76px] w-auto" />
+          {/* Official brand lockup (icon + wordmark + tagline), full color in both themes —
+              per brand spec, the icon/"Ku" never turn monochrome. The dark-theme file has
+              "Fit" pre-rendered white (icon + "Ku" stay full color) since flat navy "Fit"
+              is unreadable on a dark background; light theme uses the standard navy "Fit"
+              file. Both source PNGs are ≥578px wide, so displaying at 260px is always a
+              downscale — never upscaled, so never blurred/pixelated. */}
+          <img
+            src={
+              theme === 'dark'
+                ? '/brand/fitku-wordmark-primary-transparent.png'
+                : '/brand/fitku-logo-primary-transparent.png'
+            }
+            alt="FitKu — AI Diet Coach Indonesia"
+            className="relative h-auto w-[260px]"
+          />
         </div>
-        <p className="mt-3 font-display text-2xl font-extrabold text-ink">FitKu</p>
-        <p className="text-[12.5px] font-semibold text-accent">AI Diet Coach Indonesia</p>
 
         <div className="mt-5 flex w-full flex-col gap-2 text-left">
           {BENEFITS.map((b) => (

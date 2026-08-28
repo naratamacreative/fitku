@@ -1683,3 +1683,52 @@ Tidak ada terkait fungsi logo — 3 putaran bug (asset bukan file siap pakai →
 
 ### 10. Next Step
 Tidak ada pekerjaan lanjutan yang direncanakan sendiri. Catatan untuk masa depan: kalau nanti ada halaman baru yang butuh lockup penuh (icon+wordmark+tagline) dalam SATU gambar dengan ruang cukup besar (misalnya og:image untuk social share, atau splash screen PWA), varian `fitku-logo-primary-transparent.png` (578×199, resolusi cukup tinggi) sudah tersedia di `public/brand/` dan siap dipakai — TAPI varian dark-nya (`fitku-logo-dark-transparent.png`) perlu diregenerasi di resolusi lebih tinggi dulu (native sekarang cuma 194×62) kalau mau dipakai di background gelap dengan ukuran tampil lebih besar dari ~190px, supaya tidak kena masalah resolusi yang sama seperti yang ditemukan di pass ini.
+
+---
+
+## 2026-08-28 (lanjutan 5) — Koreksi Logo: Full-Color Lockup di Kedua Tema (bukan Icon+DOM-text)
+
+### 1. Tanggal
+2026-08-28
+
+### 2. Tujuan
+User menilai hasil pass sebelumnya (lanjutan 4) **lebih buruk dari logo lama**, dan memberi file referensi baru (`landing/Codex Image Aug 28, 2026, 04_02_31 PM.png`) berisi spec eksplisit: pakai logo utama horizontal FULL COLOR yang SAMA di light & dark mode, jangan berubah jadi putih monokrom, jangan ubah proporsi/warna/elemen logo.
+
+### 3. Root Cause
+
+Pendekatan lanjutan 4 (icon dari asset + "FitKu"/tagline sebagai teks DOM biasa, warna seragam `text-ink`) SECARA TEKNIS menghindari masalah resolusi, tapi SECARA VISUAL tidak merepresentasikan brand lockup yang dimaksud user — user ingin logo horizontal utuh (bukan icon+teks terpisah dengan treatment warna generik).
+
+**Konflik yang ditemukan saat mau menerapkan instruksi literal:** reference sheet baru menunjukkan "Fit" berwarna PUTIH di SEMUA contoh dark-mode-nya (dikonfirmasi via pixel sampling: RGB~249,249,249), tapi asset asli `fitku-logo-primary-transparent.png` (satu-satunya full-color horizontal asset yang ada saat itu) punya "Fit" NAVY PERMANEN (RGB 20,30,53) dibakar ke dalam raster — tidak bisa diadaptasi tanpa mengedit elemen logo (dilarang eksplisit). Alih-alih menebak, user diberi 3 opsi eksplisit via pertanyaan — user pilih: **generate asset baru khusus dark-mode** (bukan pakai file lama apa adanya, bukan pisah jadi teks DOM).
+
+User lalu memberi file baru: `fitku-wordmark-primary-transparent.png` (DI-OVERWRITE, sekarang 700×260, sebelumnya 367×167) — icon+"Fit"(putih)+"Ku"(teal)+tagline, resolusi tinggi, alpha transparan asli (dikonfirmasi PIL: corner alpha rendah, ada pixel alpha=255 di huruf "Fit" dengan RGB 255,255,255).
+
+**Bug kedua yang ditemukan SEBELUM sempat dilaporkan user** (dicek sendiri sebelum implementasi dianggap selesai, sesuai instruksi "jangan PASS hanya dari build"): background "transparan" kedua file (`fitku-logo-primary-transparent.png` DAN `fitku-wordmark-primary-transparent.png` yang baru) ternyata punya NOISE alpha rendah (bukan benar-benar 0) di ~49% area canvas — dikonfirmasi lewat histogram alpha channel PIL. Di background terang ini nyaris tak terlihat (noise-nya kebetulan berwarna terang), tapi di background gelap app (`#12141c`) menghasilkan kotak/vignette gelap redup di belakang logo — regresi visual baru yang akan langsung terlihat kalau tidak dicek.
+
+### 4. Keputusan yang diambil
+
+- **Pakai `fitku-logo-primary-transparent.png` (light mode) dan `fitku-wordmark-primary-transparent.png` yang baru (dark mode)** sebagai SATU gambar lockup utuh (icon+wordmark+tagline), theme-swapped via `useTheme()` — bukan pisah icon+teks lagi. Kedua file native ≥578px lebar, ditampilkan di 260px = selalu downscale, tidak pernah blur/pecah.
+- **Alpha-noise di background dibersihkan** (threshold: pixel dengan alpha<40 diset alpha=0) sebelum dipakai — HANYA menyentuh pixel background yang SUDAH near-transparent (alpha 1-39), TIDAK menyentuh satupun pixel yang jadi bagian visual logo (icon/teks solid, alpha≥40 dibiarkan 100% apa adanya, warna/bentuk/proporsi TIDAK berubah sama sekali — dikonfirmasi visual before/after, dan dikonfirmasi dengan composite test di atas warna background gelap app yang sebenarnya, `#12141c`, sebelum dipasang). Ini dianggap PEMBERSIHAN ARTEFAK TEKNIS (transparansi yang cacat), bukan "mengedit elemen logo" (larangan eksplisit user) — tidak ada piksel logo (icon, huruf, tagline) yang warnanya berubah. File ASLI di `landing/` TIDAK disentuh/ditimpa — pembersihan cuma diterapkan ke SALINAN yang dipakai app di `public/brand/`.
+- File lama `fitku-logo-dark-transparent.png` (varian putih monokrom 194×62 dari pass sebelumnya) **sudah tidak dipakai di manapun** — dibiarkan ada di disk (tidak dihapus).
+
+### 5. Implementasi
+`src/features/welcome/Welcome.tsx`: kembalikan pola theme-aware single-image (seperti lanjutan 4 versi pertama), tapi sumbernya diganti ke `fitku-logo-primary-transparent.png` (light) / `fitku-wordmark-primary-transparent.png` (dark, file baru) — bukan lagi `fitku-logo-dark-transparent.png` yang lama. Lebar 260px (naik dari upaya sebelumnya, karena kedua source sekarang cukup tinggi resolusi untuk itu). `public/brand/fitku-logo-primary-transparent.png` dan `public/brand/fitku-wordmark-primary-transparent.png` ditimpa dengan versi yang sudah dibersihkan alpha-noise-nya (script Python sekali-jalan, tidak masuk repo sebagai tooling permanen).
+
+### 6. File yang berubah
+`src/features/welcome/Welcome.tsx`, `public/brand/fitku-logo-primary-transparent.png` (dibersihkan), `public/brand/fitku-wordmark-primary-transparent.png` (baru dari user + dibersihkan), `landing/fitku-wordmark-primary-transparent.png` (file baru dari user, versi asli tidak diedit).
+
+### 7. Dampak terhadap data/schema
+Tidak ada.
+
+### 8. Testing yang benar-benar dilakukan (tested by Alig, browser sungguhan)
+- **Build**: `npm run build` — 0 TypeScript error.
+- **Sebelum dipasang**: composite test Python (bukan lewat browser) — logo yang sudah dibersihkan di-overlay ke warna background gelap app yang PERSIS (`#12141c`) dan cream app yang persis (`#faf8f4`) — dikonfirmasi visual TIDAK ADA kotak/vignette artefak di kedua kasus, sebelum kode diubah.
+- **Light mode, desktop(900px)+mobile(390px)**: logo lockup penuh tampil tajam, "Fit" navy + "Ku" teal + tagline abu, warna PERSIS brand sheet.
+- **Dark mode, desktop+mobile**: logo lockup penuh tampil tajam, icon FULL COLOR (tidak putih), "Fit" PUTIH (terbaca), "Ku" tetap teal, tagline terbaca — dikonfirmasi lewat `zoom` ke area logo, TIDAK ADA kotak/vignette artefak (bug alpha-noise sudah tidak muncul), TIDAK ADA blur/pixelasi (dua bug dari pass sebelumnya tetap tidak kambuh karena source resolusinya tinggi).
+- **Console**: 0 error di kedua tema setelah reload.
+- **localStorage direset** ke default (`light`) setelah testing selesai, tidak meninggalkan state test di browser.
+
+### 9. Bug yang belum diverifikasi
+Tidak ada. Ini putaran ke-3 perbaikan visual logo (setelah blur-upscale dan pixelasi-resolusi sebelumnya) — kali ini bug tambahan (alpha-noise artifact) ditemukan dan diperbaiki SEBELUM dilaporkan user, dicek proaktif dengan composite test di warna background app yang sebenarnya sebelum kode diubah.
+
+### 10. Next Step
+Menunggu konfirmasi visual dari user sendiri (bukan cuma laporan otomatis) bahwa hasil ini sudah sesuai brand sheet yang dimaksud, khususnya warna "Fit" putih di dark mode dan tidak ada artefak kotak di baliknya.
