@@ -1482,3 +1482,59 @@ Header belum dikonfirmasi visual/langsung aktif di production — konfigurasinya
 
 ### 10. Next Step
 Menunggu konfirmasi user setelah Vercel redeploy — cek response header di `fitku.fit` sudah sesuai. Lanjut ke task AI Coach OpenAI Edge Function (entry berikutnya).
+
+---
+
+## 2026-08-28 (lanjutan) — AI Coach: OpenAI via Vercel Edge Function
+
+### 1. Tanggal
+2026-08-28
+
+### 2. Tujuan
+Mengganti AI Coach chat (`AiCoach.tsx`'s `handleSend`) dari `generateCoachReply()` rule-based (dua kalimat template, tidak pernah benar-benar "AI") jadi LLM asli — OpenAI `gpt-4o-mini` dipanggil dari Vercel Edge Function (`api/chat.ts`), bukan langsung dari frontend, supaya `OPENAI_API_KEY` tidak pernah ada di kode/bundle client.
+
+### 3. Root Cause / Konteks
+`generateCoachReply` cuma 2 cabang if/else berbasis `proteinRemaining`, tidak membaca pesan user sama sekali — sudah dicatat sebagai item pending ("AI Coach LLM") sejak beberapa entry sebelumnya (2026-08-27 lanjutan). User memberi spec lengkap (arsitektur, system prompt, rate limit, testing wajib) di instruksi task ini.
+
+### 4. Keputusan yang diambil (termasuk deviasi dari spec awal, dengan alasan)
+
+- **Arsitektur**: `api/chat.ts` (Vercel Edge Function, `export const config = { runtime: 'edge' }`) menerima `{ userId, message, context }`, memanggil OpenAI `gpt-4o-mini` pakai `process.env.OPENAI_API_KEY`, mengembalikan `{ reply }`. `AiCoach.tsx` fetch ke `/api/chat` (same-origin), tidak pernah memanggil OpenAI langsung.
+- **`connect-src` CSP**: tidak perlu diubah — sudah diputuskan & didokumentasikan di entry Task 1 (`/api/chat` same-origin, `'self'` sudah cukup).
+- **DEVIASI dari system prompt spec user — baris "Nama: {userName}" DIHAPUS**: `User` type (`src/data/types/user.types.ts`) TIDAK PUNYA field nama sama sekali (field yang ada: `id, gender, age, heightCm, weightKg, goal, motivation, targetWeightKg, activityLevel, mealsPerDay, targetCalories, targetProtein, targetCarbs, targetFat, lastAdaptiveTargetAppliedAt, createdAt, updatedAt`). Mengisi `{userName}` berarti hardcode placeholder palsu — dilarang eksplisit oleh constraint task ini ("Jangan hardcode API key atau placeholder apapun di kode"). Baris itu dihapus dari system prompt, sisanya (goal, targetCalories, todayCalories, targetWeight, currentWeight) tetap dikirim persis sesuai spec, semuanya data asli dari `AppStateContext`/`useTodayLog`/`useWeightHistory`.
+- **`userGoal` dikirim sebagai label Indonesia** (`'Turun berat badan' | 'Naik otot' | 'Jaga berat badan'`), bukan raw enum (`lose_weight` dst) — supaya system prompt lebih natural buat LLM, pola yang sama dengan mapping lokal yang sudah ada di `Settings.tsx`/`ResultMoment.tsx`/`GoalStep.tsx` (tidak ada util bersama di codebase ini, tiap screen punya map sendiri, diikuti pola yang sama).
+- **`currentWeight` = `useWeightHistory(user.id).latest?.weightKg ?? user.weightKg`** — berat TERBARU yang di-log, bukan berat onboarding statis, dengan fallback ke `user.weightKg` kalau entri berat somehow kosong (tidak seharusnya terjadi, anchor selalu ada, tapi fallback aman bukan crash).
+- **Rate limit**: `Map<userId, {count, resetAt}>` module-scope di `api/chat.ts`, 20 pesan / 24 jam rolling per `userId`, sesuai instruksi eksplisit. **Keterbatasan yang di-flag, bukan disembunyikan**: Vercel Edge Functions bisa jalan sebagai beberapa instance concurrent lintas region, dan module state ini reset saat cold start/redeploy — jadi ini membatasi abuse PER-INSTANCE, BUKAN jaminan "20/hari" yang benar-benar global/durable lintas seluruh deployment. Kalau nanti ini jadi masalah nyata (user melaporkan bisa kirim >20 pesan), perlu upgrade ke store eksternal (KV/Redis) — di luar scope task ini karena user secara eksplisit minta in-memory.
+- **`.env` vs `.env.local`**: instruksi task menyebut key ada di `.env.local`, tapi file yang benar-benar ada di project root adalah `.env` (dicek langsung, `.env.local` tidak ada). Keduanya sama-sama di-gitignore (`.env.*` di `.gitignore`), jadi tidak ada isu keamanan — tapi dicatat sebagai penyesuaian nyata, bukan diasumsikan/didiamkan.
+- **`generateCoachReply` dihapus** dari `nutrition.ts` (bukan cuma berhenti dipanggil) — dikonfirmasi lewat grep bahwa satu-satunya caller adalah `AiCoach.tsx` yang sekarang sudah tidak memakainya, jadi dibiarkan jadi dead code akan melanggar prinsip "no unused code".
+
+### 5. Implementasi
+File baru: `api/chat.ts` (handler, system prompt builder, in-memory rate limiter, error handling per skenario: method salah, JSON invalid, field hilang, rate limit, OpenAI gagal/exception). File diubah: `src/features/ai-coach/AiCoach.tsx` (`handleSend` jadi async, fetch ke `/api/chat`, state `sending` baru untuk loading, pesan error ramah utk setiap failure mode, `useWeightHistory` ditambahkan untuk `currentWeight`, map label goal lokal ditambahkan, input+tombol kirim disable saat `sending`), `src/domain/nutrition.ts` (`generateCoachReply` dihapus).
+
+### 6. File yang berubah
+`api/chat.ts` (baru), `src/features/ai-coach/AiCoach.tsx`, `src/domain/nutrition.ts`.
+
+### 7. Dampak terhadap data/schema
+Tidak ada perubahan Dexie schema. Tidak ada dependency baru ditambahkan ke `package.json` (frontend tetap pakai `fetch` bawaan browser; Edge Function pakai Web-standard `Request`/`Response`/`fetch` bawaan Edge Runtime — tidak ada import package OpenAI SDK atau lainnya).
+
+### 8. Testing yang benar-benar dilakukan (tested by Alig) — dan yang TIDAK bisa dilakukan di environment ini
+
+**Yang berhasil dijalankan nyata:**
+- **Build**: `npm run build` (`tsc -b && vite build`) — 0 TypeScript error. **Catatan penting**: `api/chat.ts` SENGAJA di luar scope `tsconfig.app.json`/`tsconfig.node.json` (Vercel mengompilasi Edge Function terpisah saat deploy, bukan lewat `tsc -b` repo ini) — jadi `npm run build` TIDAK memvalidasi `api/chat.ts`. Untuk menutup gap ini, dijalankan type-check standalone terpisah (`tsc --noEmit --strict` dengan `lib: ES2023+DOM`, `types: node`, mengarah ke `api/chat.ts`) — 0 error juga.
+- **Test handler langsung dengan OpenAI API sungguhan** (bukan mock): dibuat harness Node (`node --env-file=.env --experimental-strip-types`, di scratchpad, TIDAK masuk repo) yang meng-import `api/chat.ts` yang SEBENARNYA dan memanggil `handler()`-nya langsung dengan `Request` object:
+  - Pertanyaan fitness in-topic ("Aku masih kurang berapa kalori hari ini?", context 1200/1800 kkal) → **status 200, balasan: "Hari ini, kamu sudah mengonsumsi 1200 kkal dan target kalori harianmu adalah 1800 kkal. Jadi, kamu masih kurang 600 kkal..."** — jawaban dinamis, mengutip angka konteks yang benar dan menghitung selisihnya (600), sesuatu yang TIDAK MUNGKIN dihasilkan rule-based lama → **mengonfirmasi respons benar-benar dari OpenAI**.
+  - Pertanyaan di luar topik ("Siapa presiden Indonesia?") → **status 200, balasan: "Maaf, saya hanya bisa membantu soal kesehatan dan fitness. Apakah ada yang ingin Anda tanyakan tentang nutrisi, olahraga, atau tujuan penurunan berat badan Anda?"** — guardrail system prompt bekerja, menolak dengan ramah + menawarkan bantuan relevan, PERSIS sesuai spec.
+  - Field hilang (`userId` tanpa `message`/`context`) → status 400, `{ error: 'Missing userId, message, or context' }`.
+  - Rate limit: 21 panggilan berturut-turut dengan `userId` yang sama → panggilan #1–20 status 200 normal, **panggilan #21 status 200 dengan `rateLimited: true`** dan pesan "Kamu sudah mencapai batas 20 pesan hari ini..." — cooldown logic benar persis di batas 20.
+- **Audit bundle frontend untuk kebocoran key**: `npm run build` lalu `grep -c "OPENAI_API_KEY\|sk-proj-" dist/assets/index-*.js` → **0 match** (grep exit 1 = tidak ketemu). Ini pengecekan yang LEBIH KUAT daripada sekadar baca DevTools Network tab sekali — membuktikan secara compile-time bahwa key tidak pernah masuk ke bundle sama sekali, bukan cuma "kebetulan tidak kelihatan di satu request yang dicoba".
+- **Console/runtime error saat testing di atas**: tidak ada exception dari harness maupun dari `api/chat.ts` sendiri di semua 4 skenario.
+
+**Yang TIDAK bisa dilakukan di environment sesi ini (di-flag eksplisit, bukan diklaim PASS):**
+- **`vercel dev` (dev server lokal Vite+Edge Function sekaligus, sesuai instruksi user)**: dicoba lewat `npx vercel@latest dev` — GAGAL karena dependency internal `vercel` CLI sendiri rusak di environment ini (`Error: Cannot find module 'bytes'`, dibutuhkan oleh `raw-body` di dalam `@vercel/fun`, package yang di-fetch npx). Ini masalah instalasi CLI, bukan bug di kode FitKu. Sebagai gantinya, dijalankan `vite dev` biasa (server hidup, `curl http://localhost:5173/` → 200) TAPI route `/api/chat` TIDAK ada di situ (murni Vite, tidak ada routing Vercel Edge Function) — jadi UI AI Coach di server ini akan selalu dapat 404 dari `/api/chat`, bukan mencerminkan perilaku production sebenarnya.
+- **Klik manual di UI browser (kirim pesan lewat chat box AI Coach, lihat DevTools Network tab)**: browser extension Claude in Chrome TIDAK terhubung di sesi ini ("Browser extension is not connected") — tidak bisa drive browser sama sekali dari sisi saya. Kode UI (`AiCoach.tsx`) sudah di-review manual baris-per-baris untuk memastikan `fetch('/api/chat', ...)` dengan body yang benar, state `sending` disable input+tombol saat loading, dan tiga jalur error (`!res.ok`, JSON tanpa `reply`, exception jaringan) masing-masing menampilkan pesan ramah Bahasa Indonesia — tapi ini VERIFIKASI KODE, BUKAN observasi visual UI yang benar-benar berjalan seperti yang diminta.
+
+### 9. Bug yang belum diverifikasi
+- Alur UI penuh (ketik pesan → klik kirim → loading state tampil → balasan OpenAI muncul di bubble chat) belum dikonfirmasi visual di browser sungguhan — logic-nya sudah diverifikasi benar di level handler (poin 8) dan kode UI sudah direview, tapi wiring UI↔network↔render belum dilihat langsung berjalan.
+- Verifikasi produksi (setelah deploy ke Vercel + `OPENAI_API_KEY` ditambahkan manual di dashboard Vercel oleh user) belum dilakukan — di luar kendali sesi ini.
+
+### 10. Next Step
+User perlu: (1) tambahkan `OPENAI_API_KEY` yang sama di Vercel dashboard (Environment Variables) untuk production, (2) setelah redeploy, coba AI Coach langsung di `fitku.fit` dan konfirmasi balasan benar-benar dari OpenAI + cek DevTools Network tab sendiri bahwa tidak ada key di request manapun, (3) kalau mau uji lokal penuh (Vite+Edge Function sekaligus), install `vercel` CLI di lingkungan lokal user sendiri (bukan lewat sesi ini) dan jalankan `vercel dev` — kemungkinan besar tidak akan kena masalah `Cannot find module 'bytes'` yang sama karena itu tampak spesifik ke environment sandbox sesi ini.

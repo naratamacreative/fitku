@@ -6,7 +6,7 @@ import { userRepository } from '../../data/repositories/userRepository'
 import { weightRepository } from '../../data/repositories/weightRepository'
 import { analyzeAdaptiveTarget, type AdaptiveTargetResult } from '../../domain/adaptiveTarget'
 import { generateDeepInsight, type DeepInsight } from '../../domain/deepInsight'
-import { calculateStreak, generateCoachReply, generateDailyCoaching, todayIso } from '../../domain/nutrition'
+import { calculateStreak, generateDailyCoaching, todayIso } from '../../domain/nutrition'
 import { analyzeScoreTrend, type ScoreTrend } from '../../domain/scoreTrend'
 import { recalculateMacrosForCalories } from '../../domain/tdee'
 import { assessDailyWeightTip, type DailyWeightTip } from '../../domain/weightAssessment'
@@ -16,6 +16,7 @@ import { ProLocked } from '../../shared/components/ProLocked'
 import { useAppState } from '../../shared/context/AppStateContext'
 import { useProAccess } from '../../shared/hooks/useProAccess'
 import { useTodayLog } from '../../shared/hooks/useTodayLog'
+import { useWeightHistory } from '../../shared/hooks/useWeightHistory'
 
 interface ChatMessage {
   role: 'user' | 'ai'
@@ -23,6 +24,14 @@ interface ChatMessage {
 }
 
 const STEP_LABELS = ['Analisa', 'Insight', 'Action'] as const
+
+// Local to this component, same pattern as Settings.tsx/ResultMoment.tsx — no shared
+// goal-label util exists in the codebase, each screen keeps its own small map.
+const GOAL_LABELS: Record<'lose_weight' | 'gain_muscle' | 'maintain', string> = {
+  lose_weight: 'Turun berat badan',
+  gain_muscle: 'Naik otot',
+  maintain: 'Jaga berat badan',
+}
 
 function isoDaysAgo(days: number): string {
   const d = new Date()
@@ -44,10 +53,12 @@ function buildScoreSparkline(points: { score: number }[], width = 220, height = 
 export function AiCoach() {
   const { user, refreshUser } = useAppState()
   const { totals } = useTodayLog(user?.id)
+  const { latest: latestWeight } = useWeightHistory(user?.id)
   const proAccess = useProAccess()
   const [streak, setStreak] = useState(0)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
+  const [sending, setSending] = useState(false)
   const [weekly, setWeekly] = useState<WeeklyInsight | null>(null)
   const [deep, setDeep] = useState<DeepInsight | null>(null)
   const [scoreTrend, setScoreTrend] = useState<ScoreTrend | null>(null)
@@ -132,12 +143,42 @@ export function AiCoach() {
   const coaching = generateDailyCoaching(user, totals, streak, dailyWeightTip)
   const steps = [coaching.analisa, coaching.insight, coaching.action]
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = input.trim()
-    if (!text) return
-    const reply = generateCoachReply(user, totals)
-    setMessages((m) => [...m, { role: 'user', text }, { role: 'ai', text: reply }])
+    if (!text || sending) return
+    setMessages((m) => [...m, { role: 'user', text }])
     setInput('')
+    setSending(true)
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          message: text,
+          context: {
+            userGoal: GOAL_LABELS[user.goal],
+            targetCalories: user.targetCalories,
+            todayCalories: Math.round(totals.calories),
+            targetWeight: user.targetWeightKg,
+            currentWeight: latestWeight?.weightKg ?? user.weightKg,
+          },
+        }),
+      })
+      if (!res.ok) {
+        setMessages((m) => [...m, { role: 'ai', text: 'AI Coach sedang mengalami gangguan. Coba lagi sebentar lagi.' }])
+        return
+      }
+      const data = (await res.json()) as { reply?: string; error?: string }
+      setMessages((m) => [
+        ...m,
+        { role: 'ai', text: data.reply ?? data.error ?? 'AI Coach tidak bisa memberikan jawaban saat ini. Coba lagi ya.' },
+      ])
+    } catch {
+      setMessages((m) => [...m, { role: 'ai', text: 'Gagal menghubungi AI Coach. Cek koneksi internetmu dan coba lagi.' }])
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -299,12 +340,19 @@ export function AiCoach() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Tanya AI Coach…"
-            className="flex-1 bg-transparent text-[11.5px] text-ink outline-none placeholder:text-ink-dim"
+            onKeyDown={(e) => e.key === 'Enter' && void handleSend()}
+            placeholder={sending ? 'AI Coach sedang menjawab…' : 'Tanya AI Coach…'}
+            disabled={sending}
+            className="flex-1 bg-transparent text-[11.5px] text-ink outline-none placeholder:text-ink-dim disabled:opacity-60"
           />
-          <button type="button" onClick={handleSend} className="text-accent" aria-label="Kirim">
-            ➤
+          <button
+            type="button"
+            onClick={() => void handleSend()}
+            disabled={sending}
+            className="text-accent disabled:opacity-60"
+            aria-label="Kirim"
+          >
+            {sending ? '…' : '➤'}
           </button>
         </div>
       </div>

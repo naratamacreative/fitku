@@ -100,15 +100,6 @@ export function generateDailyCoaching(user: User, totals: DailyTotals, streak: n
   return { analisa, insight, action }
 }
 
-/** Templated follow-up reply for the Coach chat thread — not a real LLM call. */
-export function generateCoachReply(user: User, totals: DailyTotals): string {
-  const proteinRemaining = Math.round(user.targetProtein - totals.protein)
-  if (proteinRemaining > 15) {
-    return `Berdasarkan catatanmu, protein masih kurang ${proteinRemaining}g hari ini — itu biasanya penyebab utama progress terasa lambat. Ikuti Action di atas dan cek lagi 3-4 hari ya.`
-  }
-  return 'Progress kadang melambat sementara, itu normal. Tetap ikuti Action di Daily Coaching di atas, dan cek lagi dalam beberapa hari.'
-}
-
 export function generateCoachInsight(user: User, totals: DailyTotals): string {
   const proteinRemaining = Math.round(user.targetProtein - totals.protein)
   const calorieRemaining = Math.round(user.targetCalories - totals.calories)
