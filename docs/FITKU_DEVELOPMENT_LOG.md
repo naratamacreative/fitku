@@ -2023,3 +2023,32 @@ Ditemukan sekaligus diperbaiki di tengah testing: `OPENAI_API_KEY` di Vercel ter
 
 ### 9-10. Bug belum diverifikasi / Next Step
 Tidak ada bug tersisa untuk requirement yang diminta. Belum diuji: rate-limit 20/hari masih jalan normal untuk user Pro (logic tidak diubah, cuma sumber `userId`-nya — risiko rendah, tidak dites ulang eksplisit). Tetap di branch `feat/midtrans-sandbox`, belum merge ke `main`, konsisten dengan keputusan user sebelumnya untuk menunda merge sampai Midtrans Production siap dikonfigurasi.
+
+## 2026-08-29 (lanjutan 2) — Investigasi Ulang: AI Coach LLM "Masih Terbuka untuk Free" — Bukan Bug, Trial 7 Hari Bekerja Sesuai Desain
+
+### 1-2. Tanggal & Tujuan
+2026-08-29. User cek ulang di Preview dan menemukan AI Coach LLM masih bisa dipakai user Free. Diminta investigasi ulang (root cause dulu, jangan langsung ubah kode), fokus HANYA ke AI Coach LLM Premium gating — tidak audit ulang area lain yang sudah tervalidasi (payment flow Midtrans tidak disentuh).
+
+### 3-4. Root Cause & Kesimpulan
+**Bukan regresi/bug.** Ditemukan lewat verifikasi langsung ke DB + server + UI:
+
+1. **Deployment Preview sudah paling baru** — dicek di Vercel: deployment teratas branch `feat/midtrans-sandbox` (`f6e661d`, docs-only) berstatus Ready/Latest, terikat ke domain stabil `fitku-git-feat-midtrans-sandbox-naratama.vercel.app` yang sama dipakai sejak awal. `git diff 92bddbe HEAD -- api/chat.ts api/_entitlement.ts src/features/ai-coach/AiCoach.tsx` = kosong, jadi kode gating tidak pernah berubah/ke-revert sejak commit aslinya.
+2. **Akun yang kemungkinan besar dipakai user untuk cek ulang adalah `novriekadito9+fitku4@gmail.com`** (`last_sign_in_at` = 28 Aug 2026 19:11 UTC, paling baru di antara 4 akun test yang ada). Query langsung ke `profiles`/`subscription_status` akun ini: `plan/status/expires_at/trial_used` semuanya NULL (belum pernah bayar — benar "Free" dalam arti belum berlangganan) TAPI `created_at` akun ini baru **~8 jam** sebelum dicek — jauh di bawah `TRIAL_DAYS = 7` (`src/domain/entitlement.ts`). Artinya akun ini **masih legitimately di dalam masa trial 7 hari**, yang menurut desain (`getProAccess`: aktif jika sudah bayar ATAU masih di dalam window trial dari `user.createdAt`) tetap mendapat AI Coach LLM — ini SAMA PERSIS dengan cara 3 fitur Premium lain (Weekly Insight mendalam, Tren Skor, Target Adaptif) dan halaman Premium sudah bekerja sejak P0/P1, bukan sesuatu yang khusus dibuat untuk AI Coach chat.
+3. **Diverifikasi ulang end-to-end dengan mensimulasikan kedua kondisi** memakai akun `novriekadito9+fitkulazy1@gmail.com` (browser session yang sudah login), data `profiles.created_at`/`subscription_status`-nya diubah sementara lewat SQL lalu dikembalikan persis ke nilai asli setelah tiap tes (dikonfirmasi lewat query ulang):
+   - **Kondisi "benar-benar expired"** (`created_at` dimundurkan 10 hari, `subscription_status.status` diset `'expired'`): UI `/coach` → kartu "Insight Personal Pro" DAN "AI Coach Chat" tampil terkunci (🔒, tombol "Aktifkan Pro"), tidak ada input chat sama sekali. Panggilan langsung `fetch('/api/chat', ...)` dengan token asli akun ini → **403** `{error:"...fitur Premium...", locked:true}`. Tanpa header `Authorization` → **401**.
+   - **Kondisi "masih trial"** (`created_at` diset ke `now()`, status subscription tetap non-aktif — meniru persis situasi `fitku4`): UI `/coach` → badge **"Trial 7 hari lagi"**, input chat "Tanya AI Coach..." tampil terbuka. Panggilan langsung `fetch('/api/chat', ...)` → **200**, `reply` nyata dari OpenAI diterima.
+   - Kedua hasil ini match sempurna dengan yang diharapkan dari `getProAccess()` — server (`api/_entitlement.ts` + `api/chat.ts`) dan UI (`AiCoach.tsx`) konsisten satu sama lain, tidak ada celah UI-vs-server maupun celah deployment.
+
+**Kesimpulan**: gating AI Coach LLM bekerja benar untuk kedua kasus (trial aktif → terbuka; trial+bayar expired → terkunci). Yang user amati bukan bug — akun yang dipakai untuk cek ulang kemungkinan besar masih di dalam trial 7 hari otomatis yang berlaku untuk SEMUA akun baru (bukan hanya AI Coach — ini kebijakan produk yang sama untuk semua 4 benefit Premium, sudah didokumentasikan di `docs/legal/TERMS_OF_SERVICE.md` §4: "Setiap akun baru mendapat akses trial Premium 7 hari"). Tidak ada perubahan kode yang dilakukan pada iterasi ini — sesuai instruksi user untuk tidak mengubah kode sebelum root cause jelas, dan ternyata tidak diperlukan perubahan sama sekali.
+
+### 5. File yang berubah
+Tidak ada. Investigasi murni read-only terhadap kode + manipulasi data test yang seluruhnya dikembalikan ke nilai asli.
+
+### 6-7. Dampak data/schema
+Tidak ada dampak permanen. `profiles.created_at` dan `subscription_status` milik `fitku4` dan `fitkulazy1` sempat diubah sementara untuk simulasi test, dan dikonfirmasi dikembalikan persis ke nilai asli lewat query SELECT setelah selesai (lihat detail di atas).
+
+### 8. Testing
+Lihat root cause di atas — pengujian dilakukan langsung ke Vercel Preview + Supabase DB + browser console, bukan asumsi. Payment flow Midtrans (`api/midtrans/*.ts`) tidak disentuh sama sekali selama investigasi ini.
+
+### 9-10. Bug belum diverifikasi / Next Step
+Tidak ada bug ditemukan, tidak ada fix yang diperlukan. Satu catatan produk (bukan bug) untuk dipertimbangkan user: karena trial 7 hari otomatis berlaku untuk semua benefit Premium (bukan cuma AI Coach), setiap akun baru — termasuk yang "Free" dalam arti belum pernah bayar — akan terlihat "unlocked" sampai hari ke-8. Kalau ini membingungkan saat demo/QA, pertimbangkan menambah indikator trial yang lebih jelas di UI (sudah ada badge "Trial X hari lagi" di beberapa tempat, tapi tidak di semua halaman) — perubahan ini di luar scope investigasi kali ini, tidak dikerjakan tanpa keputusan eksplisit user.
