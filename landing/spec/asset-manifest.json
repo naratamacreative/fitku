@@ -54,7 +54,7 @@
       "format": ["webp", "jpg"],
       "altText": "Tangan memegang smartphone menampilkan chat dengan AI Coach FitKu",
       "finalPath": "/assets/images/tangan-phone.webp",
-      "status": "pending"
+      "status": "ready"
     },
     {
       "id": "aktivitas-santai",
