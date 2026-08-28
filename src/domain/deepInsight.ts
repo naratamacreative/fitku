@@ -4,6 +4,7 @@ import type { HydrationLog, WeightEntry } from '../data/types/log.types'
 import type { User } from '../data/types/user.types'
 import { calculateHydrationTargetGlasses } from './hydration'
 import { aggregateLogs } from './nutrition'
+import { assessMonthlyWeightTrend } from './weightAssessment'
 
 export interface DeepInsightInput {
   user: User
@@ -58,15 +59,12 @@ export function generateDeepInsight(input: DeepInsightInput): DeepInsight {
   const onTargetDays = loggedDates30.filter((d) => withinBand(aggregateLogs(byDate.get(d)!).calories, user.targetCalories))
   const calorieAdherencePct = Math.round((onTargetDays.length / loggedDays30) * 100)
 
-  let weightTrendText = 'Belum cukup data berat untuk melihat tren 30 hari — catat beratmu secara berkala di Progress.'
+  let weightTrendText = 'Belum cukup data untuk melihat tren 30 hari — terus catat berat harian kamu.'
   if (weightEntries30.length >= 2) {
     const first = weightEntries30[0]
     const last = weightEntries30[weightEntries30.length - 1]
     const deltaKg = Math.round((last.weightKg - first.weightKg) * 10) / 10
-    weightTrendText =
-      Math.abs(deltaKg) < 0.2
-        ? 'Berat kamu relatif stabil sepanjang 30 hari terakhir.'
-        : `Berat kamu ${deltaKg < 0 ? 'turun' : 'naik'} ${Math.abs(deltaKg)}kg dalam 30 hari terakhir.`
+    weightTrendText = assessMonthlyWeightTrend(user.goal, deltaKg)
   }
 
   // Exercise-day vs non-exercise-day calorie adherence — only when both groups have enough samples.

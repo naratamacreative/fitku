@@ -6,6 +6,7 @@ export interface WeightRepository {
   all(userId: string): Promise<WeightEntry[]>
   latest(userId: string): Promise<WeightEntry | undefined>
   add(entry: NewWeightEntry): Promise<WeightEntry>
+  delete(id: string): Promise<void>
 }
 
 class DexieWeightRepository implements WeightRepository {
@@ -27,6 +28,10 @@ class DexieWeightRepository implements WeightRepository {
     }
     await db.weightHistory.add(record)
     return record
+  }
+
+  async delete(id: string): Promise<void> {
+    await db.weightHistory.delete(id)
   }
 }
 

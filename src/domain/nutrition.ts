@@ -1,5 +1,6 @@
 import type { FoodLog } from '../data/types/food.types'
 import type { User } from '../data/types/user.types'
+import type { DailyWeightTip } from './weightAssessment'
 
 export interface DailyTotals {
   calories: number
@@ -58,8 +59,12 @@ export interface DailyCoaching {
   action: string
 }
 
-/** Daily Coaching: Analisa -> Insight -> Action, auto-generated from today's data. Rule-based, no LLM call. */
-export function generateDailyCoaching(user: User, totals: DailyTotals, streak: number): DailyCoaching {
+/**
+ * Daily Coaching: Analisa -> Insight -> Action, auto-generated from today's data. Rule-based, no LLM call.
+ * `dailyWeightTip` (from assessDailyWeightTip, today-vs-yesterday weight) is optional and only used to fill
+ * the "balanced" slot below — an urgent same-day calorie/protein issue always takes priority over it.
+ */
+export function generateDailyCoaching(user: User, totals: DailyTotals, streak: number, dailyWeightTip?: DailyWeightTip | null): DailyCoaching {
   if (totals.count === 0) {
     return {
       analisa: 'Belum ada makanan tercatat hari ini.',
@@ -84,6 +89,9 @@ export function generateDailyCoaching(user: User, totals: DailyTotals, streak: n
   } else if (proteinRemaining > 15) {
     insight = 'Kekurangan protein jadi pola yang paling sering muncul dibanding kekurangan lain.'
     action = `Tambahkan sumber protein (telur/ayam/tempe) sekitar ${proteinRemaining}g di makan berikutnya.`
+  } else if (dailyWeightTip) {
+    insight = dailyWeightTip.insight
+    action = dailyWeightTip.action
   } else {
     insight = 'Kalori dan protein hari ini sudah cukup seimbang.'
     action = 'Pertahankan pola makan seperti ini sampai akhir hari.'

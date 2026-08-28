@@ -1382,3 +1382,65 @@ Perbaikan 404 belum dikonfirmasi visual di production (fitku.fit) pada pass ini 
 
 ### 11. Next Step
 Menunggu konfirmasi user setelah Vercel redeploy selesai — refresh di `fitku.fit/progress` (atau route lain) harus tetap menampilkan halaman yang benar, bukan 404. Terpisah: gap security headers di Vercel (poin 5) belum ditangani — perlu keputusan/instruksi eksplisit user kalau mau ditambahkan `headers` ke `vercel.json` mereplikasi yang sudah ada di `netlify.toml`.
+
+---
+
+## 2026-08-27 (lanjutan 3) — Perbaikan Terpadu: Riwayat Berat + Badge Goal-Aware + Penilaian Konsisten per Goal
+
+### 1. Tanggal
+2026-08-27
+
+### 2. Tujuan
+Tiga perbaikan terkait weight-tracking dikerjakan sebagai satu kesatuan (item #1 jadi fondasi #2/#3): (1) hapus entri berat yang salah di tab Berat, dengan anchor (entri pertama/onboarding) dilindungi; (2) badge "+X.Xkg dari awal" di tab Berat jadi goal-aware (bukan cuma matematis "turun selalu hijau"); (3) audit & samakan semua tempat yang menilai perubahan berat (Weekly/Deep Insight, AI Coach daily tip) supaya arah "baik/buruk" konsisten dengan goal user, plus garis referensi target di sparkline. User memberi spec sangat eksplisit di follow-up message (teks, threshold, edge case per skenario) setelah proposal awal — implementasi final mengikuti spec eksplisit tersebut, bukan proposal awal.
+
+### 3. Keputusan desain yang dikonfirmasi user sebelum coding (proposal → approval)
+Sebelum implementasi, diajukan 4 keputusan yang butuh persetujuan eksplisit (sesuai [[fitku-product-development]]'s aturan "propose dulu, baru eksekusi"), semuanya **disetujui user**:
+- **Badge 3-warna (merah/kuning/hijau) → 2 token**: FitKu cuma punya 2 token warna semantik non-netral (`success`=hijau, `pro`=amber — lihat `index.css`), dan design system FROZEN (lihat [[fitku-ux-design-system]]). Solusi: `success` untuk "good", `pro` untuk "caution" (menaungi baik kasus "merah" maupun "kuning" dari spec), abu-abu netral (`bg-surface-2 text-ink-dim`) untuk kasus "netral" (delta=0 di lose_weight). Teks + emoji ⚠️ tetap membawa beda level urgensi meski warnanya sama. Design system TIDAK di-unfreeze.
+- **Tambahan dari user saat approval**: badge ini adalah informasi kesehatan dasar, **ditampilkan ke SEMUA user (free maupun Pro) — tidak boleh di-paywall**. Sudah demikian secara alami di implementasi (badge dihitung dari `entries`/`deltaKg`, tidak digate oleh `proAccess`), dikonfirmasi eksplisit di kode dengan komentar.
+- **File target untuk item Weekly Insight**: user awalnya menyebut "Weekly Insight (deepInsight.ts)" — dua nama berbeda untuk hal yang sama. Dikonfirmasi lewat spec detail user sendiri ("Tren dihitung dari data 30 hari terakhir") bahwa target SEBENARNYA adalah `deepInsight.ts` (window 30 hari), BUKAN `weeklyInsight.ts` (window 7 hari, teks di situ sudah netral/faktual, tidak diubah).
+- **Precedence AI Coach**: isu kalori/protein akut hari itu (`calorieRemaining < 0`, `proteinRemaining > 15`) TETAP prioritas utama di `insight`/`action`. Tip berbasis tren berat HANYA mengisi slot "sudah seimbang" yang sebelumnya generik — tidak pernah override isu urgent.
+- **Fallback data tidak lengkap**: perbandingan berat harian (AI Coach tip) HANYA dihitung kalau entri berat HARI INI dan KEMARIN dua-duanya benar-benar ada — tidak pernah memaksa perbandingan dari data yang hilang.
+
+### 4. Root Cause (kenapa ini perlu dikerjakan)
+- **#1**: Tidak ada cara menghapus entri berat sama sekali sebelumnya — `weightRepository`/`useWeightHistory` cuma punya `add`, tidak ada `delete`. Salah input (typo, misal 750 alih-alih 75.0) tidak bisa dikoreksi tanpa akses langsung ke IndexedDB.
+- **#2**: Badge lama (`WeightTab.tsx`) murni `deltaKg <= 0 ? hijau : amber` — asumsi "turun berat selalu baik" yang SALAH untuk goal `gain_muscle` (turun berat saat targetnya naik otot = buruk) dan `maintain` (turun ATAU naik jauh dari titik awal = buruk).
+- **#3**: `deepInsight.ts`'s `weightTrendText` dan `nutrition.ts`'s `generateDailyCoaching` sama sekali tidak mempertimbangkan `user.goal` — keduanya cuma melaporkan angka naik/turun tanpa translate ke "apakah ini progress bagus atau tidak," inkonsisten dengan cara badge (setelah #2) dan Adaptive Target (sudah goal-aware sejak awal) menilai hal yang sama.
+
+### 5. Implementasi
+
+**#1 — Delete:**
+- `weightRepository.ts`: tambah `delete(id): Promise<void>`.
+- `useWeightHistory.ts`: tambah `removeEntry(id)` — mengembalikan `{ok:true}` atau `{ok:false, reason}`, guard "jangan hapus `entries[0]`" (anchor) di level HOOK (bukan cuma UI), jadi konsumen manapun di masa depan otomatis terlindungi. Hook juga sekarang meng-expose `first` (sebelumnya cuma dipakai internal untuk `deltaKg`).
+- `WeightTab.tsx`: daftar entri diekstrak jadi komponen `WeightEntryRow` dengan pola tap-dua-kali PERSIS sama seperti `MyFoodRow`/`ExerciseSheet` (armed-state + auto-reset 3 detik) — tap pada baris anchor menampilkan pesan blokir ("Berat awal tidak bisa dihapus — ubah lewat Edit Profil") alih-alih arming delete, auto-hilang setelah 3 detik juga.
+
+**#2 — Badge:**
+- Domain baru `src/domain/weightAssessment.ts`, fungsi `assessWeightChange(goal, deltaKg)` — logika PERSIS sesuai spec final: `lose_weight` (naik→caution merah-teks, turun→good, 0→neutral abu), `gain_muscle` (naik→good, turun→caution merah-teks, 0→caution "Berat belum berubah"), `maintain` (|delta|≤1→good, >1→caution).
+- `WeightTab.tsx`: badge sekarang render untuk SEMUA user (tidak di dalam blok `fullHistory`/Pro-gate).
+
+**#3 — Konsistensi + sparkline target:**
+- `assessMonthlyWeightTrend(goal, deltaKg)` (di file yang sama) — dipakai HANYA di `deepInsight.ts`'s `weightTrendText`, threshold stabil ±0.3kg, 9 kombinasi teks goal×arah PERSIS sesuai spec, plus copy fallback "Belum cukup data untuk melihat tren 30 hari — terus catat berat harian kamu." saat `weightEntries30.length < 2`.
+- `assessDailyWeightTip(goal, deltaKg)` (file yang sama) — dipakai di `nutrition.ts`'s `generateDailyCoaching` (parameter baru opsional `dailyWeightTip`, dipakai HANYA di branch "kalori/protein sudah seimbang", sesuai precedence yang disetujui). `AiCoach.tsx` menghitung delta harian dari entri berat hari-ini vs kemarin (dari data yang SUDAH di-fetch untuk Weekly Insight, tidak ada fetch baru) — `null` kalau salah satu tanggal tidak ada datanya, sesuai fallback yang disetujui.
+- `WeightTab.tsx`'s sparkline: garis putus-putus tipis di posisi `user.targetWeightKg` (warna `var(--fk-accent)`, opacity rendah) + label kecil "Target: Xkg" di ujung kanan — range chart di-extend untuk memasukkan nilai target supaya garis selalu masuk viewBox, bukan terpotong. Tidak render sama sekali kalau `targetWeightKg` kosong/≤0 (dicek eksplisit, bukan render di posisi 0/default).
+
+### 6. File yang berubah
+`src/domain/weightAssessment.ts` (baru — 3 fungsi: `assessWeightChange`, `assessMonthlyWeightTrend`, `assessDailyWeightTip`), `src/data/repositories/weightRepository.ts` (+`delete`), `src/shared/hooks/useWeightHistory.ts` (+`removeEntry`, +expose `first`), `src/features/progress/tabs/WeightTab.tsx` (rewrite signifikan — delete row, badge, sparkline target), `src/domain/deepInsight.ts` (`weightTrendText` goal-aware), `src/domain/nutrition.ts` (`generateDailyCoaching` +param `dailyWeightTip`), `src/features/ai-coach/AiCoach.tsx` (hitung & oper daily weight delta). `weeklyInsight.ts` SENGAJA TIDAK disentuh (lihat poin 3).
+
+### 7. Dampak terhadap data/schema
+Tidak ada perubahan Dexie schema — `SCHEMA_VERSION` tetap 6, tidak ada field baru di tipe manapun (semua derived dari `user.goal`/`user.targetWeightKg` yang sudah ada, sesuai constraint eksplisit). `AdaptiveTargetResult`/`DailyCoaching`/`DeepInsight` interface TIDAK berubah shape — hanya isi teks yang berubah.
+
+### 8. Testing yang benar-benar dilakukan (tested by Alig)
+- **Build**: `npx tsc -b` dan `npm run build` — 0 TypeScript error.
+- **Delete — diuji penuh di browser**: hapus entri TENGAH (12 Agu) → berhasil, entri lain (24 Agu, 27 Jul) tidak terpengaruh, dikonfirmasi lewat query Dexie langsung. Hapus entri TERBARU (24 Agu) → berhasil, `latest` otomatis pindah ke entri berikutnya. Coba hapus entri PERTAMA/anchor (27 Jul) → DITOLAK, pesan blokir persis "Berat awal tidak bisa dihapus — ubah lewat Edit Profil" tampil di DOM (dikonfirmasi lewat `outerHTML`, bukan cuma baca kode), data di Dexie tidak berubah. Satu percobaan awal sempat membingungkan (row terlihat belum ke-delete di screenshot) — ternyata artefak timing pesan auto-dismiss 3 detik antar-panggilan tool terpisah, bukan bug; dikonfirmasi ulang dengan kedua tap dalam SATU eksekusi script dan hasilnya benar.
+- **Badge — 3 goal diuji visual langsung di UI** (bukan cuma baca kode): `lose_weight` delta=−1 → hijau "↓ 1kg — sesuai target" ✓. `gain_muscle` delta=+0.5 → hijau "↑ 0.5kg — progres bagus" ✓. `maintain` delta=+0.5 (dalam ±1) → hijau "Berat terjaga" ✓. `lose_weight` delta=0 (persis) → **abu-abu netral** "Berat stabil", visually distinct dari hijau/amber ✓.
+- **Semua cabang logika (9 badge + 9 monthly-trend + 10 daily-tip) diuji EXHAUSTIVE lewat pemanggilan langsung fungsi domain di browser console** (bukan tebak dari baca kode) — seluruhnya cocok PERSIS dengan teks yang di-spec-kan user, termasuk kasus tepi delta=0 untuk ketiga goal di daily-tip (semuanya mengembalikan pesan netral yang sama, tidak dipaksa ke kategori naik/turun).
+- **Integrasi `deepInsight.ts` diuji langsung** (bukan cuma unit fungsi terisolasi) — dipanggil `generateDeepInsight()` yang sebenarnya dengan data 30-hari sintetis (delta −1kg, goal `lose_weight`) → menghasilkan `weightTrendText: "Berat kamu turun 1kg dalam 30 hari — sesuai target penurunan."`, persis sesuai spec DAN membuktikan wiring (bukan cuma fungsi standalone-nya) benar.
+- **Integrasi AI Coach daily tip diuji end-to-end penuh di UI** (bukan cuma fungsi) — data berat kemarin=76kg, hari ini=77kg (naik) + goal `lose_weight` + 1 food log "seimbang" hari ini → kartu "Daily Coaching" menampilkan Insight "Berat kamu naik dibanding kemarin." dan Action "Fokus jaga defisit kalori hari ini — kurangi sedikit porsi karbo atau lemak." — PERSIS sesuai spec, dan dikonfirmasi masuk ke slot yang benar (branch "seimbang", bukan override branch kalori/protein).
+- **Sparkline target line**: dikonfirmasi visual — garis putus-putus + label "Target: 55kg" tampil konsisten di semua screenshot pengujian (target user=55kg, jauh dari rentang berat aktual ~75-78kg, sehingga garis muncul di posisi ekstrem bawah chart — perilaku benar sesuai algoritma range-extend, bukan bug).
+- **Console**: dicek `onlyErrors: true` di sepanjang seluruh rangkaian pengujian (delete, ganti goal 3×, cek AI Coach, cek deepInsight) — 0 error/exception.
+- **Housekeeping**: seluruh data uji (3 entri berat sintetis, 1 food log test) dihapus lagi setelah testing, `user.goal` dikembalikan ke `lose_weight` (nilai awal), state akhir dikonfirmasi lewat query Dexie — 1 entri berat tersisa (anchor asli, 27 Jul 76.5kg), sama seperti sebelum pass ini dimulai.
+
+### 9. Bug yang belum diverifikasi
+Tidak ada — semua skenario yang diminta user (3 goal × delete tengah/terbaru/anchor-ditolak, 3 goal untuk badge/monthly-trend/daily-tip, sparkline target line dengan & tanpa data) sudah diuji, baik lewat pemanggilan fungsi langsung (exhaustive, untuk memastikan SETIAP cabang logika benar) maupun lewat UI end-to-end (untuk memastikan wiring-nya benar, bukan cuma fungsi terisolasi).
+
+### 10. Next Step
+Tidak ada pekerjaan lanjutan yang direncanakan sendiri — ketiga item selesai dan terverifikasi sesuai spec final yang disetujui user. Catatan untuk masa depan: kalau user nanti ingin badge benar-benar 3 warna berbeda (bukan 2 token + teks), itu butuh keputusan eksplisit untuk unfreeze design system dan menambah token warna baru (misal `--fk-danger`) — belum dilakukan pada pass ini sesuai kesepakatan.

@@ -9,6 +9,7 @@ import { generateDeepInsight, type DeepInsight } from '../../domain/deepInsight'
 import { calculateStreak, generateCoachReply, generateDailyCoaching, todayIso } from '../../domain/nutrition'
 import { analyzeScoreTrend, type ScoreTrend } from '../../domain/scoreTrend'
 import { recalculateMacrosForCalories } from '../../domain/tdee'
+import { assessDailyWeightTip, type DailyWeightTip } from '../../domain/weightAssessment'
 import { generateWeeklyInsight, type WeeklyInsight } from '../../domain/weeklyInsight'
 import { AppShell } from '../../shared/components/AppShell'
 import { ProLocked } from '../../shared/components/ProLocked'
@@ -53,6 +54,7 @@ export function AiCoach() {
   const [adaptiveTarget, setAdaptiveTarget] = useState<AdaptiveTargetResult | null>(null)
   const [applyingTarget, setApplyingTarget] = useState(false)
   const [targetApplied, setTargetApplied] = useState(false)
+  const [dailyWeightTip, setDailyWeightTip] = useState<DailyWeightTip | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -72,6 +74,16 @@ export function AiCoach() {
       const loggedDatesInWindow = Array.from(new Set(logs.map((l) => l.date)))
       setWeekly(
         generateWeeklyInsight({ user, logs, loggedDatesInWindow, weightEntriesInWindow, exerciseLogsInWindow: exerciseLogs, streak }),
+      )
+
+      // Only compare when BOTH today and yesterday actually have a logged entry —
+      // no forced/guessed comparison from missing data.
+      const todayEntry = allWeights.find((w) => w.date === to)
+      const yesterdayEntry = allWeights.find((w) => w.date === isoDaysAgo(1))
+      setDailyWeightTip(
+        todayEntry && yesterdayEntry
+          ? assessDailyWeightTip(user.goal, Math.round((todayEntry.weightKg - yesterdayEntry.weightKg) * 10) / 10)
+          : null,
       )
     })
   }, [user, streak, totals.count])
@@ -117,7 +129,7 @@ export function AiCoach() {
     setTargetApplied(true)
   }
 
-  const coaching = generateDailyCoaching(user, totals, streak)
+  const coaching = generateDailyCoaching(user, totals, streak, dailyWeightTip)
   const steps = [coaching.analisa, coaching.insight, coaching.action]
 
   const handleSend = () => {
