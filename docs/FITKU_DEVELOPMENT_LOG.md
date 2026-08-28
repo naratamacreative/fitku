@@ -1580,3 +1580,53 @@ Alur sukses penuh di production (balasan OpenAI asli muncul di UI, bukan cuma pe
 
 ### 10. Next Step
 User perlu: (1) buka Vercel dashboard project FitKu → Settings → Environment Variables → pastikan `OPENAI_API_KEY` benar-benar ADA (bukan cuma pernah dicoba ditambahkan) dan value-nya valid, (2) kalau baru ditambahkan/diedit, **trigger redeploy baru** (env var tidak otomatis berlaku ke deployment yang sedang jalan), (3) setelah itu, ulangi test yang sama (kirim "hallo" + pertanyaan off-topic) — kalau session ini masih aktif, saya bisa langsung ulangi lewat browser begitu dikonfirmasi sudah redeploy.
+
+---
+
+## 2026-08-28 (lanjutan 3) — AI Coach Production Testing: PASS Setelah Redeploy
+
+### 1. Tanggal
+2026-08-28
+
+### 2. Tujuan
+User mengonfirmasi sudah redeploy production dengan `OPENAI_API_KEY` terpasang, minta diulangi test end-to-end penuh di `fitku.fit` (browser sungguhan) — instruksi eksplisit: jangan nyatakan PASS hanya dari build, laporkan status code & response aktual tiap test.
+
+### 3. Root Cause / Konteks
+Kelanjutan langsung dari entry sebelumnya (lanjutan 2) yang menemukan 500 karena `OPENAI_API_KEY` belum ada di Vercel production. Setelah redeploy, test yang sama diulang persis.
+
+### 4. Keputusan yang diambil
+Tidak ada kode diubah — semua 4 test PASS, tidak ada bug baru ditemukan yang butuh fix.
+
+### 5–7. Implementasi / File yang berubah / Dampak data
+Tidak ada — murni testing, tidak ada file kode disentuh. Hanya `docs/FITKU_DEVELOPMENT_LOG.md`.
+
+### 8. Testing yang benar-benar dilakukan (tested by Alig, browser sungguhan via Claude in Chrome, `fitku.fit/coach`)
+
+**Test 1 — "hallo":**
+- Network: `POST https://fitku.fit/api/chat` → **status 200**.
+- Reply aktual (bukan rule-based lama, bukan template): *"Halo! Apa kabar? Saya di sini untuk membantu kamu dengan tujuan fitness dan kesehatanmu. Ada yang ingin kamu tanyakan tentang nutrisi, olahraga, atau kebiasaan sehat?"*
+- **PASS.**
+
+**Test 2 — "Kalori hari ini masih kurang berapa?" (fitness, harus pakai konteks user):**
+- Network: status **200**.
+- Reply: *"Saat ini kamu belum mengonsumsi kalori, jadi kamu masih kurang 1720 kkal untuk mencapai target harianmu. Cobalah untuk merencanakan makanan sehat yang sesuai dengan target kalori tersebut. Jika butuh saran makanan atau resep, jangan ragu untuk bertanya!"*
+- Verifikasi konteks: card "Daily Coaching" di halaman yang sama menunjukkan "Belum ada makanan tercatat hari ini" (todayCalories=0) — angka "1720 kkal" di balasan cocok dengan `targetCalories - todayCalories` user yang sebenarnya, BUKAN angka generik/hasil karangan. **PASS.**
+
+**Test 3 — "Siapa presiden Indonesia?" (off-topic):**
+- Network: status **200**.
+- Reply: *"Saya hanya dapat membantu dengan topik kesehatan dan fitness. Jika ada yang ingin kamu tanyakan tentang nutrisi, olahraga, atau kebiasaan sehat lainnya, silakan beri tahu saya!"*
+- Ditolak dengan ramah, tidak menjawab pertanyaannya, menawarkan bantuan relevan — persis sesuai spec system prompt. **PASS.**
+
+**Test 4 — Network/Console audit untuk kebocoran `OPENAI_API_KEY`:**
+- **Bundle produksi live** (`https://fitku.fit/assets/index-CC3zMy3R.js`, di-fetch & digrep langsung dari browser yang sedang membuka `fitku.fit`): `hasKeyWord: false`, `hasSkProj: false` — 0 kemunculan string `OPENAI_API_KEY` maupun pola `sk-proj-`. Hash file (`index-CC3zMy3R.js`) sama persis dengan build lokal sebelumnya, mengonfirmasi bundle production = kode yang sudah direview.
+- **Console** (tracking aktif SEBELUM request ke-4 dikirim, "Boleh saran menu sarapan sehat?"): **0 pesan** (log/warn/error apa pun) selama request berlangsung.
+- Body reply di 4 percobaan di atas juga diperiksa manual — tidak ada string key di manapun.
+- **PASS.**
+
+**Ringkasan status code seluruh test:** 200, 200, 200, 200 — tidak ada 500 lagi, tidak ada 502, tidak ada rate-limit ter-trigger (baru 4 pesan dari 20/hari).
+
+### 9. Bug yang belum diverifikasi
+Tidak ada dari sisi fungsi inti (kirim pesan, konteks, guardrail off-topic, tidak ada key bocor) — semua diverifikasi visual + network + console di production sungguhan, bukan cuma build atau test lokal. Yang BELUM dites eksplisit pada pass ini: rate-limit 20/hari di production sungguhan (sudah diverifikasi sebelumnya lewat handler langsung dengan key asli, bukan lewat UI production, karena akan menghabiskan kuota nyata tanpa perlu).
+
+### 10. Next Step
+Task 2 (AI Coach OpenAI Edge Function) dinyatakan **selesai** — semua testing wajib dari spec awal (kirim pesan, konfirmasi dari OpenAI, cek key tidak bocor, off-topic ditolak, konteks user terpakai) sudah lolos di production sungguhan, bukan cuma di build/handler lokal. Tidak ada pekerjaan lanjutan yang direncanakan sendiri.
