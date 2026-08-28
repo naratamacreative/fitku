@@ -1982,3 +1982,44 @@ Semua verifikasi di atas dari **Supabase REST API langsung** (bukan cuma tampila
 
 ### 9-10. Bug belum diverifikasi / Next Step
 Tidak ada bug yang diketahui tersisa untuk jalur Sandbox dasar. **Sengaja BELUM di-merge ke `main`/production** dan **BELUM ada audit Production** — atas instruksi eksplisit user, ditunda sampai user siap mengonfigurasi Midtrans Production + payment link asli, supaya audit production cukup dilakukan sekali. Implementasi tetap di branch `feat/midtrans-sandbox` + Vercel Preview. Belum diuji: metode pembayaran non-kartu (GoPay/VA/QRIS), notifikasi `pending` (mis. VA menunggu transfer), dan `expire` (transaksi kedaluwarsa tanpa dibayar) — di luar scope "flow dasar" yang diminta kali ini.
+
+## 2026-08-29 (lanjutan) — AI Coach LLM Dikunci ke Premium (Ditemukan Bebas Diakses Free)
+
+### 1-2. Tanggal & Tujuan
+2026-08-29. Saat menguji di Preview, user menemukan AI Coach LLM (chat asli via OpenAI) masih bisa dipakai user Free tanpa batas — padahal entitlement Premium sudah ada dari kerja Sandbox Midtrans di atas. User minta investigasi dulu (root cause + behavior saat ini), baru putuskan perubahan. Setelah investigasi, user memutuskan: AI Coach LLM adalah fitur Premium, harus dikunci untuk Free, access control tidak boleh cuma di UI.
+
+### 3-4. Root Cause & Keputusan
+**Investigasi (dilaporkan ke user sebelum coding apa pun):**
+- `handleSend()` di `AiCoach.tsx` — yang memanggil `POST /api/chat` (LLM sungguhan) — sama sekali tidak mengecek `proAccess`. Input & tombol kirim dirender unconditional untuk siapa pun yang login, padahal di FILE YANG SAMA 3 kartu insight lain (Weekly deep insight, Tren Skor, Target Adaptif) sudah benar digating pakai `proAccess?.active` + `ProLocked`.
+- Ini BUKAN keputusan sadar untuk versi LLM. Dev log 2026-08-24 memang eksplisit "tidak dilakukan" gating chat — tapi itu untuk `generateCoachReply()` LAMA (rule-based, 2 kalimat template, tidak ada yang bisa digating). Saat chat diupgrade jadi LLM asli (dev log 2026-08-28), entry perubahan itu sama sekali tidak menyebut gating — keputusan lama tidak pernah ditinjau ulang untuk konteks baru (LLM berbayar per-pesan, bukan lagi gratis template). Oversight, bukan keputusan.
+- `subscription_status`/trial entitlement (`useProAccess()` → `getProAccess()`) sudah benar dipakai untuk 3 kartu insight — infrastrukturnya ADA dan BEKERJA, cuma tidak diterapkan ke chat.
+- `api/chat.ts`: nol pengecekan subscription/plan/premium. Satu-satunya access control adalah rate-limit generik 20 pesan/24 jam per `userId` — berlaku sama untuk Free maupun Pro, bukan pembeda status. Lebih parah lagi: `userId` waktu itu diambil dari BODY request (client-supplied), bukan diverifikasi dari token — bisa di-spoof.
+
+**Keputusan implementasi**: gating di DUA lapis, server sebagai sumber kebenaran (bukan cuma UI):
+- `api/_entitlement.ts` (baru) — verifikasi JWT Supabase dari header `Authorization`, hitung entitlement sungguhan pakai `getProAccess()` yang SAMA PERSIS dipakai client (import langsung dari `src/domain/entitlement.ts` — logic tunggal, tidak mungkin server lebih longgar dari client karena drift). Semua query jalan di bawah RLS milik user sendiri (bukan `service_role`) — tidak bisa membaca apa pun selain yang user sendiri sudah bisa baca.
+- `api/chat.ts` — sebelum panggil OpenAI, cek `getAuthenticatedProAccess()`. Kalau token tidak valid → 401. Kalau valid tapi tidak entitled → 403 + `{locked:true}`, TIDAK sampai memanggil OpenAI sama sekali (tidak ada biaya API untuk request yang ditolak). `userId` untuk rate-limit sekarang dari token terverifikasi, bukan body — menutup celah spoofing sekaligus.
+- `AiCoach.tsx` — bagian chat (label + history + input) sekarang dibungkus `{proAccess?.active && ...}`, dengan `ProLocked` ("AI Coach Chat") kalau `proAccess && !proAccess.active` — pola persis sama dengan 3 kartu insight yang sudah ada. Daily Coaching & Weekly Insight (bukan LLM, rule-based, sudah gratis dari awal) TIDAK disentuh — di luar scope "AI Coach LLM asli" yang dimaksud user.
+
+Tidak menyentuh `api/midtrans/*.ts` atau file payment flow mana pun.
+
+### 5. File yang berubah
+Baru: `api/_entitlement.ts`. Diubah: `api/chat.ts` (entitlement check + `userId` dari token bukan body), `src/features/ai-coach/AiCoach.tsx` (gating UI chat, kirim `Authorization` header, tangani respons `locked`).
+
+### 6-7. Dampak data/schema
+Tidak ada migrasi baru — `_entitlement.ts` cuma membaca `profiles.created_at` dan `subscription_status` yang sudah ada, sudah RLS-readable oleh user sendiri. Kontrak `POST /api/chat` berubah: `userId` dihapus dari body (server derive dari token), respons gagal sekarang bisa membawa `locked: true`.
+
+### 8. Testing (Vercel Preview sungguhan, DB & API diverifikasi langsung — bukan cuma UI)
+Ditemukan sekaligus diperbaiki di tengah testing: `OPENAI_API_KEY` di Vercel ternyata masih ter-scope "Production" saja (gap yang sama persis dengan `VITE_SUPABASE_*` sebelumnya) — diperluas ke "Production and Preview" (cuma ubah scope, tidak pernah membaca/mengetik ulang nilai secret-nya), lalu redeploy ke deployment Preview yang benar (bukan default salah ke Production/main).
+
+**User Free (trial di-expire-kan sengaja untuk test — `profiles.created_at` akun test digeser mundur 10 hari via SQL, scoped ke satu akun, dikembalikan lagi setelah testing selesai)**:
+- UI `/coach`: kartu "AI Coach Chat" tampil terkunci (🔒, link ke `/premium`), TIDAK ADA input chat sama sekali. Daily Coaching & Weekly Insight tetap tampil normal (tidak digating, sesuai scope).
+- Panggilan LANGSUNG ke `/api/chat` lewat console (bypass UI total) pakai token asli akun ini → **403**, `{error: "...fitur Premium...", locked: true}`.
+- Panggilan tanpa header `Authorization` sama sekali → **401** `{error: "Sesi tidak valid..."}`.
+- Diuji ulang sekali lagi setelah redeploy (fix `OPENAI_API_KEY`) — hasil identik, masih 403.
+
+**User Premium aktif** (`novriekadito9+fitkulazy1@gmail.com`, `pro_annual/active` dari testing Sandbox Midtrans sebelumnya):
+- UI `/coach`: input chat tampil normal, sama seperti sebelum perubahan ini.
+- Kirim pesan sungguhan ("Aku masih kurang berapa kalori hari ini?") → balasan LLM asli, dinamis, mengutip angka konteks yang benar (1918 kkal, cocok target akun ini) — bukan string statis, membuktikan pipeline OpenAI utuh tidak terganggu oleh perubahan gating.
+
+### 9-10. Bug belum diverifikasi / Next Step
+Tidak ada bug tersisa untuk requirement yang diminta. Belum diuji: rate-limit 20/hari masih jalan normal untuk user Pro (logic tidak diubah, cuma sumber `userId`-nya — risiko rendah, tidak dites ulang eksplisit). Tetap di branch `feat/midtrans-sandbox`, belum merge ke `main`, konsisten dengan keputusan user sebelumnya untuk menunda merge sampai Midtrans Production siap dikonfigurasi.
