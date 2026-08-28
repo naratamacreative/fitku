@@ -1905,3 +1905,35 @@ Satu file: `src/features/ai-coach/AiCoach.tsx`. Tidak ada perubahan skema/data.
 
 ### 9-10. Bug belum diverifikasi / Next Step
 Tidak ada. Layout AI Coach sekarang jauh lebih ringkas, input benar-benar sticky, tidak ada regresi pada state insight yang sudah terisi data (jalur kode itu tidak diubah).
+
+## 2026-08-28 (lanjutan 10) — Lazy Authentication / Progressive Profiling: Login Dipindah ke Belakang Onboarding
+
+### 1-2. Tanggal & Tujuan
+2026-08-28. User minta alur diubah: pengguna baru harus bisa langsung isi data (berat, tinggi, usia, dll.) dan lihat hasil TDEE instan TANPA gerbang login di depan. Setelah klarifikasi (`AskUserQuestion`), disepakati: isi TDEE dulu tanpa login → begitu user mau **melihat hasil**, baru muncul auth → setelah login/daftar, hasil (dan fiturnya) langsung bisa dinikmati. Disetujui eksplisit: "Ya, lanjutkan coding sesuai ini".
+
+### 3-4. Root Cause & Keputusan
+Sebelumnya `OnboardingGate` di `App.tsx` mewajibkan `session` sebelum `/onboarding` bisa diakses sama sekali — bertentangan dengan permintaan "akses bebas di awal". Keputusan: pisahkan "mengisi & menghitung TDEE" (client-side murni, tidak butuh sesi) dari "menyimpan profil ke Supabase" (butuh sesi, karena `profiles.id` di-FK ke `auth.users.id`).
+
+**Desain**: `OnboardingFlow.tsx` tetap menghitung TDEE di step terakhir seperti biasa. Kalau `session` ada → simpan seperti biasa (jalur lama, dipertahankan untuk kasus jarang user sudah login lalu re-onboarding). Kalau `session` TIDAK ada → draft (termasuk hasil TDEE yang sudah dihitung) di-stash ke `sessionStorage` (key `PENDING_ONBOARDING_KEY`, di-export dari `OnboardingFlow.tsx`) → redirect ke `/auth` mode register. `Auth.tsx` setelah login/daftar sukses mengecek draft ini di `sessionStorage`; kalau ada, langsung `userRepository.save()`, hapus draft, lanjut ke `/result`.
+
+**3 bug ditemukan sendiri saat testing browser sungguhan (bukan cuma build), diperbaiki sebelum dilaporkan selesai:**
+1. **Data hilang kalau save gagal**: draft awalnya di-`sessionStorage.removeItem()` SEBELUM `await userRepository.save()` — kalau save gagal, draft sudah terhapus, data hilang permanen. Fix: `removeItem` dipindah ke SETELAH `save()` sukses, supaya save yang gagal bisa di-retry (draft masih ada).
+2. **`/result` blank putih (tanpa error)**: `ResultMoment.tsx` baca `user` dari `AppStateContext` (`if (!user) return null`) — tapi `goPastAuth()` di `Auth.tsx` tidak pernah memanggil `refreshUser()` setelah `save()`, jadi `user` di context tetap `undefined` walau row profil sudah tersimpan di database. Diverifikasi via query Supabase langsung: row-nya ADA, cuma UI-nya tidak tahu. Fix: tambah `await refreshUser()` (dari `useAppState()`).
+3. **Race condition: mendarat di "/" bukan "/result"**: setelah fix #2, `refreshUser()` men-set `user` di context SAAT MASIH di route `/auth` — ini men-trigger `GuestOnly` (`if (session && user) return <Navigate to="/" replace />`) yang membalap `navigate('/result')` milik `goPastAuth()` sendiri. Direproduksi langsung di browser (mendarat di Dashboard, bukan halaman hasil). Fix: urutan dibalik — `navigate('/result', { replace: true })` dipanggil DULU (sehingga `/auth` dan `GuestOnly`-nya sudah keluar dari render tree), baru `await refreshUser()` — `ResultMoment` sempat render `null` sesaat lalu re-render begitu `user` terisi, tidak ada lagi balapan redirect.
+
+### 5-7. Implementasi
+- `src/App.tsx`: `OnboardingGate` — hapus syarat `session`, hanya blok user yang `user` (profil) sudah ada (supaya tidak re-onboarding tanpa sengaja).
+- `src/features/welcome/Welcome.tsx`: tombol "Mulai Sekarang" → `navigate('/onboarding')` langsung (sebelumnya lewat `/auth` dulu).
+- `src/features/onboarding/OnboardingFlow.tsx`: `finishOnboarding()` dipecah — bangun `NewUser` sekali, lalu cabang `if (!session)` → stash ke `sessionStorage` + redirect `/auth` (mode register); else jalur lama (save langsung + `refreshUser` + `/result`). Export `PENDING_ONBOARDING_KEY`.
+- `src/features/auth/Auth.tsx`: `goPastAuth()` cek `PENDING_ONBOARDING_KEY` duluan sebelum fallback ke cek profil existing. Import `useAppState` untuk `refreshUser`.
+- Tidak ada perubahan skema database — `profiles` table & RLS policy tetap sama persis dari migrasi Supabase sebelumnya.
+
+### 8. Testing (browser sungguhan, akun test terpisah, DB diverifikasi langsung via query)
+- Build: `npm run build` — 0 TypeScript error (diverifikasi ulang setelah tiap fix, bukan cuma sekali di akhir).
+- E2E lengkap, 2 kali (sebelum & sesudah fix race condition #3): Welcome → "Mulai Sekarang" tanpa login → isi 6 step onboarding (goal/motivasi/data badan/target/aktivitas/frekuensi makan) → "Lihat hasilku" → redirect ke `/auth` mode Daftar (bukan Masuk) → login dengan akun test (`novriekadito9+fitkulazy1@gmail.com`) → `/result` tampil benar (80kg→74kg, ~12 minggu, 1.918 kkal/hari, 144g protein — cocok dengan draft yang dihitung sebelum login) → "Mulai Tracking" → Dashboard tampil dengan target kalori yang sama.
+- DB langsung: query `select * from profiles where id = ...` via `javascript_tool` mengonfirmasi row tersimpan dengan semua field cocok draft.
+- `sessionStorage` diverifikasi berisi draft yang benar sebelum login, dan kosong (`removeItem` jalan) setelah save sukses.
+- Akun produksi Supabase (`Confirm email` ON) — dites lewat jalur realistis: signUp → email belum terkonfirmasi → (untuk testing, email dikonfirmasi manual lewat SQL editor Supabase yang di-scope ke satu user test, BUKAN mengubah toggle "Confirm email" project yang statusnya production) → Masuk dengan akun terkonfirmasi → jalur "pending draft" teruji.
+
+### 9-10. Bug belum diverifikasi / Next Step
+Tidak ada bug yang diketahui tersisa. Belum diuji: 2 tab/device berbeda mengisi onboarding bersamaan tanpa login (sessionStorage per-tab, jadi tidak akan bentrok — tapi belum diverifikasi langsung). Belum diuji: draft yang stuck di `sessionStorage` kalau user menutup tab sebelum sempat login (diharapkan: draft hilang begitu tab ditutup, karena `sessionStorage` memang per-tab-session — user akan mulai onboarding dari awal lagi, bukan bug tapi trade-off desain `sessionStorage` yang disadari).

@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { userRepository } from '../../data/repositories/userRepository'
+import type { NewUser } from '../../data/types/user.types'
+import { PENDING_ONBOARDING_KEY } from '../onboarding/OnboardingFlow'
 import { Button } from '../../shared/components/Button'
+import { useAppState } from '../../shared/context/AppStateContext'
 import { supabase } from '../../shared/lib/supabaseClient'
 
 type Mode = 'login' | 'register'
@@ -24,8 +27,27 @@ export function Auth() {
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const navigate = useNavigate()
+  const { refreshUser } = useAppState()
 
   const goPastAuth = async () => {
+    // Lazy auth: a completed onboarding draft may be waiting from before the user had
+    // a session (see OnboardingFlow.tsx's finishOnboarding). Finish that save now that
+    // a session exists, instead of sending them back through onboarding again. The key
+    // is only cleared once the save actually succeeds, so a failed save can be retried.
+    // Navigate away from /auth BEFORE refreshUser(): setting `user` while still on
+    // /auth makes GuestOnly (session && user) redirect to "/" first, racing ahead of
+    // our own navigate('/result') below — reproduced live, landed on "/" instead of
+    // the result screen. Leaving /auth first removes GuestOnly from the tree, so its
+    // redirect can't fire once `user` updates. ResultMoment reads `user` from
+    // AppStateContext and nothing else re-syncs it after this save, hence refreshUser().
+    const pending = sessionStorage.getItem(PENDING_ONBOARDING_KEY)
+    if (pending) {
+      await userRepository.save(JSON.parse(pending) as NewUser)
+      sessionStorage.removeItem(PENDING_ONBOARDING_KEY)
+      navigate('/result', { replace: true })
+      await refreshUser()
+      return
+    }
     const existing = await userRepository.get()
     navigate(existing ? '/' : '/onboarding', { replace: true })
   }

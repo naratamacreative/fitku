@@ -34,13 +34,14 @@ function GuestOnly({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-// /onboarding needs a session (a profile row's id is the auth user's id), but must
-// NOT already have a profile — otherwise a returning user could re-onboard by accident.
+// Lazy auth: /onboarding is reachable WITHOUT a session — TDEE is computed and shown
+// purely client-side, no session needed for that. Auth only kicks in when the user
+// finishes onboarding and wants to see/save the result (see OnboardingFlow.tsx). Still
+// blocks an already-onboarded user from accidentally re-onboarding.
 function OnboardingGate({ children }: { children: React.ReactNode }) {
-  const { session, user, loading } = useAppState()
+  const { user, loading } = useAppState()
 
   if (loading) return null
-  if (!session) return <Navigate to="/welcome" replace />
   if (user) return <Navigate to="/" replace />
   return <>{children}</>
 }

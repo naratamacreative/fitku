@@ -1,6 +1,7 @@
 import { useState, type ComponentType } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { userRepository } from '../../data/repositories/userRepository'
+import type { NewUser } from '../../data/types/user.types'
 import { calculateTdee } from '../../domain/tdee'
 import { ProgressDots } from '../../shared/components/ProgressDots'
 import { useAppState } from '../../shared/context/AppStateContext'
@@ -21,11 +22,14 @@ const STEPS: ComponentType<StepProps>[] = [
   EatingHabitStep,
 ]
 
+// Read by Auth.tsx once a session exists, to finish the save that couldn't happen here.
+export const PENDING_ONBOARDING_KEY = 'fitku:pendingOnboarding'
+
 export function OnboardingFlow() {
   const [stepIndex, setStepIndex] = useState(0)
   const [draft, setDraft] = useState<OnboardingDraft>({})
   const [saving, setSaving] = useState(false)
-  const { refreshUser } = useAppState()
+  const { session, refreshUser } = useAppState()
   const navigate = useNavigate()
 
   const onChange = (patch: Partial<OnboardingDraft>) => setDraft((d) => ({ ...d, ...patch }))
@@ -62,7 +66,7 @@ export function OnboardingFlow() {
       goal: draft.goal,
     })
 
-    await userRepository.save({
+    const newUser: NewUser = {
       gender: draft.gender,
       age: draft.age,
       heightCm: draft.heightCm,
@@ -76,7 +80,20 @@ export function OnboardingFlow() {
       targetProtein: tdee.targetProtein,
       targetCarbs: tdee.targetCarbs,
       targetFat: tdee.targetFat,
-    })
+    }
+
+    // Lazy auth: TDEE above is already computed and shown regardless of session — the
+    // profile row itself can't be written yet (its id is FK'd to auth.users.id), so
+    // without a session we stash the completed draft and send the user to register/
+    // login. Auth.tsx picks PENDING_ONBOARDING_KEY back up once a session exists and
+    // finishes this exact save — nothing here is lost, just deferred.
+    if (!session) {
+      sessionStorage.setItem(PENDING_ONBOARDING_KEY, JSON.stringify(newUser))
+      navigate('/auth', { state: { mode: 'register' } })
+      return
+    }
+
+    await userRepository.save(newUser)
 
     await refreshUser()
     navigate('/result', { replace: true })
