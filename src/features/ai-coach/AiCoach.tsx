@@ -51,7 +51,7 @@ function buildScoreSparkline(points: { score: number }[], width = 220, height = 
 }
 
 export function AiCoach() {
-  const { user, refreshUser } = useAppState()
+  const { user, session, refreshUser } = useAppState()
   const { totals } = useTodayLog(user?.id)
   const { latest: latestWeight } = useWeightHistory(user?.id)
   const proAccess = useProAccess()
@@ -163,16 +163,15 @@ export function AiCoach() {
 
   const handleSend = async () => {
     const text = input.trim()
-    if (!text || sending) return
+    if (!text || sending || !session) return
     setMessages((m) => [...m, { role: 'user', text }])
     setInput('')
     setSending(true)
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({
-          userId: user.id,
           message: text,
           context: {
             userGoal: GOAL_LABELS[user.goal],
@@ -183,11 +182,19 @@ export function AiCoach() {
           },
         }),
       })
+      const data = (await res.json()) as { reply?: string; error?: string; locked?: boolean }
       if (!res.ok) {
-        setMessages((m) => [...m, { role: 'ai', text: 'AI Coach sedang mengalami gangguan. Coba lagi sebentar lagi.' }])
+        setMessages((m) => [
+          ...m,
+          {
+            role: 'ai',
+            text: data.locked
+              ? 'AI Coach chat adalah fitur Premium — upgrade untuk lanjut chat.'
+              : 'AI Coach sedang mengalami gangguan. Coba lagi sebentar lagi.',
+          },
+        ])
         return
       }
-      const data = (await res.json()) as { reply?: string; error?: string }
       setMessages((m) => [
         ...m,
         { role: 'ai', text: data.reply ?? data.error ?? 'AI Coach tidak bisa memberikan jawaban saat ini. Coba lagi ya.' },
@@ -330,50 +337,65 @@ export function AiCoach() {
           </div>
         )}
 
-        <p className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Tanya lebih lanjut</p>
-        <div className="flex flex-col gap-2">
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`max-w-[82%] rounded-2xl px-3 py-2 text-[11.5px] leading-relaxed ${
-                m.role === 'user'
-                  ? 'self-end rounded-br-md bg-surface-2 text-ink'
-                  : 'self-start rounded-bl-md text-ink shadow-soft'
-              }`}
-              style={
-                m.role === 'ai'
-                  ? {
-                      backgroundImage:
-                        'linear-gradient(120deg, color-mix(in srgb, var(--fk-primary) 10%, var(--fk-surface)), color-mix(in srgb, var(--fk-accent) 10%, var(--fk-surface)))',
-                    }
-                  : undefined
-              }
-            >
-              {m.text}
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        <div className="sticky bottom-2 z-10 mt-1 flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 shadow-soft ring-1 ring-line/60">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && void handleSend()}
-            placeholder={sending ? 'AI Coach sedang menjawab…' : 'Tanya AI Coach…'}
-            disabled={sending}
-            className="flex-1 bg-transparent text-[11.5px] text-ink outline-none placeholder:text-ink-dim disabled:opacity-60"
+        {/* AI Coach LLM chat is a Premium feature (server-enforced in api/chat.ts —
+            this UI gate is a courtesy, not the real access control). Same
+            undefined-while-loading convention as the Pro insight cards above: render
+            nothing until proAccess resolves, so there's no locked-then-unlocked flash. */}
+        {proAccess && !proAccess.active && (
+          <ProLocked
+            title="AI Coach Chat"
+            description="Tanya jawab bebas dengan AI Coach — sudah kamu rasakan waktu trial, sekarang terkunci."
           />
-          <button
-            type="button"
-            onClick={() => void handleSend()}
-            disabled={sending}
-            className="text-accent disabled:opacity-60"
-            aria-label="Kirim"
-          >
-            {sending ? '…' : '➤'}
-          </button>
-        </div>
+        )}
+
+        {proAccess?.active && (
+          <>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Tanya lebih lanjut</p>
+            <div className="flex flex-col gap-2">
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`max-w-[82%] rounded-2xl px-3 py-2 text-[11.5px] leading-relaxed ${
+                    m.role === 'user'
+                      ? 'self-end rounded-br-md bg-surface-2 text-ink'
+                      : 'self-start rounded-bl-md text-ink shadow-soft'
+                  }`}
+                  style={
+                    m.role === 'ai'
+                      ? {
+                          backgroundImage:
+                            'linear-gradient(120deg, color-mix(in srgb, var(--fk-primary) 10%, var(--fk-surface)), color-mix(in srgb, var(--fk-accent) 10%, var(--fk-surface)))',
+                        }
+                      : undefined
+                  }
+                >
+                  {m.text}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="sticky bottom-2 z-10 mt-1 flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 shadow-soft ring-1 ring-line/60">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && void handleSend()}
+                placeholder={sending ? 'AI Coach sedang menjawab…' : 'Tanya AI Coach…'}
+                disabled={sending}
+                className="flex-1 bg-transparent text-[11.5px] text-ink outline-none placeholder:text-ink-dim disabled:opacity-60"
+              />
+              <button
+                type="button"
+                onClick={() => void handleSend()}
+                disabled={sending}
+                className="text-accent disabled:opacity-60"
+                aria-label="Kirim"
+              >
+                {sending ? '…' : '➤'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </AppShell>
   )

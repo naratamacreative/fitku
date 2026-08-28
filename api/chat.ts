@@ -3,6 +3,8 @@
 // Runs server-side only: OPENAI_API_KEY never reaches the frontend bundle.
 export const config = { runtime: 'edge' }
 
+import { getAuthenticatedProAccess } from './_entitlement.js'
+
 const RATE_LIMIT = 20
 const WINDOW_MS = 24 * 60 * 60 * 1000
 
@@ -22,7 +24,6 @@ interface UserContext {
 }
 
 interface ChatRequestBody {
-  userId: string
   message: string
   context: UserContext
 }
@@ -80,6 +81,18 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ error: 'Method not allowed' }, 405)
   }
 
+  // AI Coach LLM is a Premium feature — checked here, not just in the UI, so a Free
+  // user can't bypass the paywall by calling this endpoint directly. userId is derived
+  // from the verified access token, never trusted from the request body, so a Free
+  // user also can't spoof someone else's id to piggyback on their entitlement.
+  const authed = await getAuthenticatedProAccess(request)
+  if (!authed) {
+    return json({ error: 'Sesi tidak valid — coba masuk ulang.' }, 401)
+  }
+  if (!authed.access.active) {
+    return json({ error: 'AI Coach chat adalah fitur Premium — upgrade untuk melanjutkan.', locked: true }, 403)
+  }
+
   let body: ChatRequestBody
   try {
     body = await request.json()
@@ -87,12 +100,12 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ error: 'Invalid JSON body' }, 400)
   }
 
-  const { userId, message, context } = body
-  if (!userId || !message || !context) {
-    return json({ error: 'Missing userId, message, or context' }, 400)
+  const { message, context } = body
+  if (!message || !context) {
+    return json({ error: 'Missing message or context' }, 400)
   }
 
-  if (!checkRateLimit(userId)) {
+  if (!checkRateLimit(authed.userId)) {
     return json(
       {
         reply:
