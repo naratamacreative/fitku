@@ -1,7 +1,7 @@
 {
-  "version": "1.0.0",
-  "lastUpdated": "2026-08-25",
-  "note": "Semua asset di bawah masih 'pending' — belum ada file final. Landing page render placeholder (ImageSlot) sampai path di 'finalPath' terisi file nyata.",
+  "version": "1.1.0",
+  "lastUpdated": "2026-08-29",
+  "note": "Semua 7 asset sudah 'ready' dengan file final di public/assets/images/. makanan-app-sanding memakai screenshot asli Home/Buku Harian (data nyata, bukan mockup AI); sisanya foto lifestyle/makanan yang sudah diverifikasi sesuai brief masing-masing.",
   "assets": [
     {
       "id": "hero-photo",
@@ -14,7 +14,7 @@
       "format": ["webp", "jpg"],
       "altText": "Wanita tersenyum percaya diri menggunakan aplikasi FitKu di smartphone",
       "finalPath": "/assets/images/hero-photo.webp",
-      "status": "pending"
+      "status": "ready"
     },
     {
       "id": "meja-makan-indonesia",
@@ -27,7 +27,7 @@
       "format": ["webp", "jpg"],
       "altText": "Meja makan rumahan Indonesia dengan nasi, ayam, dan sambal",
       "finalPath": "/assets/images/meja-makan-indonesia.webp",
-      "status": "pending"
+      "status": "ready"
     },
     {
       "id": "makanan-app-sanding",
@@ -67,7 +67,7 @@
       "format": ["webp", "jpg"],
       "altText": "Orang berjalan pagi dengan percaya diri",
       "finalPath": "/assets/images/aktivitas-santai.webp",
-      "status": "pending"
+      "status": "ready"
     },
     {
       "id": "lifestyle-premium",
@@ -80,7 +80,7 @@
       "format": ["webp", "jpg"],
       "altText": "Momen sehari-hari dengan pencahayaan hangat golden-hour",
       "finalPath": "/assets/images/lifestyle-premium.webp",
-      "status": "pending"
+      "status": "ready"
     },
     {
       "id": "senyum-forward",
@@ -93,7 +93,7 @@
       "format": ["webp", "jpg"],
       "altText": "Orang tersenyum menghadap ke depan, memulai perjalanan baru",
       "finalPath": "/assets/images/senyum-forward.webp",
-      "status": "pending"
+      "status": "ready"
     }
   ]
 }
