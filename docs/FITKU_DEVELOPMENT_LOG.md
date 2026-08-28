@@ -1937,3 +1937,48 @@ Sebelumnya `OnboardingGate` di `App.tsx` mewajibkan `session` sebelum `/onboardi
 
 ### 9-10. Bug belum diverifikasi / Next Step
 Tidak ada bug yang diketahui tersisa. Belum diuji: 2 tab/device berbeda mengisi onboarding bersamaan tanpa login (sessionStorage per-tab, jadi tidak akan bentrok — tapi belum diverifikasi langsung). Belum diuji: draft yang stuck di `sessionStorage` kalau user menutup tab sebelum sempat login (diharapkan: draft hilang begitu tab ditutup, karena `sessionStorage` memang per-tab-session — user akan mulai onboarding dari awal lagi, bukan bug tapi trade-off desain `sessionStorage` yang disadari).
+
+## 2026-08-29 — Sandbox Midtrans: Pembayaran Premium Nyata (Server-Verified), Bukan Lagi Mock
+
+### 1-2. Tanggal & Tujuan
+2026-08-28/29. User minta: pastikan Premium FitKu bisa diuji end-to-end lewat Sandbox Midtrans sungguhan dari aplikasi — alur nyata user mulai bayar → transaksi Sandbox → hasil pembayaran → status/akses Premium di FitKu, untuk kondisi berhasil MAUPUN gagal/cancel. Instruksi eksplisit: jangan mengarang credential Sandbox, secret tidak boleh masuk ke frontend, dan tidak boleh menyatakan selesai hanya dari build/API test — harus hasil testing nyata di aplikasi & browser.
+
+### 3-4. Root Cause & Keputusan
+Sebelum pass ini: `Premium.tsx` memanggil `subscriptionRepository.activate()` yang langsung menulis `status: 'active'` ke `subscription_status` DARI CLIENT — tidak ada payment gateway sama sekali (mock V1). Lebih parah: RLS `subscription_status` saat itu `for all using (auth.uid() = user_id)`, artinya **siapa pun bisa buka devtools dan kasih diri sendiri Premium gratis**, tanpa transaksi apa pun.
+
+**Keputusan arsitektur**: bangun jalur Midtrans Snap Sandbox sungguhan, dengan server sebagai satu-satunya sumber kebenaran:
+- `api/midtrans/create-transaction.ts` (Edge Function baru) — verifikasi JWT user dari header `Authorization`, tentukan harga dari tabel harga di server (bukan dari client), buat baris `payment_transactions` (status `pending`), lalu panggil Midtrans Snap API dengan `MIDTRANS_SERVER_KEY` (server-only) → kembalikan `token` Snap ke client (server key TIDAK PERNAH sampai ke frontend).
+- `api/midtrans/notification.ts` (Edge Function baru) — webhook Midtrans. Verifikasi signature SHA-512 (`order_id+status_code+gross_amount+ServerKey`) sebelum mempercayai apa pun; hanya setelah signature valid dan `gross_amount` cocok dengan yang tersimpan, baru update `payment_transactions.status` dan (kalau sukses) upsert `subscription_status` lewat `service_role` (bypass RLS).
+- `supabase/migrations/0003_payments.sql` — kunci `subscription_status` jadi **read-only untuk client** (drop policy lama, ganti `for select` saja); tambah tabel `payment_transactions` (audit trail + korelasi `order_id` → user/plan) yang juga read-only untuk client. Client tidak pernah lagi bisa menulis status Premium-nya sendiri.
+- `Premium.tsx` diubah total: bukan lagi tombol yang langsung "sukses", tapi memuat Snap.js sungguhan (`src/shared/lib/midtransSnap.ts`), buka Snap payment UI, lalu **polling** `subscription_status` (karena hasil sebenarnya baru masuk lewat webhook async, bukan dari callback Snap di client — callback client tidak pernah dipercaya sebagai sumber kebenaran).
+- `subscriptionRepository.activate()` dihapus total (bukan cuma tidak dipakai — dibiarkan tetap ada akan menyesatkan, karena sekarang pasti gagal kena RLS).
+
+Deployment: dikerjakan di branch terpisah `feat/midtrans-sandbox` + Vercel Preview Deployment, BUKAN langsung ke `main`/production, supaya bisa diuji penuh dulu tanpa menyentuh `fitku.fit`. Migrasi database (RLS lockdown) dijalankan langsung ke Supabase project (satu-satunya project, dipakai bareng Preview & Production) karena itu murni perbaikan keamanan (menutup celah self-grant), bukan sesuatu yang berisiko untuk fitur yang sudah berjalan.
+
+### 5. Bug ditemukan & diperbaiki selama implementasi (bukan cuma di akhir)
+1. **Import relatif Edge Function gagal build di Vercel (bukan di lokal)** — `api/` tidak ikut ter-typecheck oleh `tsconfig.app.json`/`tsc -b` (gap yang sama yang pernah menyebabkan bug `api/chat.ts` sebelumnya). Vercel awalnya minta ekstensi eksplisit (`TS2835`), setelah ditambah `.ts` malah ditolak lagi (`TS5097` — `allowImportingTsExtensions` tidak aktif di context itu). Fix: pakai ekstensi `.js` di import relatif (konvensi ESM/NodeNext standar — merujuk ke output hasil kompilasi, bukan file sumber). Diverifikasi dengan tsconfig sementara yang meniru setting Vercel sebelum push ulang.
+2. **Vercel "Deployment Protection" (Vercel Authentication) memblokir webhook Midtrans dengan HTTP 401** — Preview deployment butuh login Vercel SSO untuk diakses sama sekali, termasuk endpoint API, dan Midtrans jelas tidak bisa login SSO. Fix: buat "Protection Bypass for Automation" secret di Vercel, tempel sebagai query param `?x-vercel-protection-bypass=...` di URL notifikasi Midtrans (satu-satunya cara embed bypass untuk webhook eksternal yang tidak bisa kirim custom header).
+3. **Salah ketik domain di Notification URL** (`fitku-git-feat-midtrans-naratama.vercel.app`, hilang `-sandbox-`) menyebabkan Midtrans gagal kirim notifikasi ("URL not found") untuk SATU transaksi test spesifik sebelum dikoreksi. Diinvestigasi tuntas: dikonfirmasi lewat log notifikasi Midtrans DAN query DB langsung bahwa baris `payment_transactions` transaksi itu tetap `pending` selamanya (fail-closed, tidak pernah granting Premium) — bukan bug kode, cuma transaksi historis yang gagal terkirim sebelum URL dibetulkan. User sempat dapat email error otomatis dari Midtrans soal transaksi ini (terlambat ~9 menit dari waktu transaksi, karena email alert Midtrans memang async) — diaudit ulang secara terpisah dan dikonfirmasi bukan masalah baru, hanya artefak dari transaksi lama itu.
+
+### 6. File yang berubah
+Baru: `api/midtrans/_shared.ts`, `api/midtrans/create-transaction.ts`, `api/midtrans/notification.ts`, `src/shared/lib/midtransSnap.ts`, `supabase/migrations/0003_payments.sql`. Diubah: `src/features/premium/Premium.tsx` (alur Snap.js + polling nyata, ganti UI mock), `src/data/repositories/subscriptionRepository.ts` (hapus `activate()`), `src/vite-env.d.ts` + `.env.example` (env var baru), `vercel.json` (CSP: tambah domain Midtrans Sandbox ke `script-src`/`connect-src`, `frame-src` baru untuk iframe Snap).
+
+### 7. Dampak data/schema
+`subscription_status`: RLS berubah dari `for all` (client bisa tulis) jadi `for select` saja (client read-only) — ini **memutus** tombol Premium versi lama di `main`/production (yang masih pakai `activate()`) sampai branch ini di-merge; disengaja, karena tombol lama itu memang cuma mock berbahaya. Tabel baru `payment_transactions` (read-only untuk client, ditulis hanya lewat `service_role`).
+
+### 8. Testing (browser sungguhan di Vercel Preview, DB diverifikasi langsung via query REST, BUKAN cuma dari UI)
+**Kondisi berhasil** (dites 2×, kedua kalinya setelah semua bug di atas diperbaiki):
+- Klik "Upgrade ke Premium" di `/premium` → Snap Sandbox sungguhan terbuka (ribbon "TEST" terlihat, Order ID & jumlah cocok plan yang dipilih) → isi kartu test Midtrans (`4811 1111 1111 1114`) → 3DS challenge sungguhan → OTP `112233` → "Payment successful".
+- App menunggu ("Menunggu konfirmasi pembayaran dari Midtrans…") lalu otomatis menampilkan "Premium kamu aktif 🎉" dengan plan & tanggal expiry yang benar.
+- Diverifikasi ulang setelah **hard reload** (bukan cuma state React) — tetap aktif.
+- Query langsung ke Supabase (`payment_transactions.status = 'capture'`, `subscription_status.plan = 'pro_annual', status = 'active', expires_at = +1 tahun`) — cocok persis.
+
+**Kondisi gagal/deny** (dites setelah kondisi berhasil, akun yang sama):
+- Transaksi baru dibuat via API (`pro_monthly`), Snap sungguhan dibuka, kartu sama tapi 3DS di-**Cancel** → Snap menampilkan "Payment declined by bank".
+- Query DB: `payment_transactions` baris ini `status = 'deny'` (webhook diterima & diproses benar). `subscription_status` **sama sekali tidak berubah** — tetap `pro_annual/active` dari transaksi sukses sebelumnya, tidak ter-downgrade atau terganggu oleh transaksi yang gagal.
+- Ini membuktikan langsung requirement eksplisit user: "pastikan tidak ada Premium yang aktif jika pembayaran belum/gagal dikonfirmasi" — dan sebaliknya, transaksi gagal juga tidak merusak Premium yang sudah aktif dari transaksi lain.
+
+Semua verifikasi di atas dari **Supabase REST API langsung** (bukan cuma tampilan UI), plus log notifikasi resmi dari dashboard Midtrans Sandbox untuk tiap transaksi.
+
+### 9-10. Bug belum diverifikasi / Next Step
+Tidak ada bug yang diketahui tersisa untuk jalur Sandbox dasar. **Sengaja BELUM di-merge ke `main`/production** dan **BELUM ada audit Production** — atas instruksi eksplisit user, ditunda sampai user siap mengonfigurasi Midtrans Production + payment link asli, supaya audit production cukup dilakukan sekali. Implementasi tetap di branch `feat/midtrans-sandbox` + Vercel Preview. Belum diuji: metode pembayaran non-kartu (GoPay/VA/QRIS), notifikasi `pending` (mis. VA menunggu transfer), dan `expire` (transaksi kedaluwarsa tanpa dibayar) — di luar scope "flow dasar" yang diminta kali ini.
