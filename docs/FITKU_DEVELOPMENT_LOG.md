@@ -1838,3 +1838,43 @@ Tidak ada dari sisi fungsi inti — auth (signup/login/logout), onboarding→pro
 
 ### 10. Next Step
 Migrasi Dexie→Supabase dinyatakan **berhasil dan siap** dari sisi fungsi inti. Rekomendasi sebelum production sungguhan: (1) nyalakan lagi "Confirm email" di Supabase (dimatikan cuma untuk testing), pertimbangkan custom SMTP kalau volume signup nanti tinggi (menghindari rate limit yang sama); (2) bersihkan 2 akun test + data terkait di Supabase (opsional, milik user); (3) kalau mau lebih yakin, uji manual 7 repository yang belum representatif-dites (pola sudah terbukti benar di 3 tabel yang dites, risiko rendah).
+
+---
+
+## 2026-08-28 (lanjutan 8) — Diagnosis fitku.fit Blank Putih: CSP Blokir Supabase (Bug Kode Nyata, Diperbaiki) + Dugaan Kuat Env Var Vercel Belum Diisi
+
+### 1. Tanggal
+2026-08-28
+
+### 2. Tujuan
+User melaporkan `fitku.fit` blank putih total setelah deploy migrasi Supabase, minta dicek pakai Vercel CLI. Tidak ada akses CLI/dashboard Vercel ter-autentikasi di sesi ini (dikonfirmasi: tidak ada `.vercel/` project link, tidak ada token) — jadi tidak bisa `vercel logs` langsung. Investigasi dilakukan lewat bukti tidak langsung yang kuat dari kode & eksperimen build lokal.
+
+### 3. Root Cause (2 kandidat, satu dikonfirmasi & diperbaiki, satu dugaan kuat menunggu verifikasi user)
+
+**Kandidat 1 — DIKONFIRMASI & DIPERBAIKI: CSP `connect-src` di `vercel.json` tidak mengizinkan domain Supabase.** `connect-src 'self'` ditulis di Task 1 (security headers) SEBELUM Supabase ada di project — saat itu semua panggilan API cuma ke same-origin (`/api/chat`). Setelah migrasi Supabase, browser client memanggil `https://anyyjqmuqnmqhqjxnexx.supabase.co` langsung (domain eksternal) — dengan CSP lama, browser akan MEMBLOKIR semua request itu (auth, query tabel, dst) begitu app mencoba memakainya. Ini bug kode nyata, provable secara statis (bandingkan directive CSP vs domain yang benar-benar dipanggil `supabaseClient.ts`), tidak perlu akses production untuk membuktikannya.
+
+**Kandidat 2 — DUGAAN KUAT, BELUM BISA DIVERIFIKASI TANPA AKSES VERCEL: `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` belum diisi di Environment Variables Vercel.** `supabaseClient.ts` men-throw Error di level modul (SEBELUM React sempat render apa pun) kalau kedua var ini kosong — persis pola yang sudah dibuktikan LANGSUNG di sesi sebelumnya (lanjutan 7, poin 8): saat env var lokal sengaja dihapus, hasilnya PERSIS layar putih kosong, dengan error jelas di console. **Eksperimen dikonfirmasi ulang di sesi ini**: `.env` dipindah sementara, `npm run build` dijalankan — **build SUKSES (exit code 0), TIDAK ADA error build** — karena `import.meta.env.VITE_SUPABASE_URL` cuma dicek saat RUNTIME di browser, bukan saat build. Ini artinya: kalaupun env var itu tidak ada di Vercel, **Vercel TIDAK akan menunjukkan error build/deployment apa pun** — kegagalannya HANYA muncul sebagai halaman putih kosong di browser, persis gejala yang dilaporkan user. Pola kejadian sama seperti gap `OPENAI_API_KEY` di Task AI Coach sebelumnya (env var lokal ada, lupa ditambahkan ke Vercel dashboard).
+
+### 4. Keputusan yang diambil
+- **`vercel.json`**: `connect-src` ditambah `https://anyyjqmuqnmqhqjxnexx.supabase.co` secara eksplisit (bukan wildcard `*.supabase.co` supaya tetap ketat sesuai origin project yang sebenarnya).
+- **Env var Vercel**: TIDAK bisa saya cek/tambahkan sendiri (tidak ada akses dashboard/CLI ter-autentikasi) — dilaporkan ke user sebagai langkah wajib berikutnya, bukan diasumsikan sudah beres.
+
+### 5. Implementasi
+Satu file diubah: `vercel.json` — satu baris (`connect-src`).
+
+### 6. File yang berubah
+`vercel.json`.
+
+### 7. Dampak terhadap data/schema
+Tidak ada — murni konfigurasi header keamanan platform hosting.
+
+### 8. Testing yang benar-benar dilakukan
+- **Eksperimen build tanpa env var**: `.env` dipindah ke luar project, `npm run build` → exit 0, 0 error, build sukses total (dikembalikan setelah tes, dikonfirmasi `.env` utuh kembali). Membuktikan kandidat 2 TIDAK akan terlihat sebagai kegagalan deployment di Vercel dashboard/build log.
+- **Validasi JSON**: `vercel.json` dicek valid setelah diedit.
+- **TIDAK BISA dites pada pass ini**: kondisi production `fitku.fit` yang sebenarnya (perlu akses Vercel dashboard/CLI yang tidak tersedia di sesi ini), apakah env var Vercel benar-benar kosong atau tidak.
+
+### 9. Bug yang belum diverifikasi
+Kandidat 2 (env var Vercel kosong) belum dikonfirmasi/dibantah — murni dugaan kuat berbasis pola kejadian yang identik dengan insiden `OPENAI_API_KEY` sebelumnya, BUKAN observasi langsung ke Vercel.
+
+### 10. Next Step
+User perlu: (1) cek Vercel Dashboard → Project fitku → Settings → Environment Variables → pastikan `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY` ADA untuk environment Production (nilai sama seperti di `.env` lokal); (2) redeploy setelah CSP fix ini ter-push DAN env var (jika belum ada) ditambahkan — env var baru butuh deployment baru untuk berlaku, sama seperti kasus `OPENAI_API_KEY` sebelumnya; (3) setelah redeploy, saya bisa langsung cek `fitku.fit` lewat browser untuk konfirmasi halaman sudah tidak putih lagi.
