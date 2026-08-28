@@ -1,3 +1,4 @@
+/// <reference types="node" />
 // Vercel Edge Function — proxies AI Coach chat messages to OpenAI.
 // Runs server-side only: OPENAI_API_KEY never reaches the frontend bundle.
 export const config = { runtime: 'edge' }
