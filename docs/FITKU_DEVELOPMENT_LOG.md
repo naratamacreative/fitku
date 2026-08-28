@@ -1444,3 +1444,41 @@ Tidak ada — semua skenario yang diminta user (3 goal × delete tengah/terbaru/
 
 ### 10. Next Step
 Tidak ada pekerjaan lanjutan yang direncanakan sendiri — ketiga item selesai dan terverifikasi sesuai spec final yang disetujui user. Catatan untuk masa depan: kalau user nanti ingin badge benar-benar 3 warna berbeda (bukan 2 token + teks), itu butuh keputusan eksplisit untuk unfreeze design system dan menambah token warna baru (misal `--fk-danger`) — belum dilakukan pada pass ini sesuai kesepakatan.
+
+---
+
+## 2026-08-28 — Security Headers di vercel.json
+
+### 1. Tanggal
+2026-08-28
+
+### 2. Tujuan
+Menutup gap yang di-flag di entry 2026-08-27 (lanjutan 2): sejak hosting pindah ke Vercel (`fitku.fit`), `vercel.json` cuma berisi `rewrites` untuk fix 404 SPA — security headers produksi yang sudah ada di `netlify.toml` (dari entry 2026-08-24, "Add production security headers and build hardening") tidak pernah ter-replikasi ke Vercel, jadi kemungkinan besar tidak aktif di production sejak pindah hosting. User secara eksplisit meminta headers ini ditambahkan, sekaligus menyiapkan `connect-src` untuk Edge Function AI Coach yang akan dibangun di task berikutnya (`/api/*`).
+
+### 3. Root Cause
+`vercel.json` dan `netlify.toml` adalah file config terpisah untuk platform berbeda — menambahkan headers ke satu file tidak otomatis menerapkannya ke platform lain. Migrasi hosting ke Vercel (2026-08-27) hanya membawa `rewrites` (untuk fix 404), headers-nya tertinggal.
+
+### 4. Keputusan yang diambil
+- Blok `headers` ditambahkan ke `vercel.json`, mereplikasi PERSIS 5 header dari `netlify.toml`: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`, dan `Content-Security-Policy` dengan directive yang sama (`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'`).
+- **`connect-src` SENGAJA TIDAK diubah dari `'self'`** — instruksi user minta "sesuaikan connect-src untuk mengizinkan /api/*", tapi CSP `connect-src` beroperasi di level ORIGIN, bukan path; `/api/chat` (Edge Function AI Coach, task berikutnya) adalah path SAME-ORIGIN terhadap `fitku.fit`, jadi `'self'` yang sudah ada SUDAH mencakupnya — tidak ada origin eksternal (mis. `api.openai.com`) yang perlu di-allowlist di frontend CSP karena frontend TIDAK PERNAH memanggil OpenAI langsung, hanya `/api/chat` sendiri (lihat task berikutnya). Menambah sesuatu ke `connect-src` di luar `'self'` justru akan salah secara teknis dan melonggarkan CSP tanpa kebutuhan nyata.
+- `source: "/(.*)"` dipakai (sama seperti pattern yang sudah dipakai `rewrites`) supaya header berlaku ke semua response, termasuk `/api/*` — dikonfirmasi lewat dokumentasi routing Vercel bahwa Serverless/Edge Functions match filesystem SEBELUM `rewrites` diterapkan, jadi request ke `/api/chat` tetap sampai ke function itu (tidak ikut ter-rewrite ke `/`), dan `headers` tetap ter-attach ke response-nya.
+
+### 5. Implementasi
+Satu file diubah: `vercel.json` — ditambah blok `headers` (5 header di atas), `rewrites` yang sudah ada tidak disentuh.
+
+### 6. File yang berubah
+`vercel.json`.
+
+### 7. Dampak terhadap data/schema
+Tidak ada — murni file konfigurasi platform hosting.
+
+### 8. Testing yang benar-benar dilakukan (tested by Alig)
+- **Validasi JSON**: `python3 -c "import json; json.load(open('vercel.json'))"` — valid.
+- **Build**: `npm run build` (`tsc -b && vite build`) — 0 TypeScript error, build sukses (`vercel.json` di luar pipeline Vite/tsc, dicek untuk memastikan tidak ada regresi tak terduga).
+- **Verifikasi header aktif di production (fitku.fit)**: BELUM dilakukan pada pass ini — sama seperti fix 404 sebelumnya, ini butuh redeploy Vercel dulu (di luar kendali langsung sesi ini). User yang akan memverifikasi lewat `curl -I https://fitku.fit` atau DevTools Network tab setelah redeploy selesai.
+
+### 9. Bug yang belum diverifikasi
+Header belum dikonfirmasi visual/langsung aktif di production — konfigurasinya sudah pasti benar secara sintaks Vercel (format `headers` standar, sama seperti dipakai untuk rewrites), tapi konfirmasi akhir menunggu redeploy + cek user.
+
+### 10. Next Step
+Menunggu konfirmasi user setelah Vercel redeploy — cek response header di `fitku.fit` sudah sesuai. Lanjut ke task AI Coach OpenAI Edge Function (entry berikutnya).
