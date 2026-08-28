@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { subscriptionRepository } from '../../data/repositories/subscriptionRepository'
 import { AppShell } from '../../shared/components/AppShell'
 import { useAppState } from '../../shared/context/AppStateContext'
 import { useTheme } from '../../shared/context/ThemeContext'
 import { useProAccess } from '../../shared/hooks/useProAccess'
-import { exportBackup, importBackup } from './dataBackup'
+import { supabase } from '../../shared/lib/supabaseClient'
 
 const GOAL_LABEL: Record<string, string> = {
   lose_weight: 'Turun berat badan',
@@ -24,40 +24,13 @@ export function Settings() {
   const { user } = useAppState()
   const { theme, toggleTheme } = useTheme()
   const proAccess = useProAccess()
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [plan, setPlan] = useState<string>('free')
-  const [importMsg, setImportMsg] = useState('')
-  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null)
 
   useEffect(() => {
     if (user) subscriptionRepository.get(user.id).then((s) => setPlan(s.plan))
   }, [user])
 
   if (!user) return null
-
-  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPendingImportFile(file)
-  }
-
-  const handleCancelImport = () => {
-    setPendingImportFile(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
-  const handleConfirmImport = async () => {
-    if (!pendingImportFile) return
-    try {
-      const count = await importBackup(pendingImportFile)
-      setImportMsg(`Data berhasil dipulihkan (${count} tabel). Muat ulang halaman untuk melihat perubahan.`)
-    } catch (err) {
-      setImportMsg(err instanceof Error ? err.message : 'Gagal memulihkan — pastikan file backup valid.')
-    } finally {
-      setPendingImportFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-    }
-  }
 
   return (
     <AppShell>
@@ -102,49 +75,6 @@ export function Settings() {
         </section>
 
         <section className="rounded-2xl bg-surface px-4 py-3">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wide text-ink-dim">Cadangkan Data</h4>
-          <button type="button" onClick={() => exportBackup()} className="mt-2 block text-sm font-semibold text-accent">
-            ↓ Unduh salinan data (JSON)
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="mt-2 block text-sm font-semibold text-accent"
-          >
-            ↑ Pulihkan dari file
-          </button>
-          <input ref={fileInputRef} type="file" accept="application/json" hidden onChange={handleFileSelected} />
-          {pendingImportFile && (
-            <div className="mt-2 rounded-xl border border-line bg-surface-2 px-3 py-2.5">
-              <p className="text-[11.5px] leading-relaxed text-ink-dim">
-                Ini akan menimpa semua data di perangkat ini dengan isi{' '}
-                <b className="text-ink">{pendingImportFile.name}</b>. Lanjutkan?
-              </p>
-              <div className="mt-2 flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleConfirmImport}
-                  className="rounded-full bg-pro-soft px-3 py-1.5 text-xs font-bold text-pro"
-                >
-                  Ya, Timpa Data
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancelImport}
-                  className="rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-ink-dim"
-                >
-                  Batal
-                </button>
-              </div>
-            </div>
-          )}
-          {importMsg && <p className="mt-2 text-xs text-ink-dim">{importMsg}</p>}
-          <p className="mt-2 text-[11px] leading-relaxed text-ink-dim">
-            Data tersimpan di perangkat ini saja. Ekspor rutin supaya tidak hilang.
-          </p>
-        </section>
-
-        <section className="rounded-2xl bg-surface px-4 py-3">
           <h4 className="text-[11px] font-semibold uppercase tracking-wide text-ink-dim">Langganan</h4>
           <div className="mt-2 flex justify-between text-sm">
             <span className="text-ink-dim">Plan aktif</span>
@@ -167,6 +97,17 @@ export function Settings() {
           <Link to="/premium" className="mt-2 block text-sm font-semibold text-accent">
             Lihat FitKu Premium
           </Link>
+        </section>
+
+        <section className="rounded-2xl bg-surface px-4 py-3">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wide text-ink-dim">Akun</h4>
+          <button
+            type="button"
+            onClick={() => void supabase.auth.signOut()}
+            className="mt-2 block text-sm font-semibold text-accent"
+          >
+            Keluar
+          </button>
         </section>
       </div>
     </AppShell>

@@ -1,22 +1,31 @@
-import { db } from '../db'
-import type { DailyNote } from '../types/log.types'
+import { supabase } from '../../shared/lib/supabaseClient'
 
 export interface NoteRepository {
   getForDate(userId: string, date: string): Promise<string>
   save(userId: string, date: string, text: string): Promise<void>
 }
 
-class DexieNoteRepository implements NoteRepository {
+class SupabaseNoteRepository implements NoteRepository {
   async getForDate(userId: string, date: string): Promise<string> {
-    const entry = await db.dailyNotes.get(`${userId}:${date}`)
-    return entry?.text ?? ''
+    const { data, error } = await supabase
+      .from('daily_notes')
+      .select('note_text')
+      .eq('user_id', userId)
+      .eq('log_date', date)
+      .maybeSingle()
+    if (error) throw error
+    return data?.note_text ?? ''
   }
 
   async save(userId: string, date: string, text: string): Promise<void> {
-    const key = `${userId}:${date}`
-    const record: DailyNote = { key, userId, date, text, updatedAt: new Date().toISOString() }
-    await db.dailyNotes.put(record)
+    const { error } = await supabase
+      .from('daily_notes')
+      .upsert(
+        { user_id: userId, log_date: date, note_text: text, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id,log_date' },
+      )
+    if (error) throw error
   }
 }
 
-export const noteRepository: NoteRepository = new DexieNoteRepository()
+export const noteRepository: NoteRepository = new SupabaseNoteRepository()

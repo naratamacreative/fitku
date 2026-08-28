@@ -1,5 +1,6 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { AiCoach } from './features/ai-coach/AiCoach'
+import { Auth } from './features/auth/Auth'
 import { Dashboard } from './features/dashboard/Dashboard'
 import { FoodTracker } from './features/food-tracker/FoodTracker'
 import { Hydration } from './features/hydration/Hydration'
@@ -13,19 +14,64 @@ import { Welcome } from './features/welcome/Welcome'
 import { AppStateProvider, useAppState } from './shared/context/AppStateContext'
 import { ThemeProvider } from './shared/context/ThemeContext'
 
+// Requires both an authenticated session AND a profile row (onboarding completed).
 function Gate({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAppState()
+  const { session, user, loading } = useAppState()
 
   if (loading) return null
-  if (!user) return <Navigate to="/welcome" replace />
+  if (!session) return <Navigate to="/welcome" replace />
+  if (!user) return <Navigate to="/onboarding" replace />
+  return <>{children}</>
+}
+
+// For /welcome and /auth: a fully set-up visitor (session + profile) skips
+// straight to the app instead of seeing the marketing/auth screens again.
+function GuestOnly({ children }: { children: React.ReactNode }) {
+  const { session, user, loading } = useAppState()
+
+  if (loading) return null
+  if (session && user) return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
+// /onboarding needs a session (a profile row's id is the auth user's id), but must
+// NOT already have a profile — otherwise a returning user could re-onboard by accident.
+function OnboardingGate({ children }: { children: React.ReactNode }) {
+  const { session, user, loading } = useAppState()
+
+  if (loading) return null
+  if (!session) return <Navigate to="/welcome" replace />
+  if (user) return <Navigate to="/" replace />
   return <>{children}</>
 }
 
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/welcome" element={<Welcome />} />
-      <Route path="/onboarding" element={<OnboardingFlow />} />
+      <Route
+        path="/welcome"
+        element={
+          <GuestOnly>
+            <Welcome />
+          </GuestOnly>
+        }
+      />
+      <Route
+        path="/auth"
+        element={
+          <GuestOnly>
+            <Auth />
+          </GuestOnly>
+        }
+      />
+      <Route
+        path="/onboarding"
+        element={
+          <OnboardingGate>
+            <OnboardingFlow />
+          </OnboardingGate>
+        }
+      />
       <Route path="/result" element={<ResultMoment />} />
       <Route
         path="/"

@@ -1,4 +1,4 @@
-import { db } from '../db'
+import { supabase } from '../../shared/lib/supabaseClient'
 import type { FoodReport, FoodReportReason } from '../types/foodReport.types'
 
 export interface FoodReportRepository {
@@ -7,32 +7,66 @@ export interface FoodReportRepository {
   save(userId: string, foodId: string, reasons: FoodReportReason[], note: string): Promise<FoodReport>
 }
 
-class DexieFoodReportRepository implements FoodReportRepository {
-  async reportedFoodIds(userId: string): Promise<Set<string>> {
-    const reports = await db.foodReports.where('userId').equals(userId).toArray()
-    return new Set(reports.map((r) => r.foodId))
-  }
+interface FoodReportRow {
+  user_id: string
+  food_id: string
+  reasons: FoodReportReason[]
+  note: string | null
+  created_at: string
+  updated_at: string
+}
 
-  async getForFood(userId: string, foodId: string): Promise<FoodReport | undefined> {
-    return db.foodReports.get(`${userId}:${foodId}`)
-  }
-
-  async save(userId: string, foodId: string, reasons: FoodReportReason[], note: string): Promise<FoodReport> {
-    const key = `${userId}:${foodId}`
-    const existing = await db.foodReports.get(key)
-    const now = new Date().toISOString()
-    const record: FoodReport = {
-      key,
-      userId,
-      foodId,
-      reasons,
-      note: note.trim() || undefined,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    }
-    await db.foodReports.put(record)
-    return record
+function fromRow(row: FoodReportRow): FoodReport {
+  return {
+    key: `${row.user_id}:${row.food_id}`,
+    userId: row.user_id,
+    foodId: row.food_id,
+    reasons: row.reasons,
+    note: row.note ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   }
 }
 
-export const foodReportRepository: FoodReportRepository = new DexieFoodReportRepository()
+class SupabaseFoodReportRepository implements FoodReportRepository {
+  async reportedFoodIds(userId: string): Promise<Set<string>> {
+    const { data, error } = await supabase.from('food_reports').select('food_id').eq('user_id', userId)
+    if (error) throw error
+    return new Set((data as { food_id: string }[]).map((r) => r.food_id))
+  }
+
+  async getForFood(userId: string, foodId: string): Promise<FoodReport | undefined> {
+    const { data, error } = await supabase
+      .from('food_reports')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('food_id', foodId)
+      .maybeSingle()
+    if (error) throw error
+    return data ? fromRow(data as FoodReportRow) : undefined
+  }
+
+  async save(userId: string, foodId: string, reasons: FoodReportReason[], note: string): Promise<FoodReport> {
+    const existing = await this.getForFood(userId, foodId)
+    const now = new Date().toISOString()
+    const { data, error } = await supabase
+      .from('food_reports')
+      .upsert(
+        {
+          user_id: userId,
+          food_id: foodId,
+          reasons,
+          note: note.trim() || null,
+          created_at: existing?.createdAt ?? now,
+          updated_at: now,
+        },
+        { onConflict: 'user_id,food_id' },
+      )
+      .select()
+      .single()
+    if (error) throw error
+    return fromRow(data as FoodReportRow)
+  }
+}
+
+export const foodReportRepository: FoodReportRepository = new SupabaseFoodReportRepository()

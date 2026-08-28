@@ -1,5 +1,4 @@
-import { db } from '../db'
-import { generateId } from '../../shared/lib/id'
+import { supabase } from '../../shared/lib/supabaseClient'
 import type { NewWeightEntry, WeightEntry } from '../types/log.types'
 
 export interface WeightRepository {
@@ -9,10 +8,35 @@ export interface WeightRepository {
   delete(id: string): Promise<void>
 }
 
-class DexieWeightRepository implements WeightRepository {
+interface WeightRow {
+  id: string
+  user_id: string
+  entry_date: string
+  weight_kg: number
+  note: string | null
+  created_at: string
+}
+
+function fromRow(row: WeightRow): WeightEntry {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    date: row.entry_date,
+    weightKg: row.weight_kg,
+    note: row.note ?? undefined,
+    createdAt: row.created_at,
+  }
+}
+
+class SupabaseWeightRepository implements WeightRepository {
   async all(userId: string): Promise<WeightEntry[]> {
-    const entries = await db.weightHistory.where('userId').equals(userId).toArray()
-    return entries.sort((a, b) => a.date.localeCompare(b.date))
+    const { data, error } = await supabase
+      .from('weight_entries')
+      .select('*')
+      .eq('user_id', userId)
+      .order('entry_date', { ascending: true })
+    if (error) throw error
+    return (data as WeightRow[]).map(fromRow)
   }
 
   async latest(userId: string): Promise<WeightEntry | undefined> {
@@ -21,18 +45,24 @@ class DexieWeightRepository implements WeightRepository {
   }
 
   async add(entry: NewWeightEntry): Promise<WeightEntry> {
-    const record: WeightEntry = {
-      ...entry,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-    }
-    await db.weightHistory.add(record)
-    return record
+    const { data, error } = await supabase
+      .from('weight_entries')
+      .insert({
+        user_id: entry.userId,
+        entry_date: entry.date,
+        weight_kg: entry.weightKg,
+        note: entry.note ?? null,
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return fromRow(data as WeightRow)
   }
 
   async delete(id: string): Promise<void> {
-    await db.weightHistory.delete(id)
+    const { error } = await supabase.from('weight_entries').delete().eq('id', id)
+    if (error) throw error
   }
 }
 
-export const weightRepository: WeightRepository = new DexieWeightRepository()
+export const weightRepository: WeightRepository = new SupabaseWeightRepository()

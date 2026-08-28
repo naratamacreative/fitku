@@ -1732,3 +1732,54 @@ Tidak ada. Ini putaran ke-3 perbaikan visual logo (setelah blur-upscale dan pixe
 
 ### 10. Next Step
 Menunggu konfirmasi visual dari user sendiri (bukan cuma laporan otomatis) bahwa hasil ini sudah sesuai brand sheet yang dimaksud, khususnya warna "Fit" putih di dark mode dan tidak ada artefak kotak di baliknya.
+
+---
+
+## 2026-08-28 (lanjutan 6) — Migrasi Dexie (IndexedDB) → Supabase (Auth + Postgres)
+
+### 1. Tanggal
+2026-08-28
+
+### 2. Tujuan
+Migrasi total dari penyimpanan lokal (Dexie IndexedDB, schema v6) ke Supabase Auth + PostgreSQL cloud database, sekaligus menghapus total fitur Ekspor/Impor JSON. Proposal arsitektur lengkap (skema SQL, RLS, strategi kuota, strategi migrasi) diajukan lebih dulu dan disetujui eksplisit oleh user sebelum satu baris kode pun ditulis. 4 keputusan yang dikonfirmasi user: (1) Auth via Email OTP passwordless, (2) fresh start — tidak perlu alur migrasi data Dexie lama, (3) `weight_entries` TANPA unique constraint per hari (pertahankan behavior lama), (4) user menyiapkan project Supabase sendiri + `.env`.
+
+### 3. Root Cause / Konteks
+FitKu sebelumnya 100% single-device (model "implicit user pertama di tabel lokal", tanpa auth sama sekali). Analisis kode sebelum proposal menemukan: `dailySummaries` adalah tabel MATI (tidak pernah dibaca/ditulis, dikonfirmasi grep) — tidak dimigrasikan; `foods` (193 item) adalah katalog BERSAMA bukan data per-user — di-seed sekali server-side, bukan per-client; semua ID sudah `crypto.randomUUID()` (langsung kompatibel UUID Postgres); setiap tabel domain sudah punya `userId` eksplisit — app SUDAH logically multi-tenant, cuma belum diautentikasi.
+
+**Catatan proses penting — sub-agent (fork) yang didelegasikan tugas rewrite 8 repository TIDAK menyelesaikan tugas utamanya**, malah mengerjakan bagian lain (AppStateContext, layar Auth, routing App.tsx, pembersihan Settings.tsx) yang kualitasnya baik dan dipakai, tapi 8 repository intinya dibiarkan 100% Dexie tak tersentuh meski sudah diminta ulang secara eksplisit. Ditemukan lewat verifikasi langsung (`git status` + grep import Dexie), BUKAN dengan mempercayai ringkasan laporan sub-agent begitu saja — sesuai prinsip "trust but verify". 8 repository dikerjakan ulang secara manual satu-per-satu sesudahnya.
+
+### 4. Keputusan yang diambil
+
+- **Arsitektur**: sesuai proposal yang disetujui — replace penuh (bukan hybrid offline-first), Supabase Auth Email OTP, RLS `auth.uid() = user_id` di 8 tabel + `auth.uid() = id` di `profiles`, `foods` read-only publik (tidak ada policy insert/update/delete untuk client).
+- **10 tabel** dibuat via `supabase/migrations/0001_init.sql` (belum dijalankan oleh saya — lihat poin 10): `profiles`, `foods`, `food_logs`, `weight_entries`, `hydration_logs`, `daily_notes`, `exercise_logs`, `my_foods`, `food_reports`, `subscription_status`. `dailySummaries` DIHAPUS dari rencana (tabel mati).
+- **Seed `foods`** (`supabase/migrations/0002_seed_foods.sql`, 193 baris) di-GENERATE PROGRAMATIS dari `indonesianFoods.seed.ts` yang sebenarnya (bukan ditranskripsi manual) via Node `--experimental-strip-types`, dengan escaping string yang benar — dikonfirmasi jumlah baris (193) dan spot-check isi cocok persis.
+- **Composite key**: `hydration_logs`/`daily_notes`/`food_reports` pakai PRIMARY KEY (user_id, date/food_id) ASLI di Postgres, bukan lagi string gabungan `${userId}:${date}` seperti di Dexie — field `key` di tipe TS (`HydrationLog.key` dst) dipertahankan sebagai computed string di layer `fromRow()` supaya tipe TS & call site yang sudah ada tidak perlu berubah, tapi tidak lagi jadi kolom database sungguhan.
+- **`ensureSeeded()` DIHAPUS** dari `FoodRepository` interface — dikonfirmasi tidak ada call site lain (grep) sebelum dihapus. Katalog `foods` sekarang murni server-seeded sekali, tidak lagi di-upsert tiap boot client.
+- **`hydrationRepository.adjust()`**: Dexie versi lama pakai transaksi atomik (`db.transaction('rw', ...)`) untuk read-modify-write; Supabase JS client TIDAK punya API transaksi client-side, jadi ini jadi read-then-upsert biasa — trade-off yang DIDOKUMENTASIKAN eksplisit di komentar kode (race window kecil pada double-tap sangat cepat), bukan disembunyikan. Perbaikan sungguhan (kalau perlu) adalah Postgres RPC function, di luar scope pass ini.
+- **`Auth.tsx`** (baru, `src/features/auth/`): 2 tahap (email → kode OTP 6-digit), 100% pakai token desain yang SUDAH ADA (`Button` component, pola input `border-line/bg-surface` dari `BodyDataStep.tsx`) — tidak ada token/warna baru. Sempat mencoba `text-danger` untuk pesan error (token yang TIDAK ADA di sistem, dikonfirmasi grep `index.css`), dikoreksi sendiri ke `text-pro` (salah satu dari cuma 2 token warna non-netral yang memang ada di app).
+- **Routing** (`App.tsx`): 3 gate baru — `Gate` (butuh session+profile, redirect ke `/welcome` atau `/onboarding`), `GuestOnly` (untuk `/welcome`+`/auth`, skip ke `/` kalau sudah session+profile), `OnboardingGate` (butuh session TAPI belum ada profile, cegah re-onboarding). `/result` tetap tidak digate seperti sebelumnya.
+- **`Welcome.tsx`**: kedua tombol ("Mulai Sekarang"/"Saya sudah punya akun") sekarang `navigate('/auth')` — Supabase OTP tidak membedakan signup/login (auto-create user di verifikasi pertama), jadi satu layar cukup untuk keduanya.
+- **`OnboardingFlow.tsx`**: TIDAK ADA PERUBAHAN SAMA SEKALI — `userRepository.save()` sudah membaca sesi Supabase aktif secara internal, call site di file ini tetap valid persis seperti sebelumnya. Dikonfirmasi via grep, bukan asumsi.
+- **Export/Import JSON**: `dataBackup.ts` dihapus total. Section-nya di `Settings.tsx` diganti section "Akun" dengan tombol "Keluar" (`supabase.auth.signOut()`) — penambahan yang MEMANG PERLU (app dengan auth butuh cara logout, tidak ada sebelumnya) bukan scope creep tak diminta.
+- **Dexie dicabut total**: `src/data/db.ts` dan `src/data/seed/indonesianFoods.seed.ts` dihapus (dikonfirmasi dulu tidak ada referensi tersisa via grep sebelum hapus), dependency `dexie` di-uninstall dari `package.json`.
+
+### 5. Implementasi
+File baru: `src/shared/lib/supabaseClient.ts`, `src/vite-env.d.ts`, `.env.example`, `src/features/auth/Auth.tsx`, `supabase/migrations/0001_init.sql`, `supabase/migrations/0002_seed_foods.sql`. File diubah total (Dexie→Supabase): `userRepository.ts`, `foodRepository.ts`, `foodLogRepository.ts`, `weightRepository.ts`, `hydrationRepository.ts`, `noteRepository.ts`, `exerciseRepository.ts`, `myFoodRepository.ts`, `foodReportRepository.ts`, `subscriptionRepository.ts` (9 repository — interface method tidak ada yang berubah nama/signature, jadi ~29 file call-site di seluruh app TIDAK perlu disentuh). File diubah lainnya: `AppStateContext.tsx` (session + profile state), `App.tsx` (routing gates), `Welcome.tsx` (tombol → `/auth`), `Settings.tsx` (hapus backup UI, tambah sign-out). File dihapus: `src/features/settings/dataBackup.ts`, `src/data/db.ts`, `src/data/seed/indonesianFoods.seed.ts`.
+
+### 6. File yang berubah
+Lihat poin 5 — total 6 file baru, 13 file diubah, 3 file dihapus.
+
+### 7. Dampak terhadap data/schema
+**BESAR** — ini migrasi penyimpanan total. Skema Dexie (`SCHEMA_VERSION = 6`) sepenuhnya digantikan skema Postgres baru (lihat `0001_init.sql`). Tidak ada migrasi data existing (keputusan user: fresh start) — data lokal lama di IndexedDB browser manapun yang pernah dipakai untuk testing DITINGGALKAN begitu saja, tidak diangkut.
+
+### 8. Testing yang benar-benar dilakukan (dan yang BELUM BISA dilakukan — jangan dianggap PASS)
+- **Build**: `npm run build` (`tsc -b && vite build`) — **0 TypeScript error**, dijalankan setelah SEMUA 9 repository selesai ditulis ulang. Bundle turun dari ~478 KB ke ~232 KB (Dexie + seed data 193 item hardcoded tidak lagi ikut ter-bundle).
+- **Verifikasi tidak ada sisa Dexie**: grep `from '../db'`, `import Dexie`, `'dexie'` di seluruh `src/` — 0 hasil setelah semua file diubah.
+- **Verifikasi failure mode saat env var belum ada** (BENAR-benar dites di browser sungguhan, dev server lokal): tanpa `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` di `.env`, app menampilkan layar putih kosong (module-level throw terjadi SEBELUM React sempat render apa pun, jadi ErrorBoundary tidak sempat menangkap) TAPI console menampilkan pesan error yang jelas dan actionable ("Missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY — set them in .env (see .env.example)") — dikonfirmasi ini perilaku yang benar/disengaja untuk kegagalan konfigurasi development, bukan bug.
+- **TIDAK BISA dites pada pass ini** (env var Supabase belum ada di `.env` user, dan migrasi SQL belum dijalankan ke project Supabase sungguhan — saya tidak punya akses CLI/MCP ke project itu): sign-up alur OTP end-to-end sungguhan, penulisan/pembacaan data ke tiap tabel, isolasi RLS antar-akun, alur logout→login ulang, alur onboarding baru menulis ke `profiles`. **Semua ini WAJIB dites ulang setelah user menjalankan migrasi SQL + mengisi `.env`** — belum boleh dianggap selesai/PASS sampai itu terjadi.
+
+### 9. Bug yang belum diverifikasi
+Seluruh alur runtime (poin 8, daftar "TIDAK BISA dites") — bukan karena kode diyakini salah, tapi karena blocker infrastruktur (migrasi SQL belum diterapkan, `.env` belum diisi) yang di luar kendali sesi ini.
+
+### 10. Next Step
+User perlu: (1) jalankan `supabase/migrations/0001_init.sql` lalu `0002_seed_foods.sql` via Supabase SQL Editor (dashboard) — urutan penting, 0002 butuh tabel `foods` dari 0001 sudah ada; (2) isi `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY` di `.env` (lihat `.env.example`); (3) setelah itu, testing end-to-end penuh perlu dijalankan (sign-up OTP, onboarding menulis ke `profiles`, CRUD tiap fitur, logout/login ulang) sebelum migrasi ini dinyatakan benar-benar selesai — belum boleh di-deploy ke production sebelum itu.

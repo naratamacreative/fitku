@@ -1,39 +1,62 @@
-import { db } from '../db'
-import { indonesianFoodsSeed } from '../seed/indonesianFoods.seed'
+import { supabase } from '../../shared/lib/supabaseClient'
 import type { Food } from '../types/food.types'
 
 export interface FoodRepository {
-  ensureSeeded(): Promise<void>
   all(): Promise<Food[]>
   search(query: string): Promise<Food[]>
   byId(id: string): Promise<Food | undefined>
 }
 
-class DexieFoodRepository implements FoodRepository {
-  async ensureSeeded(): Promise<void> {
-    // Always upsert (not just when empty): `foods` is written ONLY by this seed —
-    // MyFood/FoodLog live in separate tables — so re-running bulkPut on every boot
-    // is purely additive/self-healing. This is what lets a catalog update (e.g. new
-    // items added to indonesianFoodsSeed) reach a device that was already seeded
-    // from an older build, without the user having to clear IndexedDB by hand.
-    // bulkPut (not bulkAdd) is also safe against StrictMode's double-invoked effects.
-    await db.foods.bulkPut(indonesianFoodsSeed)
-  }
+interface FoodRow {
+  id: string
+  name: string
+  category: Food['category']
+  serving_label: string
+  serving_grams: number
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  region: string | null
+}
 
-  async all(): Promise<Food[]> {
-    return db.foods.toArray()
-  }
-
-  async search(query: string): Promise<Food[]> {
-    const q = query.trim().toLowerCase()
-    if (!q) return this.all()
-    const foods = await db.foods.toArray()
-    return foods.filter((f) => f.name.toLowerCase().includes(q))
-  }
-
-  async byId(id: string): Promise<Food | undefined> {
-    return db.foods.get(id)
+function fromRow(row: FoodRow): Food {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    servingLabel: row.serving_label,
+    servingGrams: row.serving_grams,
+    calories: row.calories,
+    protein: row.protein,
+    carbs: row.carbs,
+    fat: row.fat,
+    region: row.region ?? undefined,
   }
 }
 
-export const foodRepository: FoodRepository = new DexieFoodRepository()
+class SupabaseFoodRepository implements FoodRepository {
+  async all(): Promise<Food[]> {
+    const { data, error } = await supabase.from('foods').select('*')
+    if (error) throw error
+    return (data as FoodRow[]).map(fromRow)
+  }
+
+  async search(query: string): Promise<Food[]> {
+    const q = query.trim()
+    if (!q) return this.all()
+    // Server-side filter, same substring/case-insensitive semantics as the old
+    // client-side `name.toLowerCase().includes(q)`.
+    const { data, error } = await supabase.from('foods').select('*').ilike('name', `%${q}%`)
+    if (error) throw error
+    return (data as FoodRow[]).map(fromRow)
+  }
+
+  async byId(id: string): Promise<Food | undefined> {
+    const { data, error } = await supabase.from('foods').select('*').eq('id', id).maybeSingle()
+    if (error) throw error
+    return data ? fromRow(data as FoodRow) : undefined
+  }
+}
+
+export const foodRepository: FoodRepository = new SupabaseFoodRepository()
