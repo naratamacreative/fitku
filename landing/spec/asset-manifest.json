@@ -33,15 +33,15 @@
       "id": "makanan-app-sanding",
       "usedInSection": "solusi",
       "type": "composite",
-      "description": "Foto makanan Indonesia asli (rendang/soto/nasi ayam) bersanding dengan screenshot asli fitur 'Menu Hari Ini' FitKu.",
-      "style": "Bukan ilustrasi — screenshot harus dari app FitKu sungguhan, bukan mockup buatan.",
+      "description": "Foto makanan Indonesia asli (nasi, ayam goreng, sayur, sambal) bersanding dengan screenshot asli halaman Home/Buku Harian FitKu.",
+      "style": "Bukan ilustrasi — screenshot diambil langsung dari app FitKu sungguhan (data nyata: Nasi Uduk, Telur Ceplok, Ayam Goreng Dada), bukan mockup buatan AI.",
       "aspectRatio": "16:10",
       "minWidth": 1600,
       "format": ["webp", "png"],
-      "altText": "Makanan Indonesia asli bersanding dengan tampilan fitur Menu Hari Ini di aplikasi FitKu",
+      "altText": "Makanan Indonesia asli bersanding dengan tampilan Buku Harian di aplikasi FitKu",
       "finalPath": "/assets/images/makanan-app-sanding.webp",
-      "status": "pending",
-      "dependsOn": "Screenshot resmi fitur Menu Hari Ini dari app FitKu (bukan placeholder)"
+      "status": "ready",
+      "dependsOn": "Screenshot resmi Home/Buku Harian dari app FitKu (bukan placeholder) — diambil 2026-08-29 dari Preview"
     },
     {
       "id": "tangan-phone",
