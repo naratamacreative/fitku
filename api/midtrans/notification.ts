@@ -6,7 +6,7 @@
 // is verified against Midtrans's own signature before anything is granted.
 export const config = { runtime: 'edge' }
 
-import { expiryFor, getServiceClient, isPaidPlan, json, sha512Hex } from './_shared.ts'
+import { expiryFor, getServiceClient, isPaidPlan, json, sha512Hex } from './_shared.js'
 
 interface MidtransNotification {
   order_id?: string

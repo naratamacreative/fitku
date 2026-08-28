@@ -4,7 +4,7 @@
 // short-lived Snap `token`, which Snap.js uses to open the payment UI.
 export const config = { runtime: 'edge' }
 
-import { getAuthenticatedUser, getServiceClient, isPaidPlan, json, PLAN_AMOUNTS, PLAN_ITEM_NAMES } from './_shared.ts'
+import { getAuthenticatedUser, getServiceClient, isPaidPlan, json, PLAN_AMOUNTS, PLAN_ITEM_NAMES } from './_shared.js'
 
 // Sandbox only — this task is explicitly Sandbox testing (see fitku-security-status
 // memory: real payment stays blocked until backend entitlement + legal land). Switching
