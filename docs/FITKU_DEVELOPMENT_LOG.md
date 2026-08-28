@@ -1630,3 +1630,56 @@ Tidak ada dari sisi fungsi inti (kirim pesan, konteks, guardrail off-topic, tida
 
 ### 10. Next Step
 Task 2 (AI Coach OpenAI Edge Function) dinyatakan **selesai** — semua testing wajib dari spec awal (kirim pesan, konfirmasi dari OpenAI, cek key tidak bocor, off-topic ditolak, konteks user terpakai) sudah lolos di production sungguhan, bukan cuma di build/handler lokal. Tidak ada pekerjaan lanjutan yang direncanakan sendiri.
+
+---
+
+## 2026-08-28 (lanjutan 4) — Update Logo FitKu ke Brand Baru
+
+### 1. Tanggal
+2026-08-28
+
+### 2. Tujuan
+User minta ganti seluruh penggunaan logo/brand mark lama di aplikasi dengan asset logo baru, dengan syarat: pakai asset resmi (bukan recreate via CSS/SVG), pilih varian sesuai konteks, jangan ubah layout/spacing/typography/UX yang tidak berkaitan, jangan hapus asset lama sebelum yakin tidak dipakai lagi.
+
+### 3. Root Cause / Investigasi
+
+**Audit lokasi logo:** grep menyeluruh atas `grad-hero` (utility gradient yang dipakai di banyak tempat) dan teks "FitKu" di seluruh `src/` menemukan HANYA DUA lokasi yang benar-benar representasi identitas/brand FitKu (bukan sekadar UI accent yang kebetulan pakai gradient brand yang sama):
+1. `src/features/welcome/Welcome.tsx` — hero mark di atas Welcome screen: lingkaran gradient + SVG hand-drawn (siluet orang + 2 leaf, sama sekali tidak mirip brand baru) + teks "FitKu" + tagline.
+2. `public/favicon.svg` — icon tab browser, ternyata sebuah mark ungu abstrak (panah/petir) yang SAMA SEKALI TIDAK ADA HUBUNGANNYA dengan brand FitKu manapun (kemungkinan sisa scaffold/template lama).
+
+Lokasi LAIN yang memakai `grad-hero` (Button primary, Chip active, ProgressDots, tab aktif di Progress, badge di FoodTracker/Dashboard/AiCoach, tombol di ErrorBoundary, ring "Progress dimulai" di ResultMoment) DIKONFIRMASI BUKAN representasi logo — itu cuma reuse utility class gradient brand untuk aksen UI (tombol, badge, dsb), bukan penempatan identitas/logo. Tidak disentuh, sesuai instruksi "jangan ubah UX yang tidak berkaitan dengan pergantian logo". `public/icons.svg` dicek juga — ternyata sprite ikon sosial (bluesky/discord/github/x) dari scaffold lama, tidak dipakai di manapun di `src/`, tidak terkait brand FitKu sama sekali — dibiarkan.
+
+**Masalah asset (2 putaran):**
+- **Putaran 1**: satu-satunya file di `landing/` ternyata brand-guideline SHEET (1254×1254, flat RGB, TANPA alpha channel) — bukan asset siap pakai. User diberi pertanyaan eksplisit (bukan ditebak), user memilih menyediakan file asset asli. User lalu menaruh 4 file PNG baru (semua RGBA, alpha genuinely transparan, dikonfirmasi lewat PIL): `fitku-logo-primary-transparent.png` (578×199), `fitku-wordmark-primary-transparent.png` (367×167), `fitku-icon-transparent.png` (86×93), `fitku-logo-dark-transparent.png` (194×62).
+- **Putaran 2 (setelah implementasi awal)**: user melaporkan logo BLUR di dark mode. Investigasi: `fitku-logo-dark-transparent.png` resolusi native cuma 194×62, ditampilkan di CSS width 240px → upscale ~24% → blur. Diperbaiki ke width 188px (≤ native width dark variant) supaya tidak pernah upscale.
+- **Putaran 3 (setelah fix upscale)**: user melaporkan tetap pecah/pixelated, KHUSUSNYA teks tagline "AI Diet Coach Indonesia". Root cause SEBENARNYA: bukan soal upscale lagi (sudah diperbaiki), tapi resolusi NATIVE asset itu sendiri terlalu rendah untuk memuat 3 elemen (icon+wordmark+tagline) sekaligus dalam kanvas 194×62px — tagline kebagian hanya ~8-10px tinggi native, jauh di bawah cukup untuk teks tanpa terlihat jaggy, dengan ATAU TANPA upscaling CSS. Tidak ada trik CSS yang bisa memperbaiki resolusi sumber yang memang rendah.
+
+### 4. Keputusan yang diambil
+
+- **Pendekatan final**: pisahkan icon dari teks. Icon graphic (`fitku-icon-transparent.png`, 86×93, cuma bentuk/warna flat tanpa detail teks halus — resolusi segitu sudah cukup untuk bentuk sederhana) dipakai sebagai `<img>` di kedua tema (light & dark) — warnanya (teal/ungu/navy) sudah kontras cukup di kedua background, tidak perlu varian dark terpisah untuk si icon. Wordmark "FitKu" + tagline "AI Diet Coach Indonesia" DIKEMBALIKAN jadi teks DOM asli (persis pola yang SUDAH ADA sebelumnya di kode), bukan gambar — karena font yang dipakai (`--font-display: "Sora"`) SUDAH font resmi brand (dikonfirmasi cocok dengan spec tipografi di brand sheet: "Sora Bold"), dan teks DOM selalu tajam di resolusi/DPI berapa pun, tidak pernah kena masalah resolusi source image.
+- **Ini BUKAN "membuat ulang logo via CSS/SVG"** — larangan itu ditujukan ke elemen GRAFIS/mark (dan itu sudah dipakai dari asset resmi, bukan digambar ulang). Teks "FitKu" sebagai teks biasa dengan font resmi brand bukan rekreasi logo, itu wordmark yang memang secara native adalah teks, ditulis dengan font yang benar.
+- **3 dari 4 asset baru** (`fitku-logo-primary-transparent.png`, `fitku-wordmark-primary-transparent.png`, `fitku-logo-dark-transparent.png`) TIDAK dipakai di implementasi final Welcome.tsx — disimpan tetap di `public/brand/` (tidak dihapus) untuk kemungkinan pemakaian lain di masa depan (landing page, app store listing, social share image) yang punya ruang lebih besar untuk lockup resolusi tinggi.
+- **Favicon**: diganti dari `favicon.svg` (mark ungu tidak terkait) ke `fitku-icon-transparent.png` via `<link rel="icon" type="image/png">` — icon PNG resolusi 86×93 cukup untuk ukuran favicon standar (16-48px), tidak ada masalah resolusi di sini. File `favicon.svg` LAMA TIDAK DIHAPUS (masih ada di `public/`, cuma sudah tidak direferensikan di `index.html` — dikonfirmasi lewat grep tidak ada referensi lain ke file itu di manapun), sesuai instruksi jangan hapus sebelum yakin tidak dipakai lagi.
+
+### 5. Implementasi
+`src/features/welcome/Welcome.tsx`: hapus SVG hand-drawn lama + lingkaran gradient custom, ganti dengan `<img src="/brand/fitku-icon-transparent.png">` (76px tinggi) di dalam wrapper radial-glow yang sudah ada (disesuaikan ukurannya dari 132px ke 100px supaya proporsional dengan icon yang lebih kecil dari SVG lama) — teks "FitKu"/tagline di bawahnya TIDAK diubah sama sekali dari kode aslinya (class, warna, posisi persis sama). `index.html`: satu baris `<link rel="icon">` diganti dari svg lama ke png baru. `public/brand/` (folder baru): 4 file PNG di-copy dari `landing/` (sumber asli tetap ada di `landing/`, tidak dipindah/dihapus).
+
+### 6. File yang berubah
+`src/features/welcome/Welcome.tsx`, `index.html`, `public/brand/fitku-icon-transparent.png` (baru), `public/brand/fitku-logo-primary-transparent.png` (baru, belum dipakai), `public/brand/fitku-wordmark-primary-transparent.png` (baru, belum dipakai), `public/brand/fitku-logo-dark-transparent.png` (baru, belum dipakai). Tidak ada file lain disentuh — `public/favicon.svg` dan `public/icons.svg` dibiarkan ada di disk, cuma `favicon.svg` yang tidak lagi direferensikan.
+
+### 7. Dampak terhadap data/schema
+Tidak ada — murni asset & 1 komponen presentasional, tidak menyentuh data/schema apa pun.
+
+### 8. Testing yang benar-benar dilakukan (tested by Alig, browser sungguhan via Claude in Chrome)
+- **Build**: `npm run build` (`tsc -b && vite build`) — 0 TypeScript error, dijalankan ULANG setelah SETIAP revisi (implementasi awal, fix upscale, fix final icon+DOM-text) — total 3× build, semuanya 0 error.
+- **Visual light mode, desktop (900px) & mobile (390px)**: icon tajam, teks "FitKu"+tagline tajam (DOM text), radial glow proporsional, tidak ada elemen terpotong/overflow.
+- **Visual dark mode, desktop & mobile**: sama — dikonfirmasi lewat `zoom` pada area logo, tidak ada blur/pixelation di icon maupun teks (dua putaran bug sebelumnya SUDAH diperbaiki dan diverifikasi ulang di kedua tema).
+- **Favicon**: dicek lewat `fetch()` terhadap `<link rel="icon">` yang aktif di halaman — status 200, `content-type: image/png`, ukuran byte cocok persis dengan file source (12963 bytes) — bukan broken image.
+- **Console**: dicek `onlyErrors: true` di light & dark mode setelah reload — 0 error di kedua kondisi (tidak ada 404 asset/broken image).
+- **Grep referensi logo lama**: dikonfirmasi tidak ada lagi referensi ke `favicon.svg` di manapun (`grep -rn "favicon.svg"` kosong), dan SVG hand-drawn lama di `Welcome.tsx` sudah terhapus total dari kode (bukan cuma disembunyikan).
+
+### 9. Bug yang belum diverifikasi
+Tidak ada terkait fungsi logo — 3 putaran bug (asset bukan file siap pakai → blur upscale → pixelasi resolusi native) semuanya ditemukan lewat feedback user langsung dan sudah diperbaiki + diverifikasi ulang secara visual setiap putaran, bukan diasumsikan selesai dari build saja.
+
+### 10. Next Step
+Tidak ada pekerjaan lanjutan yang direncanakan sendiri. Catatan untuk masa depan: kalau nanti ada halaman baru yang butuh lockup penuh (icon+wordmark+tagline) dalam SATU gambar dengan ruang cukup besar (misalnya og:image untuk social share, atau splash screen PWA), varian `fitku-logo-primary-transparent.png` (578×199, resolusi cukup tinggi) sudah tersedia di `public/brand/` dan siap dipakai — TAPI varian dark-nya (`fitku-logo-dark-transparent.png`) perlu diregenerasi di resolusi lebih tinggi dulu (native sekarang cuma 194×62) kalau mau dipakai di background gelap dengan ukuran tampil lebih besar dari ~190px, supaya tidak kena masalah resolusi yang sama seperti yang ditemukan di pass ini.
