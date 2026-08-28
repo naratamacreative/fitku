@@ -1538,3 +1538,45 @@ Tidak ada perubahan Dexie schema. Tidak ada dependency baru ditambahkan ke `pack
 
 ### 10. Next Step
 User perlu: (1) tambahkan `OPENAI_API_KEY` yang sama di Vercel dashboard (Environment Variables) untuk production, (2) setelah redeploy, coba AI Coach langsung di `fitku.fit` dan konfirmasi balasan benar-benar dari OpenAI + cek DevTools Network tab sendiri bahwa tidak ada key di request manapun, (3) kalau mau uji lokal penuh (Vite+Edge Function sekaligus), install `vercel` CLI di lingkungan lokal user sendiri (bukan lewat sesi ini) dan jalankan `vercel dev` — kemungkinan besar tidak akan kena masalah `Cannot find module 'bytes'` yang sama karena itu tampak spesifik ke environment sandbox sesi ini.
+
+---
+
+## 2026-08-28 (lanjutan 2) — AI Coach Production Testing: Root Cause 500 Ditemukan (Bukan Bug Kode)
+
+### 1. Tanggal
+2026-08-28
+
+### 2. Tujuan
+Browser extension (Claude in Chrome) baru aktif di sesi ini — user minta testing end-to-end AI Coach langsung di `fitku.fit` production (buka AI Coach, kirim "hallo", cek request masuk `/api/chat`, cek key tidak bocor di Network tab, test pertanyaan off-topic), dengan instruksi eksplisit: kalau gagal, JANGAN langsung ubah kode — cari root cause aktual dulu dari status code/response body/console.
+
+### 3. Root Cause
+Dites langsung di `fitku.fit/coach` (browser sungguhan, user yang sudah login/onboarding sebelumnya): kirim "hallo" → bubble AI Coach menjawab **"AI Coach sedang mengalami gangguan. Coba lagi sebentar lagi."** — ini pesan generik frontend untuk SEMUA `!res.ok` dari `/api/chat` (`AiCoach.tsx`), jadi tidak menunjukkan penyebab spesifik dari tampilan UI saja. Diselidiki lebih lanjut, TIDAK langsung diasumsikan/diubah kode-nya:
+- `read_network_requests` (tab yang sama) → request `POST https://fitku.fit/api/chat` **statusCode: 500**, konsisten di 3 percobaan berturut-turut.
+- Body response diperiksa langsung lewat `fetch()` dari console halaman yang sama (bukan lewat DevTools UI manual, tapi hasilnya identik): `{"error":"AI Coach sedang tidak tersedia. Coba lagi nanti."}`.
+- Pesan ini **PERSIS** string yang di-`return` oleh `api/chat.ts` di baris `if (!apiKey) return json({ error: 'AI Coach sedang tidak tersedia. Coba lagi nanti.' }, 500)` — bukan error generik Vercel platform (yang akan punya format/body berbeda, biasanya HTML error page atau `{"error":{"code":"FUNCTION_INVOCATION_FAILED",...}}`), dan bukan exception tak tertangani di kode (yang akan masuk ke `catch` block dan mengembalikan pesan 502 yang berbeda, "AI Coach sedang mengalami gangguan..." dari `api/chat.ts`, bukan "tidak tersedia").
+- **Kesimpulan: `process.env.OPENAI_API_KEY` undefined di Vercel Edge Function production** — persis skenario yang sudah diprediksi & dicatat sebagai "Next Step" di entry sebelumnya (belum ditambahkan user di Vercel dashboard, ATAU sudah ditambahkan tapi belum redeploy — Vercel env var baru butuh deployment baru untuk ter-load ke Edge Function yang sedang jalan).
+
+### 4. Keputusan yang diambil
+**TIDAK ADA KODE YANG DIUBAH.** Sesuai instruksi eksplisit user ("jangan langsung menyimpulkan atau mengubah kode") dan karena root cause yang ditemukan memang bukan bug — kode berjalan PERSIS sesuai desain: request sampai ke Edge Function (routing Vercel benar, bukan 404), guard "key hilang" ter-trigger dengan benar, response 500 dengan pesan Indonesia yang jelas dikembalikan, frontend menangkap `!res.ok` dan menampilkan pesan ramah ke user, input kembali aktif setelah error (state `sending` ter-reset, tidak stuck). Semua ini justru MEMBUKTIKAN error-handling path dari Task 2 bekerja dengan benar di production sungguhan.
+
+### 5. Implementasi
+Tidak ada — pass ini murni investigasi/testing, tidak ada file kode yang disentuh.
+
+### 6. File yang berubah
+Tidak ada file kode. Hanya `docs/FITKU_DEVELOPMENT_LOG.md` (entry ini).
+
+### 7. Dampak terhadap data/schema
+Tidak ada.
+
+### 8. Testing yang benar-benar dilakukan (tested by Alig, browser sungguhan via Claude in Chrome)
+- **Buka AI Coach production**: navigasi ke `https://fitku.fit/coach` — halaman render normal, semua card (Daily Coaching, Weekly Insight, Pro insights) tampil dengan data user sungguhan yang sudah ada.
+- **Kirim "hallo" lewat UI sungguhan** (klik input, ketik, Enter — bukan simulasi): bubble user "hallo" muncul, diikuti bubble AI Coach dengan pesan error ramah (bukan crash, bukan UI freeze, bukan balasan rule-based lama).
+- **Network tab (via `read_network_requests`, setara DevTools)**: dikonfirmasi request `POST /api/chat` benar-benar terkirim ke endpoint yang benar, status 500. Body request (dikonstruksi dari kode `AiCoach.tsx` yang sudah direview) berisi HANYA `userId`/`message`/`context` — **tidak ada `OPENAI_API_KEY` atau field sensitif apa pun di request dari frontend**, dikonfirmasi ulang lewat pemanggilan `fetch('/api/chat', ...)` langsung dari console halaman (request yang sama persis dengan yang dikirim UI) — body maupun response TIDAK mengandung string key di manapun.
+- **Console**: dicek, tidak ada console error/exception yang muncul — errornya ditangani rapi lewat state React (`!res.ok` branch), bukan unhandled exception.
+- **Pertanyaan off-topic**: TIDAK dites terpisah pada pass ini — karena root cause (key hilang) di-cek SEBELUM kode sempat memanggil OpenAI sama sekali (lihat urutan di `api/chat.ts`: rate-limit check → apiKey check → baru panggil OpenAI), pertanyaan APAPUN (in-topic atau off-topic) akan menghasilkan 500 yang SAMA PERSIS selama key belum ada — mengulang tes ini sekarang cuma akan mengonfirmasi ulang temuan yang sama, bukan menguji guardrail off-topic yang sebenarnya. Guardrail off-topic SUDAH diverifikasi sebelumnya lewat pemanggilan handler langsung dengan key asli (entry 2026-08-28 lanjutan, poin 8) — behaviornya tidak berubah, cuma belum bisa dikonfirmasi ulang lewat production karena blocker infra ini.
+
+### 9. Bug yang belum diverifikasi
+Alur sukses penuh di production (balasan OpenAI asli muncul di UI, bukan cuma pesan error) masih belum bisa dikonfirmasi visual — bukan karena kode salah, tapi karena `OPENAI_API_KEY` belum aktif di Vercel production. Begitu env var ditambahkan + redeploy, ini perlu diulang.
+
+### 10. Next Step
+User perlu: (1) buka Vercel dashboard project FitKu → Settings → Environment Variables → pastikan `OPENAI_API_KEY` benar-benar ADA (bukan cuma pernah dicoba ditambahkan) dan value-nya valid, (2) kalau baru ditambahkan/diedit, **trigger redeploy baru** (env var tidak otomatis berlaku ke deployment yang sedang jalan), (3) setelah itu, ulangi test yang sama (kirim "hallo" + pertanyaan off-topic) — kalau session ini masih aktif, saya bisa langsung ulangi lewat browser begitu dikonfirmasi sudah redeploy.
