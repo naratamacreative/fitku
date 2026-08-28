@@ -1783,3 +1783,58 @@ Seluruh alur runtime (poin 8, daftar "TIDAK BISA dites") — bukan karena kode d
 
 ### 10. Next Step
 User perlu: (1) jalankan `supabase/migrations/0001_init.sql` lalu `0002_seed_foods.sql` via Supabase SQL Editor (dashboard) — urutan penting, 0002 butuh tabel `foods` dari 0001 sudah ada; (2) isi `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY` di `.env` (lihat `.env.example`); (3) setelah itu, testing end-to-end penuh perlu dijalankan (sign-up OTP, onboarding menulis ke `profiles`, CRUD tiap fitur, logout/login ulang) sebelum migrasi ini dinyatakan benar-benar selesai — belum boleh di-deploy ke production sebelum itu.
+
+---
+
+## 2026-08-28 (lanjutan 7) — Migrasi Supabase: Ganti ke Email+Password, 3 Bug Infra Ditemukan+Diperbaiki, E2E PASS Penuh
+
+### 1. Tanggal
+2026-08-28
+
+### 2. Tujuan
+Melanjutkan testing end-to-end migrasi Supabase (lanjutan 6) setelah user menyelesaikan setup infrastruktur (migrasi SQL dijalankan, `.env` diisi). Testing menemukan 3 masalah infra berurutan (semua di luar kode, di sisi konfigurasi Supabase) dan 1 bug kode nyata di `AppStateContext` — semua diperbaiki/diselesaikan sebelum akhirnya seluruh alur E2E (signup, onboarding→profiles, CRUD 3 tabel, isolasi RLS, logout/login) PASS.
+
+### 3. Root Cause per Masalah (kronologis, masing-masing dikonfirmasi via bukti aktual, bukan diasumsikan)
+
+**Masalah 1 — `VITE_SUPABASE_URL` salah format:** request `signInWithOtp` menghasilkan `POST /rest/v1/auth/v1/otp` (404) — path dobel. Root cause: `.env` user berisi "REST API URL" dari dashboard (sudah termasuk `/rest/v1`), bukan "Project URL" polos. User perbaiki manual di `.env`.
+
+**Masalah 2 — Email OTP tidak menampilkan kode:** setelah URL diperbaiki, email yang diterima cuma berisi link konfirmasi, tanpa kode 6-digit terlihat. Root cause: template email default Supabase ("Confirm signup") tidak menyertakan `{{ .Token }}` kecuali diedit manual — dan project user terkunci ke template default tanpa custom SMTP. **Keputusan: ganti arsitektur auth dari Email OTP ke Email+Password konvensional** (Register & Login), sesuai instruksi eksplisit user — `Auth.tsx` ditulis ulang total (2 mode: `login`/`register`, `signInWithPassword`/`signUp`), `Welcome.tsx`'s 2 tombol diberi `navigate('/auth', {state:{mode}})` untuk default mode yang sesuai. `AppStateContext.tsx` DIKONFIRMASI tidak perlu berubah — sudah auth-method-agnostic (cuma dengar `Session` object generik).
+
+**Masalah 3 — Rate limit email Supabase:** percobaan OTP+signup berulang (dari masalah 1 & 2) memicu `error.code: "over_email_send_rate_limit"` saat signup Email+Password dicoba. Root cause: Supabase tanpa custom SMTP punya rate limit ketat (~2-4 email/jam). **Keputusan (pilihan user)**: matikan "Confirm email" di Authentication → Providers → Email — signup jadi tidak perlu kirim email sama sekali, `data.session` langsung ada setelah `signUp()`. Trade-off (siapa pun bisa daftar pakai email siapa saja tanpa verifikasi kepemilikan) diterima untuk tahap testing, dicatat eksplisit untuk diaktifkan lagi sebelum production nyata.
+
+**Masalah 4 — PGRST205, semua tabel "not found in schema cache":** setelah signup berhasil (`hasSession: true`), SEMUA query tabel (`profiles`, `foods`, `food_logs`, dst — dites satu-satu, bukan cuma satu) gagal dengan `PGRST205`. Root cause: PostgREST schema cache belum ter-refresh setelah migrasi SQL dijalankan — gotcha umum Supabase. Fix: `NOTIFY pgrst, 'reload schema';` via SQL Editor (dilakukan user). Butuh beberapa detik untuk propagasi — dikonfirmasi via retry dengan module import fresh (bukan cache client-side) sampai `foods` benar-benar terbaca.
+
+**Masalah 5 — BUG KODE NYATA, direproduksi 2×: form onboarding reset ke step 1 di tengah pengisian.** Awalnya diduga false-positive automasi (viewport window sempat berubah ukuran dari sesi test logo sebelumnya, jadi koordinat klik meleset) — TAPI setelah dites ulang dengan window size tetap DAN klik berbasis elemen (bukan koordinat), reset TETAP terjadi persis di titik yang sama. Root cause SEBENARNYA ditemukan via instrumentasi `onAuthStateChange` langsung: `AppStateContext`'s `useEffect(..., [session])` mengeset `loading=true` ULANG setiap kali `onAuthStateChange` fire (termasuk event yang tidak mengubah identitas user, misal refresh token/tab-visibility) — `loading=true` membuat `OnboardingGate` di `App.tsx` render `null`, MENGE-UNMOUNT `OnboardingFlow` beserta seluruh state lokalnya (`stepIndex`, `draft`). Fix: restrukturisasi `AppStateContext` supaya `loading` HANYA pernah `true→false` SEKALI di bootstrap awal (pakai `useRef` sebagai guard permanen), event auth berikutnya tetap update `session`/`user` tapi tidak lagi men-trigger unmount rute yang sedang aktif. Diverifikasi ulang dengan sequence identik — onboarding selesai penuh tanpa reset.
+
+### 4. Keputusan yang diambil
+Semua keputusan sudah dijabarkan per-masalah di atas. Ringkasan perubahan kode: `Auth.tsx` (OTP→Email+Password total), `AppStateContext.tsx` (fix loading-flicker/unmount bug). `Welcome.tsx` disesuaikan (mode login/register per tombol). Tidak ada perubahan skema database.
+
+### 5. Implementasi
+File diubah: `src/features/auth/Auth.tsx` (rewrite total), `src/shared/context/AppStateContext.tsx` (fix bug), `src/features/welcome/Welcome.tsx` (state mode di navigate).
+
+### 6. File yang berubah
+`src/features/auth/Auth.tsx`, `src/shared/context/AppStateContext.tsx`, `src/features/welcome/Welcome.tsx`.
+
+### 7. Dampak terhadap data/schema
+Tidak ada perubahan skema. 2 akun test dibuat di Supabase Auth project user (`novriekadito9+fitku4@gmail.com`, `+fitku5@gmail.com`) beserta 1 baris `profiles`, 1 `weight_entries` (79.5kg), 1 `hydration_logs` (3 gelas) untuk akun `+fitku4` — data test, BELUM dibersihkan, di-flag ke user untuk keputusan (hapus manual atau biarkan).
+
+### 8. Testing yang benar-benar dilakukan (tested by Alig, browser sungguhan, database dikonfirmasi langsung tiap langkah — bukan cuma dari UI)
+
+- **Build**: `npm run build` — 0 TypeScript error (dijalankan setelah tiap perubahan kode).
+- **Signup Email+Password**: berhasil, `hasSession: true` dikonfirmasi via console — TIDAK ada email terkirim (Confirm email off).
+- **Onboarding → `profiles`**: seluruh 6 step diisi via UI sungguhan (klik berbasis elemen, bukan koordinat), submit di step terakhir → redirect ke Dashboard. **Dikonfirmasi langsung query `profiles` table**: semua field (age 30, height_cm 175, weight_kg 80, goal lose_weight, target_calories 2211, dst) cocok PERSIS dengan yang diisi di form.
+- **food_logs CRUD**: cari "Nasi Putih" (ILIKE query ke Postgres, hasil benar) → tambah ke basket → simpan → Dashboard update (130/2.211 kkal) → **dikonfirmasi row ada di database** dengan `food_id` ter-link benar ke `foods`, `meal_type: 'dinner'`. Hapus via UI (double-tap konfirmasi) → **dikonfirmasi row hilang dari database** (count: 0).
+- **weight_entries CRUD**: tambah 79.5kg via `/progress?tab=weight` → tampil di UI → **dikonfirmasi row di database** persis.
+- **hydration_logs CRUD (composite PK + upsert)**: tambah 3 gelas via `/hydration` → **dikonfirmasi row di database** dengan primary key `(user_id, log_date)` asli (bukan string key lagi).
+- **Isolasi RLS — READ**: login sebagai akun kedua (`+fitku5`), coba baca `profiles`/`weight_entries`/`hydration_logs` milik akun pertama dengan `user_id` eksplisit — **SEMUA mengembalikan array kosong**. Bahkan `select('id')` tanpa filter di `profiles` mengembalikan `[]` (tidak bocor data akun manapun).
+- **Isolasi RLS — WRITE (forgery)**: sebagai akun kedua, coba `INSERT` ke `weight_entries` dengan `user_id` akun pertama — **DITOLAK** oleh Postgres: `"new row violates row-level security policy"`, code `42501`. Membuktikan `WITH CHECK` clause bekerja, bukan cuma `USING` (read-side).
+- **`foods` shared catalog**: dikonfirmasi tetap terbaca oleh akun kedua (baru, belum onboarding) — policy `select using (true)` bekerja lepas dari status profil.
+- **Logout**: klik "Keluar" di Settings → redirect ke `/welcome` otomatis (reaktif dari `onAuthStateChange`).
+- **Login ulang**: email+password akun pertama → langsung ke Dashboard (skip onboarding, profil ditemukan), target kalori konsisten dengan sebelumnya.
+- **Console**: dicek bersih (0 error) di kondisi akhir setelah semua fix — 17 error yang sempat muncul semuanya dari fase troubleshooting SEBELUM fix (masalah 1-4), dikonfirmasi via timestamp, bukan dari alur yang sudah diperbaiki.
+
+### 9. Bug yang belum diverifikasi
+Tidak ada dari sisi fungsi inti — auth (signup/login/logout), onboarding→profiles, CRUD 3 tabel representatif (food_logs/weight_entries/hydration_logs), dan RLS (read isolation + write forgery prevention) semuanya diverifikasi langsung ke database, bukan cuma dari tampilan UI. **Belum dites eksplisit**: 7 repository lain yang tidak representatif-dites langsung (`noteRepository`, `exerciseRepository`, `myFoodRepository`, `foodReportRepository`, `subscriptionRepository`, `foodRepository.search` sudah dites, `userRepository.update` belum) — polanya identik dengan yang sudah dites (sama-sama lewat `supabase.from(table)` dengan RLS yang sama), risiko rendah tapi tidak sama dengan "sudah dibuktikan."
+
+### 10. Next Step
+Migrasi Dexie→Supabase dinyatakan **berhasil dan siap** dari sisi fungsi inti. Rekomendasi sebelum production sungguhan: (1) nyalakan lagi "Confirm email" di Supabase (dimatikan cuma untuk testing), pertimbangkan custom SMTP kalau volume signup nanti tinggi (menghindari rate limit yang sama); (2) bersihkan 2 akun test + data terkait di Supabase (opsional, milik user); (3) kalau mau lebih yakin, uji manual 7 repository yang belum representatif-dites (pola sudah terbukti benar di 3 tabel yang dites, risiko rendah).

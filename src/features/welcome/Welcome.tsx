@@ -49,8 +49,8 @@ export function Welcome() {
       </div>
 
       <div className="flex flex-col gap-2 pt-4">
-        <Button onClick={() => navigate('/auth')}>Mulai Sekarang</Button>
-        <Button variant="ghost" onClick={() => navigate('/auth')}>
+        <Button onClick={() => navigate('/auth', { state: { mode: 'register' } })}>Mulai Sekarang</Button>
+        <Button variant="ghost" onClick={() => navigate('/auth', { state: { mode: 'login' } })}>
           Saya sudah punya akun
         </Button>
       </div>
