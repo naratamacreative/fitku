@@ -3,6 +3,7 @@ import spec from '../spec/landing-page-spec.json'
 import assetManifest from '../spec/asset-manifest.json'
 import type { LandingPageSpec, AssetManifest } from './types'
 import { trackPageView } from './tracking'
+import { HeaderBar } from './components/HeaderBar'
 import { TrackedSection } from './components/TrackedSection'
 import { HeroSection } from './sections/HeroSection'
 import { ProblemSection } from './sections/ProblemSection'
@@ -37,6 +38,7 @@ export function LandingPage() {
 
   return (
     <div className="lp-root">
+      <HeaderBar />
       <div className="lp-page">
         {orderedSections.map((section) => (
           <TrackedSection id={section.id} key={section.id}>

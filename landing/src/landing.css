@@ -63,6 +63,16 @@
 
 .lp-page { max-width: 460px; margin: 0 auto; background: var(--lp-surface); }
 
+.lp-header { max-width: 460px; margin: 0 auto; display: flex; justify-content: center; align-items: center; padding: 14px 20px; background: var(--lp-bg); border-bottom: 1px solid var(--lp-line); }
+.lp-header__logo { height: 30px; width: auto; display: block; }
+.lp-header__logo--dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .lp-header__logo--light { display: none; }
+  :root:not([data-theme='light']) .lp-header__logo--dark { display: block; }
+}
+:root[data-theme='dark'] .lp-header__logo--light { display: none; }
+:root[data-theme='dark'] .lp-header__logo--dark { display: block; }
+
 .lp-section { border-top: 1px solid var(--lp-line); padding: 46px 28px 40px; }
 .lp-section:first-child { border-top: none; padding-top: 20px; }
 
