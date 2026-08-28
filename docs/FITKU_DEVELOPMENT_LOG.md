@@ -1878,3 +1878,30 @@ Kandidat 2 (env var Vercel kosong) belum dikonfirmasi/dibantah — murni dugaan 
 
 ### 10. Next Step
 User perlu: (1) cek Vercel Dashboard → Project fitku → Settings → Environment Variables → pastikan `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY` ADA untuk environment Production (nilai sama seperti di `.env` lokal); (2) redeploy setelah CSP fix ini ter-push DAN env var (jika belum ada) ditambahkan — env var baru butuh deployment baru untuk berlaku, sama seperti kasus `OPENAI_API_KEY` sebelumnya; (3) setelah redeploy, saya bisa langsung cek `fitku.fit` lewat browser untuk konfirmasi halaman sudah tidak putih lagi.
+
+---
+
+## 2026-08-28 (lanjutan 9) — Rapikan Layout AI Coach: Sticky Input, Banner Ringkas Pengganti Kartu Kosong
+
+### 1-2. Tanggal & Tujuan
+2026-08-28. Halaman `/coach` terlalu padat vertikal — user minta: (1) input chat sticky/floating di atas BottomNav, (2) kartu insight Pro yang masih "0 hari"/kosong disederhanakan jadi banner ringkas, (3) spacing lebih rapi untuk mobile.
+
+### 3-4. Root Cause & Keputusan
+Input bar sebelumnya pakai `mt-auto` di dalam container yang SCROLL sendiri — tidak benar-benar sticky, cuma jadi elemen terakhir di list panjang (user harus scroll penuh untuk mencapainya). 3 kartu insight Pro (`Tren Skor`, `Target Adaptif`, `Analisa Mendalam`) masing-masing render kartu penuh sendiri-sendiri walau isinya cuma pesan "belum cukup data" — untuk user baru (trial/Pro baru mulai), ketiganya kosong bersamaan, jadi 3 kartu nyaris identik menumpuk percuma.
+
+**Fix**: (a) input bar → `sticky bottom-2` (dalam scroll container `AppShell`, otomatis menempel tepat di atas `BottomNav` yang jadi sibling-nya, tanpa perlu ubah `AppShell`/`BottomNav`). (b) Tambah `allProInsightsEmpty` (true kalau ketiga insight sudah loaded TAPI ketiganya `!hasEnoughData`) — kalau true, render SATU banner ringkas ("✨ Insight Pro belum siap...") menggantikan 3 kartu; kalau ada SALAH SATU yang sudah punya data, sisanya yang masih kosong disembunyikan total (bukan tampil sebagai kartu kosong) — behavior lama tetap dipakai untuk kartu yang sudah terisi data. (c) Spacing outer di-rapatkan sedikit (`gap-3`→`gap-2.5`, icon header 8→7).
+
+**Bug ditemukan sendiri saat testing (browser sungguhan), diperbaiki sebelum dilaporkan selesai**: setelah input jadi sticky, pesan chat BARU bisa render tertutup sebagian oleh input bar (karena tidak ada auto-scroll — pesan baru mendarat di posisi Y yang kebetulan berada di balik posisi "stuck" input). Fix: `useRef` sentinel di akhir list pesan + `useEffect` yang `scrollIntoView` tiap `messages.length` berubah.
+
+### 5-7. Implementasi
+Satu file: `src/features/ai-coach/AiCoach.tsx`. Tidak ada perubahan skema/data.
+
+### 8. Testing (browser sungguhan, akun test yang sama)
+- Build: 0 TypeScript error.
+- Login production-data (Supabase) di localhost, buka `/coach`: 3 kartu kosong → 1 banner ringkas, halaman muat 1 layar tanpa scroll (sebelumnya perlu scroll panjang).
+- Kirim 6 pesan chat berturut-turut → sempat ketemu bug overlap (pesan baru ketutupan input) → diperbaiki dengan auto-scroll → diuji ulang, pesan baru selalu terlihat penuh di atas input, tidak ada overlap lagi.
+- Scroll manual: input tetap di posisi yang benar (tepat di atas BottomNav).
+- Console: 0 error.
+
+### 9-10. Bug belum diverifikasi / Next Step
+Tidak ada. Layout AI Coach sekarang jauh lebih ringkas, input benar-benar sticky, tidak ada regresi pada state insight yang sudah terisi data (jalur kode itu tidak diubah).

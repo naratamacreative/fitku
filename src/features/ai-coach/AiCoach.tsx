@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { exerciseRepository } from '../../data/repositories/exerciseRepository'
 import { foodLogRepository } from '../../data/repositories/foodLogRepository'
 import { hydrationRepository } from '../../data/repositories/hydrationRepository'
@@ -66,6 +66,15 @@ export function AiCoach() {
   const [applyingTarget, setApplyingTarget] = useState(false)
   const [targetApplied, setTargetApplied] = useState(false)
   const [dailyWeightTip, setDailyWeightTip] = useState<DailyWeightTip | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // The input bar is sticky now, so a new message can land at a Y position the sticky
+  // bar visually sits on top of if the view hasn't scrolled there yet — keep the newest
+  // message actually in view instead of letting it render hidden behind the input.
+  useEffect(() => {
+    if (messages.length === 0) return
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [messages.length])
 
   useEffect(() => {
     if (!user) return
@@ -143,6 +152,15 @@ export function AiCoach() {
   const coaching = generateDailyCoaching(user, totals, streak, dailyWeightTip)
   const steps = [coaching.analisa, coaching.insight, coaching.action]
 
+  // When a Pro user is too new for ANY of the 3 insight cards to have real data yet
+  // (common right after signup/trial start — all 3 thresholds take days to clear
+  // together), showing 3 near-identical "belum cukup data" cards stacked is pure
+  // vertical bloat. Collapse them into one compact banner instead. The moment even
+  // ONE has real data, fall back to the existing per-card rendering untouched.
+  const proInsightsLoaded = scoreTrend !== null && adaptiveTarget !== null && deep !== null
+  const allProInsightsEmpty =
+    proInsightsLoaded && !scoreTrend.hasEnoughData && !adaptiveTarget.hasEnoughData && !deep.hasEnoughData
+
   const handleSend = async () => {
     const text = input.trim()
     if (!text || sending) return
@@ -183,9 +201,9 @@ export function AiCoach() {
 
   return (
     <AppShell>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2.5">
         <div className="flex items-center gap-2">
-          <span className="grad-hero h-8 w-8 shrink-0 rounded-full" />
+          <span className="grad-hero h-7 w-7 shrink-0 rounded-full" />
           <b className="font-display text-sm text-ink">AI Coach</b>
         </div>
 
@@ -245,38 +263,44 @@ export function AiCoach() {
           />
         )}
 
-        {proAccess?.active && scoreTrend && (
+        {proAccess?.active && allProInsightsEmpty && (
+          <div className="flex items-center gap-3 rounded-2xl bg-pro-soft px-3.5 py-3 shadow-soft">
+            <span className="text-xl" aria-hidden="true">
+              ✨
+            </span>
+            <p className="text-[11px] leading-snug text-pro-ink">
+              <b>Insight Pro belum siap.</b> Catat makanan &amp; berat badan rutin untuk membuka tren skor, target
+              adaptif, dan analisa 30 hari.
+            </p>
+          </div>
+        )}
+
+        {proAccess?.active && !allProInsightsEmpty && scoreTrend?.hasEnoughData && (
           <div className="flex flex-col gap-2 rounded-2xl bg-surface p-3.5 shadow-soft">
             <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Tren Skor · 14 hari</span>
-            {!scoreTrend.hasEnoughData ? (
-              <p className="text-[11px] leading-relaxed text-ink-dim">{scoreTrend.message}</p>
-            ) : (
-              <>
-                <p className="font-display text-2xl font-bold tabular-nums text-ink">{scoreTrend.avgScore}</p>
-                <svg viewBox="0 0 220 40" width="100%" height="40" preserveAspectRatio="none">
-                  <line x1="0" y1="40" x2="220" y2="40" stroke="var(--fk-line)" strokeWidth="1" />
-                  <polyline
-                    points={buildScoreSparkline(scoreTrend.points)}
-                    fill="none"
-                    stroke="var(--fk-pro)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <p className="text-[11px] leading-relaxed text-ink">{scoreTrend.trendText}</p>
-                {scoreTrend.correlationText && (
-                  <div className="rounded-xl bg-accent-soft px-3 py-2 text-[11px] text-ink">
-                    <b className="text-accent">Pola ditemukan: </b>
-                    {scoreTrend.correlationText}
-                  </div>
-                )}
-              </>
+            <p className="font-display text-2xl font-bold tabular-nums text-ink">{scoreTrend.avgScore}</p>
+            <svg viewBox="0 0 220 40" width="100%" height="40" preserveAspectRatio="none">
+              <line x1="0" y1="40" x2="220" y2="40" stroke="var(--fk-line)" strokeWidth="1" />
+              <polyline
+                points={buildScoreSparkline(scoreTrend.points)}
+                fill="none"
+                stroke="var(--fk-pro)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <p className="text-[11px] leading-relaxed text-ink">{scoreTrend.trendText}</p>
+            {scoreTrend.correlationText && (
+              <div className="rounded-xl bg-accent-soft px-3 py-2 text-[11px] text-ink">
+                <b className="text-accent">Pola ditemukan: </b>
+                {scoreTrend.correlationText}
+              </div>
             )}
           </div>
         )}
 
-        {proAccess?.active && adaptiveTarget && (
+        {proAccess?.active && !allProInsightsEmpty && adaptiveTarget?.hasEnoughData && (
           <div className="flex flex-col gap-2 rounded-2xl bg-surface p-3.5 shadow-soft">
             <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Target Adaptif</span>
             <p className="text-[11.5px] leading-relaxed text-ink">{adaptiveTarget.message}</p>
@@ -294,21 +318,15 @@ export function AiCoach() {
           </div>
         )}
 
-        {proAccess?.active && deep && (
+        {proAccess?.active && !allProInsightsEmpty && deep?.hasEnoughData && (
           <div className="flex flex-col gap-2 rounded-2xl bg-surface p-3.5 shadow-soft">
             <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Analisa Mendalam · 30 hari</span>
-            {!deep.hasEnoughData ? (
-              <p className="text-[11px] leading-relaxed text-ink-dim">{deep.message}</p>
-            ) : (
-              <>
-                <p className="text-[11.5px] leading-relaxed text-ink">{deep.headline}</p>
-                <div className="flex flex-col gap-1.5 text-[11px] leading-relaxed text-ink-dim">
-                  <p>⚖️ {deep.weightTrendText}</p>
-                  {deep.exerciseCorrelationText && <p>🏃 {deep.exerciseCorrelationText}</p>}
-                  {deep.hydrationCorrelationText && <p>💧 {deep.hydrationCorrelationText}</p>}
-                </div>
-              </>
-            )}
+            <p className="text-[11.5px] leading-relaxed text-ink">{deep.headline}</p>
+            <div className="flex flex-col gap-1.5 text-[11px] leading-relaxed text-ink-dim">
+              <p>⚖️ {deep.weightTrendText}</p>
+              {deep.exerciseCorrelationText && <p>🏃 {deep.exerciseCorrelationText}</p>}
+              {deep.hydrationCorrelationText && <p>💧 {deep.hydrationCorrelationText}</p>}
+            </div>
           </div>
         )}
 
@@ -334,9 +352,10 @@ export function AiCoach() {
               {m.text}
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
-        <div className="mt-auto flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 shadow-soft">
+        <div className="sticky bottom-2 z-10 mt-1 flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 shadow-soft ring-1 ring-line/60">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
