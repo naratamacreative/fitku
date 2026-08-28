@@ -1,18 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { subscriptionRepository } from '../../data/repositories/subscriptionRepository'
-import type { SubscriptionPlan } from '../../data/types/log.types'
+import type { SubscriptionPlan, SubscriptionStatus } from '../../data/types/log.types'
 import { AppShell } from '../../shared/components/AppShell'
 import { Button } from '../../shared/components/Button'
 import { useAppState } from '../../shared/context/AppStateContext'
+import { loadSnap } from '../../shared/lib/midtransSnap'
 import { PRO_PLANS } from '../paywall/paywall.triggers'
 
 // These 4 are real and actually gated via useProAccess() — see AiCoach.tsx
 // (Weekly Insight mendalam, Target Adaptif, Tren Skor) and CalorieTab.tsx /
 // WeightTab.tsx (Riwayat & grafik penuh). Every new user gets full access to
 // all 4 during the 7-day trial (see domain/entitlement.ts), then they lock.
-// Replaces the earlier 4-benefit list (Chat lanjutan, Menu personal harian,
-// Riwayat unlimited, Analisa progress mendalam) that was never actually
-// enforced anywhere — see the P0 audit note in git history for that finding.
 const BENEFITS = [
   'Weekly Insight mendalam — analisa pola 30 hari, bukan cuma 7',
   'Riwayat & grafik kalori dan berat badan tanpa batas',
@@ -20,20 +18,92 @@ const BENEFITS = [
   'Skor harian dengan tren & korelasi kebiasaan',
 ]
 
+const PLAN_LABEL: Record<SubscriptionPlan, string> = {
+  free: 'Free',
+  pro_monthly: 'Pro 1 Bulan',
+  pro_annual: 'Pro 3 Bulan',
+  pro_lifetime: 'Pro 12 Bulan',
+}
+
+type PayState = 'idle' | 'creating' | 'confirming' | 'error'
+
+// After Snap reports success/pending, the actual grant happens asynchronously via the
+// Midtrans notification webhook (api/midtrans/notification.ts) — the client can no
+// longer write subscription_status itself (see supabase/migrations/0003_payments.sql).
+// Poll briefly for the webhook to land instead of trusting Snap's callback alone.
+const POLL_INTERVAL_MS = 1500
+const POLL_MAX_TRIES = 20
+
 export function Premium() {
-  const { user } = useAppState()
+  const { user, session } = useAppState()
   const [selected, setSelected] = useState<SubscriptionPlan>('pro_annual')
-  const [activating, setActivating] = useState(false)
-  const [activated, setActivated] = useState(false)
+  const [sub, setSub] = useState<SubscriptionStatus | null>(null)
+  const [payState, setPayState] = useState<PayState>('idle')
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!user) return
+    subscriptionRepository.get(user.id).then(setSub)
+  }, [user])
 
   if (!user) return null
 
+  const isActivePaid = sub && sub.plan !== 'free' && sub.status === 'active'
+
+  const pollForActivation = async () => {
+    setPayState('confirming')
+    for (let i = 0; i < POLL_MAX_TRIES; i++) {
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS))
+      const latest = await subscriptionRepository.get(user.id)
+      if (latest.plan !== 'free' && latest.status === 'active') {
+        setSub(latest)
+        setPayState('idle')
+        return
+      }
+    }
+    // Still not confirmed after ~30s — Midtrans notification may just be slow (sandbox
+    // can lag). Not an error: leave the user on the confirming message rather than
+    // falsely claiming failure when the payment may still land.
+  }
+
   const handleActivate = async () => {
-    setActivating(true)
-    // No payment gateway in V1 — this records intent locally as a mock activation.
-    await subscriptionRepository.activate(user.id, selected)
-    setActivating(false)
-    setActivated(true)
+    if (!session) {
+      setError('Sesi tidak valid — coba masuk ulang.')
+      setPayState('error')
+      return
+    }
+    setPayState('creating')
+    setError('')
+
+    try {
+      const res = await fetch('/api/midtrans/create-transaction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ plan: selected }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.token) {
+        setError(data.error ?? 'Gagal membuat transaksi.')
+        setPayState('error')
+        return
+      }
+
+      const snap = await loadSnap(import.meta.env.VITE_MIDTRANS_CLIENT_KEY)
+      snap.pay(data.token, {
+        onSuccess: () => void pollForActivation(),
+        onPending: () => void pollForActivation(),
+        onError: () => {
+          setError('Pembayaran gagal. Coba lagi atau gunakan metode lain.')
+          setPayState('error')
+        },
+        onClose: () => {
+          setPayState('idle')
+        },
+      })
+    } catch {
+      setError('Gagal menghubungi server pembayaran. Cek koneksi internetmu.')
+      setPayState('error')
+    }
   }
 
   return (
@@ -44,11 +114,12 @@ export function Premium() {
           <p className="text-[11px] opacity-90">FitKu yang makin memahami kamu</p>
         </div>
 
-        {activated ? (
+        {isActivePaid ? (
           <div className="py-4 text-center">
-            <p className="font-display text-base font-bold text-ink">Terima kasih! 🎉</p>
+            <p className="font-display text-base font-bold text-ink">Premium kamu aktif 🎉</p>
             <p className="mt-1 text-sm text-ink-dim">
-              FitKu Premium kamu aktif (mode uji coba — belum ada pembayaran nyata di V1).
+              Plan aktif: <b className="text-ink">{PLAN_LABEL[sub!.plan]}</b>
+              {sub!.expiresAt && ` · berlaku sampai ${new Date(sub!.expiresAt).toLocaleDateString('id-ID')}`}
             </p>
           </div>
         ) : (
@@ -68,6 +139,7 @@ export function Premium() {
                   key={plan.id}
                   type="button"
                   onClick={() => setSelected(plan.id)}
+                  disabled={payState === 'creating' || payState === 'confirming'}
                   className={`flex-1 rounded-xl px-2 py-2 text-center ${
                     selected === plan.id ? 'border-2 border-transparent' : 'border-[1.5px] border-line'
                   }`}
@@ -89,8 +161,23 @@ export function Premium() {
               ))}
             </div>
 
-            <Button variant="pro" onClick={handleActivate} disabled={activating}>
-              {activating ? 'Memproses…' : 'Upgrade ke Premium'}
+            {payState === 'confirming' && (
+              <p className="text-center text-xs font-semibold text-accent">
+                Menunggu konfirmasi pembayaran dari Midtrans…
+              </p>
+            )}
+            {payState === 'error' && error && <p className="text-center text-xs font-semibold text-pro">{error}</p>}
+
+            <Button
+              variant="pro"
+              onClick={handleActivate}
+              disabled={payState === 'creating' || payState === 'confirming'}
+            >
+              {payState === 'creating'
+                ? 'Membuka pembayaran…'
+                : payState === 'confirming'
+                  ? 'Menunggu konfirmasi…'
+                  : 'Upgrade ke Premium'}
             </Button>
           </>
         )}
