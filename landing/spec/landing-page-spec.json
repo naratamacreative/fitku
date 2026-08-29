@@ -62,9 +62,10 @@
     "secondary": {
       "id": "cta-secondary",
       "label": "Lihat cara kerjanya dulu",
-      "action": "scroll",
-      "target": "#solusi",
-      "description": "Scroll halus ke section Solusi, untuk user yang belum siap klik CTA utama."
+      "action": "navigate",
+      "target": "https://claude.ai/code/artifact/21f56645-8ae1-4d6b-8b07-32d9bcff5fee",
+      "newTab": true,
+      "description": "Buka artifact 'FitKu Premium Experience' (product tour, buka di tab baru) untuk user yang belum siap klik CTA utama — sebelumnya scroll ke #solusi, diganti 2026-08-29 atas permintaan eksplisit. CATATAN: artifact ini private secara default; harus di-share dulu lewat menu share Claude sebelum link ini bisa dibuka publik oleh trafik iklan asli."
     }
   },
   "tracking": {

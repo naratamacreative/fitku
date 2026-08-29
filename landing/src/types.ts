@@ -10,6 +10,8 @@ export interface CtaAction {
   action: 'navigate' | 'scroll'
   target: string
   description: string
+  /** Open target in a new tab (e.g. an external link) instead of navigating away from the landing page. */
+  newTab?: boolean
 }
 
 export interface CtaFlow {
