@@ -24,7 +24,7 @@
       "aspectRatio": "16:10",
       "prompt": null,
       "negativePrompt": null,
-      "notes": "TIDAK bisa di-AI-gen — asset ini WAJIB screenshot ASLI fitur 'Menu Hari Ini' dari app FitKu (bukan mockup buatan), supaya klaim di landing page jujur. Ambil screenshot langsung dari app, sandingkan dengan foto makanan Indonesia asli (bisa pakai hasil generate dari prompt 'meja-makan-indonesia' di atas, atau foto lain yang relevan)."
+      "notes": "TIDAK bisa di-AI-gen — asset ini WAJIB screenshot ASLI halaman Home/Buku Harian dari app FitKu (bukan mockup buatan), supaya klaim di landing page jujur. Sudah diselesaikan 2026-08-29: screenshot diambil dari Preview dengan data nyata (Nasi Uduk, Telur Ceplok, Ayam Goreng Dada), disandingkan dengan foto 'meja-makan-indonesia'. Lihat asset-manifest.json untuk hasil final."
     },
     {
       "assetId": "tangan-phone",
