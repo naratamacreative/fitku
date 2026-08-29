@@ -31,7 +31,12 @@ export function CTAButton({ cta, sectionId, variant = 'default', trackAs = 'none
   }
 
   return (
-    <a className={className} href={cta.target} onClick={handleClick}>
+    <a
+      className={className}
+      href={cta.target}
+      onClick={handleClick}
+      {...(cta.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+    >
       {cta.label}
     </a>
   )
