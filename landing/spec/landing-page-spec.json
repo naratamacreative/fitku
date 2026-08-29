@@ -114,7 +114,7 @@
       "headline": "FitKu Ngerti Makanan Indonesia",
       "checklist": [
         { "title": "Personal calorie goal", "desc": "Dihitung dari tubuh & targetmu, bukan angka generik" },
-        { "title": "Menu Hari Ini", "desc": "Saran makanan Indonesia sesuai sisa kalorimu" },
+        { "title": "Buku Harian", "desc": "Catat makananmu, otomatis dikelompokkan per waktu makan" },
         { "title": "AI Diet Coach", "desc": "Ngobrol harian, bukan cuma catat angka" },
         { "title": "Makanan Indonesia", "desc": "Porsi centong, potong, piring — bukan gram asing" }
       ],
