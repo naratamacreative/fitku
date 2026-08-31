@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panduan Pakai FitKu — Dari Onboarding Sampai AI Coach</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #FAF8F4;
+            --surface: #FFFFFF;
+            --surface-2: #F3F0E9;
+            --ink: #1E2333;
+            --ink-dim: #6B7280;
+            --line: #E9E4D8;
+            --teal: #0D9488;
+            --teal-soft: #E1F1EE;
+            --violet: #7C3AED;
+            --violet-soft: #F1EBFD;
+            --gold: #C9971F;
+            --gold-soft: #FAF1DE;
+            --success: #16A34A;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--ink);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        h1, h2, h3 { font-family: 'Sora', sans-serif; margin: 0; }
+
+        a { color: inherit; }
+
+        .wrap { max-width: 640px; margin: 0 auto; padding: 0 20px 80px; }
+
+        header.top {
+            max-width: 640px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        header.top img { height: 28px; width: auto; display: block; }
+
+        .back-link {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--teal);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .hero { padding: 40px 0 28px; text-align: center; }
+
+        .eyebrow {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--teal);
+            background: var(--teal-soft);
+            padding: 5px 12px;
+            border-radius: 999px;
+            margin-bottom: 14px;
+        }
+
+        .hero h1 {
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1.25;
+            color: var(--ink);
+        }
+
+        .hero p {
+            margin: 14px auto 0;
+            max-width: 460px;
+            color: var(--ink-dim);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .flow-map {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-top: 22px;
+        }
+
+        .flow-map span {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--ink-dim);
+            background: var(--surface);
+            border: 1px solid var(--line);
+            padding: 5px 10px;
+            border-radius: 999px;
+        }
+
+        .steps { display: flex; flex-direction: column; gap: 20px; margin-top: 36px; }
+
+        .step {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .step__head { display: flex; align-items: center; gap: 12px; }
+
+        .step__num {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--teal), var(--violet));
+            color: #fff;
+            font-family: 'Sora', sans-serif;
+            font-weight: 800;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step__title { font-size: 17px; font-weight: 700; color: var(--ink); }
+
+        .step__badge-premium {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--gold);
+            background: var(--gold-soft);
+            border-radius: 999px;
+            padding: 3px 9px;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        .step p.desc { font-size: 14px; line-height: 1.65; color: var(--ink-dim); margin: 0; }
+
+        /* mini device mockup, CSS-only */
+        .mock {
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 12.5px;
+        }
+
+        .mock .mock-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .mock .mock-label { color: var(--ink-dim); font-size: 11px; }
+        .mock .mock-strong { font-weight: 700; color: var(--ink); }
+
+        .ring-mini {
+            width: 74px; height: 74px; border-radius: 50%;
+            background: conic-gradient(var(--teal) 0deg 245deg, var(--line) 245deg 360deg);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .ring-mini__inner {
+            width: 58px; height: 58px; border-radius: 50%; background: var(--surface);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .ring-mini__inner b { font-size: 13px; font-family: 'Sora', sans-serif; }
+        .ring-mini__inner span { font-size: 8.5px; color: var(--ink-dim); }
+
+        .macro-row { display: flex; gap: 8px; margin-top: 12px; }
+        .macro-card { flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; text-align: center; }
+        .macro-card span { display: block; font-size: 10px; color: var(--ink-dim); margin-bottom: 4px; }
+        .macro-card b { font-size: 11.5px; font-family: 'Sora', sans-serif; }
+
+        .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+        .chip { font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--ink-dim); }
+        .chip.on { background: var(--teal); color: #fff; border-color: var(--teal); }
+
+        .food-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+        .food-row:last-child { border-bottom: none; }
+        .food-row__name { font-weight: 600; font-size: 12.5px; }
+        .food-row__meta { font-size: 10.5px; color: var(--ink-dim); }
+        .quick-add { width: 22px; height: 22px; border-radius: 7px; background: var(--teal-soft); color: var(--teal); font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+        .bars { display: flex; gap: 4px; align-items: flex-end; height: 34px; margin-top: 8px; }
+        .bars i { flex: 1; background: var(--success); border-radius: 3px 3px 0 0; display: block; }
+        .bars i.peak { background: var(--gold); }
+
+        .coach-bubble { border-radius: 12px; padding: 10px 12px; font-size: 12px; line-height: 1.5; }
+        .coach-bubble.ai { background: var(--violet-soft); color: var(--ink); }
+        .coach-bubble.user { background: var(--surface); border: 1px solid var(--line); margin-left: 28px; }
+
+        .prem-row { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+        .prem-row:last-child { border-bottom: none; }
+        .prem-row span:first-child { color: var(--ink-dim); }
+        .prem-row span:last-child { font-weight: 700; }
+
+        .tip {
+            font-size: 12.5px;
+            color: var(--ink-dim);
+            background: var(--surface-2);
+            border-left: 3px solid var(--teal);
+            padding: 8px 12px;
+            border-radius: 0 8px 8px 0;
+        }
+        .tip b { color: var(--ink); }
+
+        .final-cta {
+            margin-top: 40px;
+            text-align: center;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 32px 24px;
+        }
+
+        .final-cta h2 { font-size: 20px; margin-bottom: 10px; }
+        .final-cta p { color: var(--ink-dim); font-size: 14px; margin: 0 0 20px; }
+
+        .btn-main {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--teal), var(--violet));
+            color: #fff;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 14px 28px;
+            border-radius: 12px;
+            text-decoration: none;
+        }
+
+        footer.page-footer {
+            text-align: center;
+            font-size: 11.5px;
+            color: var(--ink-dim);
+            margin-top: 28px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="top">
+        <img src="/fitku-logo-primary-transparent.png" alt="FitKu — AI Diet Coach Indonesia">
+        <a class="back-link" href="/">← Beranda FitKu</a>
+    </header>
+
+    <div class="wrap">
+        <section class="hero">
+            <span class="eyebrow">Panduan Pengguna</span>
+            <h1>Cara Pakai FitKu, dari Isi Data Sampai Ngobrol dengan AI Coach</h1>
+            <p>Belum tahu harus mulai dari mana? Ikuti 8 langkah ini — sama persis dengan alur yang akan kamu temui di aplikasi.</p>
+            <div class="flow-map">
+                <span>Onboarding</span><span>Daftar</span><span>Rencana</span><span>Buku Harian</span><span>Progress</span><span>AI Coach</span><span>Premium</span><span>Setelan</span>
+            </div>
+        </section>
+
+        <div class="steps">
+
+            <!-- 1 -->
+            <div class="step">
+                <div class="step__head">
+                    <span class="step__num">1</span>
+                    <span class="step__title">Isi Onboarding Singkat</span>
+                </div>
+                <p class="desc">Sebelum diminta bikin akun, kamu akan ditanya 6 hal singkat: tujuan (turun berat / naik otot / jaga berat), motivasi, kondisi tubuh sekarang, target tubuh, tingkat aktivitas, dan kebiasaan makan sehari-hari. Semua jawaban ini yang dipakai FitKu untuk menghitung rencana kalori dan protein personal kamu.</p>
+                <div class="mock">
+                    <div class="mock-label" style="margin-bottom:6px;">Apa tujuanmu?</div>
+                    <div class="chip-row">
+                        <span class="chip on">Turun berat badan</span>
+                        <span class="chip">Naik otot</span>
+                        <span class="chip">Jaga berat badan</span>
+                    </div>
+                </div>
+                <p class="tip"><b>Tips:</b> jawab sejujur mungkin — rencana kalori yang dihitung nanti langsung mengikuti jawaban di langkah ini.</p>
+            </div>
+
+            <!-- 2 -->
+            <div class="step">
+                <div class="step__head">
+                    <span class="step__num">2</span>
+                    <span class="step__title">Baru Diminta Bikin Akun</span>
+                </div>
+                <p class="desc">FitKu sengaja menunda proses daftar akun sampai <i>setelah</i> onboarding selesai, supaya kamu bisa lihat dulu rencana kalorimu sebelum diminta email dan password. Cukup satu akun — tidak perlu verifikasi ribet untuk mulai pakai.</p>
+                <div class="mock">
+                    <div class="mock-row"><span class="mock-label">Email</span><span class="mock-strong">novri@email.com</span></div>
+                    <div class="mock-row" style="margin-top:6px;"><span class="mock-label">Password</span><span class="mock-strong">••••••••</span></div>
+                </div>
+            </div>
+
+            <!-- 3 -->
+            <div class="step">
+                <div class="step__head">
+                    <span class="step__num">3</span>
+                    <span class="step__title">Lihat Rencana Kalori & Protein Harian</span>
+                </div>
+                <p class="desc">Begitu akun jadi, rencana personal kamu langsung muncul: target kalori harian dan target protein harian, dibingkai sebagai titik awal perjalanan — bukan sekadar angka di layar.</p>
+                <div class="mock">
+                    <div class="macro-row">
+                        <div class="macro-card"><span>Target kalori</span><b>1.918 kkal/hari</b></div>
+                        <div class="macro-card"><span>Target protein</span><b>110 g/hari</b></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 -->
+            <div class="step">
+                <div class="step__head">
+                    <span class="step__num">4</span>
+                    <span class="step__title">Catat Makanan di Buku Harian</span>
+                </div>
+                <p class="desc">Ini yang kamu buka tiap hari. Dari Beranda, ketuk tombol <b>Tambah</b> lalu pilih makanan dari tab <b>Favorit</b>, <b>Terakhir</b>, atau <b>Milikku</b> (katalog buatanmu sendiri), atau telusuri kategori makanan Indonesia (Nasi & Karbo, Lauk, Sayur, Gorengan, dll). Setiap catatan otomatis dikelompokkan per waktu makan — sarapan, makan siang, makan malam.</p>
+                <div class="mock">
+                    <div class="chip-row" style="margin-bottom:10px;">
+                        <span class="chip on">Favorit</span><span class="chip">Terakhir</span><span class="chip">Milikku</span>
+                    </div>
+                    <div class="food-row">
+                        <div><div class="food-row__name">Nasi Putih</div><div class="food-row__meta">1 centong · 130 kkal</div></div>
+                        <div class="quick-add">+</div>
+                    </div>
+                    <div class="food-row">
+                        <div><div class="food-row__name">Ayam Goreng</div><div class="food-row__meta">1 potong · 240 kkal</div></div>
+                        <div class="quick-add">+</div>
+                    </div>
+                </div>
+                <div class="mock">
+                    <div class="mock-row">
+                        <div class="ring-mini">
+                            <div class="ring-mini__inner"><b>1.240</b><span>kkal tersisa</span></div>
+                        </div>
+                        <div style="flex:1;">
+                            <div class="macro-row" style="margin-top:0;">
+                                <div class="macro-card"><span>Protein</span><b>60/100g</b></div>
+                                <div class="macro-card"><span>Karbo</span><b>90/200g</b></div>
+                                <div class="macro-card"><span>Lemak</span><b>35/50g</b></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="tip"><b>Tips:</b> makanan yang sering kamu makan otomatis masuk tab Terakhir, jadi catat harian jadi makin cepat setelah beberapa hari pemakaian.</p>
+            </div>
+
+            <!-- 5 -->
+            <div class="step">
+                <div class="step__head">
+                    <span class="step__num">5</span>
+                    <span class="step__title">Pantau Progress</span>
+                </div>
+                <p class="desc">Buka tab <b>Progress</b> untuk lihat grafik kalori 7 hari terakhir dan rata-rata makro — ini selalu gratis. Tren jangka panjang 30 hari (kalori & berat badan) adalah bagian dari pengalaman Premium.</p>
+                <div class="mock">
+                    <div class="mock-row"><span class="mock-strong">Kalori 7 Hari</span><span class="mock-label">7/7 hari</span></div>
+                    <div class="bars">
+                        <i style="height:60%"></i><i style="height:80%"></i><i style="height:65%"></i>
+                        <i class="peak" style="height:95%"></i><i style="height:70%"></i><i style="height:85%"></i><i style="height:72%"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6 -->
+            <div class="step">
+                <div class="step__head">
+                    <span class="step__num">6</span>
+                    <span class="step__title">Ngobrol dengan AI Coach</span>
+                    <span class="step__badge-premium">★ PRO</span>
+                </div>
+                <p class="desc">Tab <b>Coach</b> memberi Daily Coaching (analisa + satu aksi konkret untuk hari ini) berdasarkan catatan makanmu, dan kamu bisa tanya apa saja soal progress lewat chat. Fitur chat bebas ini bagian dari Premium.</p>
+                <div class="mock" style="display:flex; flex-direction:column; gap:8px;">
+                    <div class="coach-bubble user">Kenapa berat saya belum turun minggu ini?</div>
+                    <div class="coach-bubble ai">Wajar — progress kadang melambat minggu ke-2. Konsistensimu tetap bagus, cek lagi 3-4 hari ya.</div>
+                </div>
+            </div>
+
+            <!-- 7 -->
+            <div class="step">
+                <div class="step__head">
+                    <span class="step__num">7</span>
+                    <span class="step__title">Kelola Langganan Premium</span>
+                </div>
+                <p class="desc">Status langganan kamu selalu bisa dicek di <b>Setelan → Langganan</b>: plan aktif, tanggal berlaku, dan daftar manfaat yang sedang kamu pakai.</p>
+                <div class="mock">
+                    <div class="prem-row"><span>Plan aktif</span><span>Pro 3 Bulan</span></div>
+                    <div class="prem-row"><span>Berlaku sampai</span><span>28 Nov 2026</span></div>
+                    <div class="prem-row"><span>Metode bayar</span><span>Midtrans</span></div>
+                </div>
+            </div>
+
+            <!-- 8 -->
+            <div class="step">
+                <div class="step__head">
+                    <span class="step__num">8</span>
+                    <span class="step__title">Atur Profil di Setelan</span>
+                </div>
+                <p class="desc">Di tab <b>Setelan</b>, kamu bisa lihat dan ubah data profil (tujuan, berat sekarang), ganti tema tampilan (terang/gelap), cek status langganan, dan keluar akun — semuanya terkumpul dalam satu tempat.</p>
+            </div>
+
+        </div>
+
+        <div class="final-cta">
+            <h2>Sudah paham alurnya?</h2>
+            <p>Langsung mulai onboarding dan dapatkan rencana kalori personal kamu.</p>
+            <a class="btn-main" href="/onboarding">Mulai Sekarang →</a>
+        </div>
+
+        <footer class="page-footer">Panduan ini mengikuti alur pemakaian FitKu yang sebenarnya berjalan di aplikasi. Fitur bertanda ★ PRO adalah bagian dari langganan Premium.</footer>
+    </div>
+
+</body>
+</html>
