@@ -6,6 +6,7 @@ import { useAppState } from '../../shared/context/AppStateContext'
 import { useTheme } from '../../shared/context/ThemeContext'
 import { useProAccess } from '../../shared/hooks/useProAccess'
 import { supabase } from '../../shared/lib/supabaseClient'
+import { SupportChatSheet } from './components/SupportChatSheet'
 
 const GOAL_LABEL: Record<string, string> = {
   lose_weight: 'Turun berat badan',
@@ -25,6 +26,7 @@ export function Settings() {
   const { theme, toggleTheme } = useTheme()
   const proAccess = useProAccess()
   const [plan, setPlan] = useState<string>('free')
+  const [supportOpen, setSupportOpen] = useState(false)
 
   useEffect(() => {
     if (user) subscriptionRepository.get(user.id).then((s) => setPlan(s.plan))
@@ -100,6 +102,17 @@ export function Settings() {
         </section>
 
         <section className="rounded-2xl bg-surface px-4 py-3">
+          <h4 className="text-[11px] font-semibold uppercase tracking-wide text-ink-dim">Bantuan</h4>
+          <button
+            type="button"
+            onClick={() => setSupportOpen(true)}
+            className="mt-2 block text-sm font-semibold text-accent"
+          >
+            💬 Tanya Admin
+          </button>
+        </section>
+
+        <section className="rounded-2xl bg-surface px-4 py-3">
           <h4 className="text-[11px] font-semibold uppercase tracking-wide text-ink-dim">Akun</h4>
           <button
             type="button"
@@ -110,6 +123,15 @@ export function Settings() {
           </button>
         </section>
       </div>
+
+      {supportOpen && (
+        <SupportChatSheet
+          userId={user.id}
+          planLabel={proAccess?.reason === 'trial' ? `Trial (${PLAN_LABEL[plan] ?? plan})` : (PLAN_LABEL[plan] ?? plan)}
+          trialDaysLeft={proAccess?.reason === 'trial' ? proAccess.trialDaysLeft : 0}
+          onClose={() => setSupportOpen(false)}
+        />
+      )}
     </AppShell>
   )
 }
