@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitKu — AI Diet Coach & Hitung Kalori Makanan Indonesia</title>
+<meta name="description" content="Aplikasi hitung kalori dan makronutrisi khusus ribuan makanan Indonesia. Dilengkapi AI Diet Coach pintar untuk bantu capai target berat badan idealmu.">
+
+<!-- Fonts: Sora & Plus Jakarta Sans -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --brand-dark: #0A1916;
+    --primary: #0D7A53;
+    --primary-light: #E7F6ED;
+    --primary-hover: #096142;
+    --teal: #0D9488;
+    --violet: #6366F1;
+    --accent: #F97316;
+    --accent-light: #FFF4ED;
+    --ink: #0F172A;
+    --ink-mid: #334155;
+    --ink-soft: #64748B;
+    --canvas: #FAF9F6;
+    --surface: #FFFFFF;
+    --border: #E2E8F0;
+    --border-light: #F1F5F9;
+    --shadow-sm: 0 2px 4px rgba(10, 25, 22, 0.04);
+    --shadow-md: 0 10px 25px -5px rgba(10, 25, 22, 0.07);
+    --radius-full: 9999px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--canvas);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Sora', sans-serif;
+  }
+
+  .container {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250, 249, 246, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 72px;
+  }
+  .logo-wrap {
+    display: inline-flex; align-items: center;
+    text-decoration: none;
+  }
+  .logo-img {
+    height: 42px;
+    width: auto;
+    max-width: 150px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .nav-menu {
+    display: flex; align-items: center; gap: 28px;
+  }
+  .nav-link {
+    color: var(--ink-mid);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+  .nav-link:hover { color: var(--primary); }
+
+  .btn-nav {
+    background: var(--primary);
+    color: #fff !important;
+    text-decoration: none;
+    padding: 9px 22px;
+    border-radius: var(--radius-full);
+    font-size: 0.875rem;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(13, 122, 83, 0.2);
+    transition: all 0.2s;
+  }
+  .btn-nav:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+  }
+
+  /* HERO */
+  .hero-section {
+    position: relative;
+    padding: 70px 0 64px;
+    overflow: hidden;
+  }
+  .hero-glow {
+    position: absolute;
+    top: -80px; left: 50%;
+    transform: translateX(-50%);
+    width: 650px; height: 350px;
+    background: radial-gradient(circle, rgba(13, 148, 136, 0.12) 0%, rgba(13, 122, 83, 0.05) 50%, transparent 80%);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 48px;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #FFFFFF;
+    border: 1px solid rgba(13, 122, 83, 0.2);
+    box-shadow: var(--shadow-sm);
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 20px;
+  }
+  .badge-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--primary);
+    box-shadow: 0 0 0 3px rgba(13, 122, 83, 0.2);
+    animation: pulseDot 2s infinite;
+  }
+  @keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .hero h1 {
+    font-size: clamp(2.3rem, 4.2vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.14;
+    letter-spacing: -1.2px;
+    color: var(--brand-dark);
+    margin-bottom: 22px;
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--teal) 60%, var(--violet) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--ink-mid);
+    line-height: 1.7;
+    margin-bottom: 34px;
+    max-width: 500px;
+  }
+  .hero-ctas {
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, #0c714c 100%);
+    color: #fff;
+    text-decoration: none;
+    padding: 15px 32px;
+    border-radius: var(--radius-full);
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 10px 24px rgba(13, 122, 83, 0.28);
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(13, 122, 83, 0.35);
+  }
+  .btn-secondary {
+    color: var(--ink-mid);
+    background: #FFFFFF;
+    border: 1px solid var(--border);
+    text-decoration: none;
+    padding: 14px 24px;
+    border-radius: var(--radius-full);
+    font-size: 0.95rem;
+    font-weight: 600;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+  }
+  .btn-secondary:hover {
+    background: #F8FAFC;
+    color: var(--ink);
+  }
+  .hero-trust {
+    margin-top: 32px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 0.86rem; color: var(--ink-soft);
+  }
+  .avatar-group { display: flex; }
+  .avatar-mini {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; font-weight: 800; color: #fff;
+    margin-left: -7px;
+  }
+  .avatar-mini:first-child { margin-left: 0; }
+  .av-1 { background: #0D9488; }
+  .av-2 { background: #F97316; }
+  .av-3 { background: #6366F1; }
+  .av-4 { background: #0D7A53; }
+  .stars { color: #F59E0B; letter-spacing: -1px; font-weight: bold; }
+
+  /* PHONE MOCKUP */
+  .mockup-wrap {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+  .phone-frame {
+    width: 290px;
+    background: #0F172A;
+    border-radius: 44px;
+    padding: 10px;
+    box-shadow: 0 35px 80px -15px rgba(10, 25, 22, 0.35);
+    position: relative;
+    z-index: 2;
+  }
+  .phone-screen {
+    background: #F8FAF9;
+    border-radius: 34px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .phone-dynamic-island {
+    width: 84px; height: 22px;
+    background: #0F172A;
+    border-radius: 20px;
+    margin: 8px auto 6px;
+  }
+  .mock-header {
+    padding: 8px 16px 12px;
+    background: #FFFFFF;
+    border-bottom: 1px solid #EDF2F0;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .mock-user-name { font-size: 0.85rem; font-weight: 800; color: var(--brand-dark); }
+  .mock-date { font-size: 0.65rem; color: var(--ink-soft); }
+  .mock-badge-pro {
+    font-size: 0.6rem; font-weight: 800;
+    background: #FEF3C7; color: #B45309;
+    padding: 2px 7px; border-radius: 6px;
+  }
+  .mock-rings-card {
+    background: #FFFFFF;
+    border-radius: 16px;
+    margin: 10px;
+    padding: 14px 12px;
+    border: 1px solid #E8ECE9;
+  }
+  .mock-rings-title {
+    display: flex; justify-content: space-between;
+    font-size: 0.65rem; font-weight: 700; color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  .mock-rings-row {
+    display: flex; justify-content: space-around; text-align: center;
+  }
+  .ring-box {
+    position: relative;
+    width: 52px; height: 52px;
+    margin: 0 auto 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ring-box svg {
+    position: absolute; top: 0; left: 0;
+    transform: rotate(-90deg);
+  }
+  .ring-center-val {
+    font-size: 0.65rem; font-weight: 800; color: var(--brand-dark);
+  }
+  .ring-caption {
+    font-size: 0.6rem; font-weight: 600; color: var(--ink-soft);
+  }
+  .mock-section-title {
+    font-size: 0.65rem; font-weight: 800; color: var(--ink-soft);
+    padding: 4px 14px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .mock-meal-item {
+    background: #FFFFFF;
+    border: 1px solid #EAEFEA;
+    border-radius: 12px;
+    margin: 0 10px 6px;
+    padding: 9px 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .mock-meal-title { font-size: 0.72rem; font-weight: 700; color: var(--ink); }
+  .mock-meal-sub { font-size: 0.6rem; color: var(--ink-soft); }
+  .mock-meal-cal { font-size: 0.75rem; font-weight: 800; color: var(--primary); }
+
+  .mock-coach-card {
+    background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+    border: 1px solid #BBF7D0;
+    border-radius: 12px;
+    margin: 6px 10px 12px;
+    padding: 8px 10px;
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .coach-avatar {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--primary); color: #fff;
+    font-size: 0.6rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .coach-text { font-size: 0.62rem; color: #166534; line-height: 1.4; }
+
+  /* FLOATING BADGES */
+  .float-badge {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 14px;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 12px 28px -4px rgba(10, 25, 22, 0.12);
+    z-index: 3;
+    animation: floatAnim 4s ease-in-out infinite;
+  }
+  .float-left { bottom: 90px; left: -35px; animation-delay: 0s; }
+  .float-right { top: 60px; right: -30px; animation-delay: 2s; }
+  @keyframes floatAnim {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .float-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+  .float-icon.orange { background: var(--accent-light); }
+  .float-icon.green { background: var(--primary-light); }
+  .float-val { font-size: 0.82rem; font-weight: 800; color: var(--brand-dark); line-height: 1.2; }
+  .float-desc { font-size: 0.68rem; color: var(--ink-soft); }
+
+  /* METRICS STRIP */
+  .metrics-strip {
+    background: #FFFFFF;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 36px 0;
+  }
+  .metrics-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 24px; text-align: center;
+  }
+  .metric-item { position: relative; }
+  .metric-item:not(:last-child)::after {
+    content: '';
+    position: absolute; right: 0; top: 20%; height: 60%;
+    width: 1px; background: var(--border);
+  }
+  .metric-num {
+    font-family: 'Sora', sans-serif;
+    font-size: 2rem; font-weight: 800; color: var(--brand-dark);
+    line-height: 1.2; margin-bottom: 4px;
+  }
+  .metric-num span { color: var(--primary); }
+  .metric-label { font-size: 0.85rem; color: var(--ink-soft); font-weight: 600; }
+
+  /* SECTION COMMON */
+  .section { padding: 90px 0; }
+  .section-tag {
+    display: inline-block;
+    font-size: 0.8rem; font-weight: 800; color: var(--primary);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;
+  }
+  .section-heading {
+    font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+    font-weight: 800; letter-spacing: -0.7px; line-height: 1.22;
+    color: var(--brand-dark); margin-bottom: 16px;
+  }
+  .section-desc {
+    font-size: 1.05rem; color: var(--ink-soft);
+    max-width: 580px; line-height: 1.7;
+  }
+  .text-center { text-align: center; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+
+  /* PROBLEM / COMPARISON */
+  .problem-wrap {
+    margin-top: 50px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  }
+  .compare-card {
+    background: #FFFFFF; border-radius: 20px;
+    padding: 32px; border: 1px solid var(--border);
+  }
+  .compare-card.bad { background: #FFFDFD; border-color: #FECACA; }
+  .compare-card.good {
+    background: #F8FCF9; border-color: #A7F3D0;
+    box-shadow: 0 10px 30px -5px rgba(13, 122, 83, 0.08);
+  }
+  .compare-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px; font-size: 1.1rem; font-weight: 800;
+  }
+  .compare-card.bad .compare-header { color: #DC2626; }
+  .compare-card.good .compare-header { color: var(--primary); }
+  .compare-list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .compare-list li {
+    display: flex; gap: 12px; font-size: 0.92rem; line-height: 1.5; color: var(--ink-mid);
+  }
+  .compare-icon {
+    flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 800;
+  }
+  .compare-card.bad .compare-icon { background: #FEE2E2; color: #DC2626; }
+  .compare-card.good .compare-icon { background: var(--primary-light); color: var(--primary); }
+
+  /* FOOD TICKER */
+  .ticker-section {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 36px 0; overflow: hidden;
+  }
+  .ticker-intro {
+    text-align: center; font-size: 0.8rem; font-weight: 800;
+    color: var(--ink-soft); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 20px;
+  }
+  .marquee-box {
+    display: flex; overflow: hidden; user-select: none;
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+  .marquee-content {
+    display: flex; gap: 12px; flex-shrink: 0;
+    animation: marqueeScroll 32s linear infinite;
+  }
+  .marquee-box:hover .marquee-content { animation-play-state: paused; }
+  @keyframes marqueeScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+  }
+  .food-badge {
+    background: #FFFFFF; border: 1px solid var(--border);
+    border-radius: var(--radius-full); padding: 9px 18px;
+    white-space: nowrap; font-size: 0.86rem; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .food-badge .cal-tag {
+    background: var(--primary-light); color: var(--primary);
+    font-weight: 800; font-size: 0.78rem;
+    padding: 2px 8px; border-radius: var(--radius-full);
+  }
+
+  /* BENTO GRID */
+  .bento-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 20px; margin-top: 50px;
+  }
+  .bento-card {
+    background: #FFFFFF; border: 1px solid var(--border);
+    border-radius: 24px; padding: 30px;
+    transition: all 0.25s ease;
+    display: flex; flex-direction: column; justify-content: space-between;
+    box-shadow: var(--shadow-sm);
+  }
+  .bento-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: rgba(13, 122, 83, 0.4);
+  }
+  .bento-col-2 { grid-column: span 2; }
+  .bento-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    background: var(--primary-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.35rem; margin-bottom: 20px;
+  }
+  .bento-icon.purple { background: #EEF2FF; }
+  .bento-icon.amber { background: #FEF3C7; }
+  .bento-title {
+    font-size: 1.15rem; font-weight: 800; color: var(--brand-dark);
+    margin-bottom: 10px;
+  }
+  .bento-desc { font-size: 0.9rem; color: var(--ink-soft); line-height: 1.65; }
+
+  .chat-preview {
+    background: #F8FAFC; border: 1px solid #E2E8F0;
+    border-radius: 16px; padding: 14px; margin-top: 18px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .chat-bubble {
+    font-size: 0.78rem; padding: 8px 12px; border-radius: 12px;
+    max-width: 85%; line-height: 1.45;
+  }
+  .chat-user {
+    background: #0D7A53; color: #FFFFFF;
+    align-self: flex-end; border-bottom-right-radius: 2px;
+  }
+  .chat-bot {
+    background: #FFFFFF; border: 1px solid #E2E8F0;
+    color: var(--ink); align-self: flex-start;
+    border-bottom-left-radius: 2px;
+  }
+
+  /* TESTIMONIALS */
+  .testi-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 20px; margin-top: 50px;
+  }
+  .testi-card {
+    background: #FFFFFF; border: 1px solid var(--border);
+    border-radius: 20px; padding: 26px;
+    box-shadow: var(--shadow-sm);
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .testi-stars { color: #F59E0B; font-size: 0.95rem; margin-bottom: 14px; }
+  .testi-quote {
+    font-size: 0.92rem; color: var(--ink-mid); line-height: 1.7;
+    margin-bottom: 20px;
+  }
+  .testi-author { display: flex; align-items: center; gap: 12px; }
+  .testi-pic {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--teal) 100%);
+    color: #fff; font-weight: 800; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .testi-name { font-size: 0.9rem; font-weight: 800; color: var(--brand-dark); }
+  .testi-meta { font-size: 0.75rem; color: var(--ink-soft); }
+
+  /* PRICING */
+  .pricing-bg {
+    background: linear-gradient(180deg, var(--canvas) 0%, #F1F7F4 100%);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .pricing-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 20px; margin-top: 50px; max-width: 960px;
+  }
+  .pricing-card {
+    background: #FFFFFF; border: 1.5px solid var(--border);
+    border-radius: 24px; padding: 32px 24px; text-align: center;
+    position: relative; transition: all 0.2s ease;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .pricing-card:hover { border-color: var(--primary); }
+  .pricing-card.featured {
+    border-color: var(--primary);
+    box-shadow: 0 15px 35px -5px rgba(13, 122, 83, 0.15);
+    transform: scale(1.03);
+    z-index: 2;
+  }
+  .badge-featured {
+    position: absolute; top: -14px; left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--teal) 100%);
+    color: #FFFFFF; font-size: 0.72rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 4px 16px; border-radius: var(--radius-full);
+    white-space: nowrap; box-shadow: 0 4px 10px rgba(13, 122, 83, 0.25);
+  }
+  .pricing-plan-name { font-size: 1.1rem; font-weight: 800; color: var(--brand-dark); margin-bottom: 6px; }
+  .pricing-plan-desc { font-size: 0.8rem; color: var(--ink-soft); margin-bottom: 20px; }
+  .pricing-amount {
+    font-family: 'Sora', sans-serif;
+    font-size: 2.3rem; font-weight: 800; color: var(--brand-dark);
+    letter-spacing: -1px; line-height: 1;
+  }
+  .pricing-amount span { font-size: 0.95rem; font-weight: 600; color: var(--ink-soft); }
+  .pricing-daily-eq {
+    display: inline-block; font-size: 0.78rem; font-weight: 700;
+    color: var(--primary); background: var(--primary-light);
+    padding: 3px 10px; border-radius: var(--radius-full);
+    margin: 10px 0 16px;
+  }
+  .pricing-save-pill {
+    font-size: 0.75rem; font-weight: 700; color: var(--accent); margin-bottom: 14px;
+  }
+  .pricing-card ul {
+    list-style: none; text-align: left;
+    margin: 20px 0 26px; display: flex; flex-direction: column; gap: 10px;
+    border-top: 1px solid var(--border-light); padding-top: 20px;
+    font-size: 0.85rem; color: var(--ink-mid);
+  }
+  .pricing-card li { display: flex; align-items: center; gap: 8px; }
+  .pricing-card li::before { content: '✓'; color: var(--primary); font-weight: 800; }
+
+  .btn-pricing {
+    display: block; width: 100%; padding: 13px 20px;
+    border-radius: var(--radius-full); font-size: 0.92rem;
+    font-weight: 700; text-decoration: none; transition: all 0.2s;
+  }
+  .btn-pricing-primary {
+    background: var(--primary); color: #fff;
+    box-shadow: 0 4px 12px rgba(13, 122, 83, 0.25);
+  }
+  .btn-pricing-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+  .btn-pricing-outline {
+    background: #FFFFFF; color: var(--primary);
+    border: 1.5px solid var(--primary);
+  }
+  .btn-pricing-outline:hover { background: var(--primary-light); }
+
+  /* FAQ */
+  .faq-box {
+    max-width: 740px; margin: 40px auto 0;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .faq-item {
+    background: #FFFFFF; border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden; transition: border-color 0.2s;
+  }
+  .faq-item[open] { border-color: var(--primary); }
+
+  summary.faq-q {
+    list-style: none; padding: 18px 22px;
+    font-size: 1rem; font-weight: 700; color: var(--brand-dark);
+    cursor: pointer; display: flex; justify-content: space-between;
+    align-items: center; gap: 12px; user-select: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::marker { display: none; }
+
+  .faq-icon-cross {
+    width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+    color: var(--primary); font-size: 1.3rem; font-weight: 400;
+    transition: transform 0.2s ease;
+  }
+  .faq-item[open] .faq-icon-cross { transform: rotate(45deg); color: var(--accent); }
+  .faq-a {
+    padding: 0 22px 20px; font-size: 0.92rem;
+    color: var(--ink-mid); line-height: 1.7;
+  }
+
+  /* FINAL CTA */
+  .final-cta-section {
+    position: relative; padding: 84px 0;
+    background: linear-gradient(135deg, #0A1E17 0%, #064E3B 60%, #06392D 100%);
+    color: #FFFFFF; text-align: center; overflow: hidden;
+  }
+  .final-cta-section h2 {
+    font-size: clamp(2rem, 3.5vw, 2.8rem);
+    font-weight: 800; margin-bottom: 14px; color: #FFFFFF;
+  }
+  .final-cta-section p {
+    font-size: 1.05rem; color: rgba(255, 255, 255, 0.82);
+    max-width: 580px; margin: 0 auto 36px;
+  }
+  .btn-cta-white {
+    background: #FFFFFF; color: var(--primary);
+    text-decoration: none; padding: 16px 36px;
+    border-radius: var(--radius-full); font-weight: 800;
+    font-size: 1.05rem; display: inline-flex; align-items: center; gap: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); transition: all 0.2s ease;
+  }
+  .btn-cta-white:hover {
+    transform: translateY(-2px); background: #F8FAF9;
+  }
+  .final-guarantee {
+    margin-top: 20px; font-size: 0.85rem; color: rgba(255, 255, 255, 0.65);
+  }
+
+  /* FOOTER */
+  footer {
+    background: #06110E; border-top: 1px solid rgba(255,255,255,0.06);
+    color: #64748B; padding: 32px 0; font-size: 0.84rem;
+  }
+  .footer-inner {
+    display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 16px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; text-align: center; gap: 50px; }
+    .hero-sub { margin-left: auto; margin-right: auto; }
+    .hero-ctas { justify-content: center; }
+    .hero-trust { justify-content: center; }
+    .mockup-wrap { order: 1; }
+    .float-left { left: 0; }
+    .float-right { right: 0; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; gap: 32px 16px; }
+    .metric-item:nth-child(2)::after { display: none; }
+    .problem-wrap { grid-template-columns: 1fr; }
+    .bento-grid { grid-template-columns: 1fr; }
+    .bento-col-2 { grid-column: auto; }
+    .testi-grid { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; max-width: 420px; }
+    .pricing-card.featured { transform: none; }
+    .nav-menu .nav-link { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .phone-frame { width: 260px; }
+    .float-badge { display: none; }
+    .metrics-grid { grid-template-columns: 1fr; }
+    .metric-item::after { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="container nav-inner">
+    <a href="https://fitku.fit" class="logo-wrap">
+      <img src="fitku-logo-primary-transparent.png" onerror="this.onerror=null; this.src='https://fitku.fit/brand/fitku-logo-primary-transparent.png';" alt="FitKu - AI Diet Coach Indonesia" class="logo-img">
+    </a>
+    <div class="nav-menu">
+      <a href="#cara-kerja" class="nav-link">Keunggulan</a>
+      <a href="#fitur" class="nav-link">Fitur AI</a>
+      <a href="#testimoni" class="nav-link">Testimoni</a>
+      <a href="#pricing" class="nav-link">Biaya</a>
+      <a href="https://fitku.fit" class="btn-nav">Coba Gratis 7 Hari</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero-section">
+  <div class="hero-glow"></div>
+  <div class="container hero-grid">
+    <div class="hero-left">
+      <div class="badge-pill">
+        <span class="badge-dot"></span>
+        <span>AI Diet Coach #1 Khusus Makanan Indonesia 🇮🇩</span>
+      </div>
+      <h1>
+        Makan enak tanpa rasa bersalah. <br>
+        <span class="gradient-text">FitKu yang hitung kalorinya.</span>
+      </h1>
+      <p class="hero-sub">
+        Lupakan ribetnya cari nasi padang atau soto di aplikasi luar. Cukup ketik apa yang kamu makan, dan AI Coach FitKu langsung atur defisit kalori serta kebutuhan nutrisimu secara presisi.
+      </p>
+      <div class="hero-ctas">
+        <a href="https://fitku.fit" class="btn-primary">
+          Mulai Trial Gratis 7 Hari →
+        </a>
+        <a href="#cara-kerja" class="btn-secondary">
+          Lihat Cara Kerjanya ↓
+        </a>
+      </div>
+      <div class="hero-trust">
+        <div class="avatar-group">
+          <div class="avatar-mini av-1">AR</div>
+          <div class="avatar-mini av-2">RH</div>
+          <div class="avatar-mini av-3">DS</div>
+          <div class="avatar-mini av-4">FA</div>
+        </div>
+        <div>
+          <span class="stars">★★★★★</span>
+          <span>Rating <strong>4.9/5</strong> dari 12.000+ pejuang diet</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP MOCKUP INTERAKTIF -->
+    <div class="mockup-wrap">
+      <div class="float-badge float-left">
+        <div class="float-icon green">🥗</div>
+        <div>
+          <div class="float-val">Nasi Padang</div>
+          <div class="float-desc">Terhitung otomatis 720 kkal</div>
+        </div>
+      </div>
+
+      <div class="float-badge float-right">
+        <div class="float-icon orange">🔥</div>
+        <div>
+          <div class="float-val">Defisit 520 kkal</div>
+          <div class="float-desc">Target harian on-track!</div>
+        </div>
+      </div>
+
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="phone-dynamic-island"></div>
+
+          <div class="mock-header">
+            <div>
+              <div class="mock-user-name">Halo, Dinda! 👋</div>
+              <div class="mock-date">Rabu, 28 Agustus 2026</div>
+            </div>
+            <div class="mock-badge-pro">PRO TRIAL</div>
+          </div>
+
+          <div class="mock-rings-card">
+            <div class="mock-rings-title">
+              <span>TARGET HARIAN</span>
+              <span style="color: var(--primary);">1.480 / 2.000 KKAL</span>
+            </div>
+            <div class="mock-rings-row">
+              <div>
+                <div class="ring-box">
+                  <svg width="52" height="52" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="#E2E8F0" stroke-width="4.5"/>
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="#0D7A53" stroke-width="4.5"
+                      stroke-dasharray="131.9" stroke-dashoffset="34" stroke-linecap="round"/>
+                  </svg>
+                  <span class="ring-center-val">74%</span>
+                </div>
+                <span class="ring-caption">Kalori</span>
+              </div>
+              <div>
+                <div class="ring-box">
+                  <svg width="52" height="52" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="#FFF4ED" stroke-width="4.5"/>
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="#F97316" stroke-width="4.5"
+                      stroke-dasharray="131.9" stroke-dashoffset="52" stroke-linecap="round"/>
+                  </svg>
+                  <span class="ring-center-val">145g</span>
+                </div>
+                <span class="ring-caption">Karbo</span>
+              </div>
+              <div>
+                <div class="ring-box">
+                  <svg width="52" height="52" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="#EEF2FF" stroke-width="4.5"/>
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="#6366F1" stroke-width="4.5"
+                      stroke-dasharray="131.9" stroke-dashoffset="40" stroke-linecap="round"/>
+                  </svg>
+                  <span class="ring-center-val">78g</span>
+                </div>
+                <span class="ring-caption">Protein</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mock-section-title">Buku Harian Hari Ini</div>
+          <div class="mock-meal-item">
+            <div>
+              <div class="mock-meal-title">🍳 Nasi Uduk Komplit</div>
+              <div class="mock-meal-sub">Sarapan · Telur balado + tempe orek</div>
+            </div>
+            <div class="mock-meal-cal">510 kkal</div>
+          </div>
+          <div class="mock-meal-item">
+            <div>
+              <div class="mock-meal-title">🍗 Ayam Bakar Dada + Lalap</div>
+              <div class="mock-meal-sub">Siang · Nasi merah 1 porsi</div>
+            </div>
+            <div class="mock-meal-cal">425 kkal</div>
+          </div>
+
+          <div class="mock-coach-card">
+            <div class="coach-avatar">✦</div>
+            <div class="coach-text">
+              <strong>Tips AI Coach:</strong> Proteinmu hampir tercapai! Makan malam ini bisa pilih sate ayam tanpa lontong.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METRICS COUNTER -->
+<div class="metrics-strip">
+  <div class="container metrics-grid">
+    <div class="metric-item">
+      <div class="metric-num">5.000<span>+</span></div>
+      <div class="metric-label">Menu Makanan Lokal</div>
+    </div>
+    <div class="metric-item">
+      <div class="metric-num">12.000<span>+</span></div>
+      <div class="metric-label">Pengguna Aktif</div>
+    </div>
+    <div class="metric-item">
+      <div class="metric-num">94<span>%</span></div>
+      <div class="metric-label">Mencapai Target BB</div>
+    </div>
+    <div class="metric-item">
+      <div class="metric-num">Rp 1.100</div>
+      <div class="metric-label">Investasi per Hari</div>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEM & COMPARISON -->
+<section class="section" id="cara-kerja">
+  <div class="container">
+    <div class="text-center">
+      <span class="section-tag">Kenapa Banyak Orang Gagal Diet?</span>
+      <h2 class="section-heading">Bukan karena kurang niat,<br>tapi karena tebakan kalori yang salah</h2>
+      <p class="section-desc mx-auto">
+        Banyak orang mengira sudah makan sedikit, tapi berat badan tetap mandek. Rahasianya bukan kelaparan, melainkan konsistensi tracking makanan yang kita konsumsi sehari-hari.
+      </p>
+    </div>
+
+    <div class="problem-wrap">
+      <div class="compare-card bad">
+        <div class="compare-header">
+          <span>❌</span> Cara Lama (App Luar Negeri)
+        </div>
+        <ul class="compare-list">
+          <li>
+            <div class="compare-icon">✕</div>
+            <div><strong>Makanan lokal tidak ada:</strong> Harus tebak-tebak kalori soto betawi, pecel lele, rendang, atau es cendol.</div>
+          </li>
+          <li>
+            <div class="compare-icon">✕</div>
+            <div><strong>Tracking ribet & lambat:</strong> Buka sheet berulang kali hanya untuk mencatat satu jenis lauk.</div>
+          </li>
+          <li>
+            <div class="compare-icon">✕</div>
+            <div><strong>Tanpa panduan cerdas:</strong> Hanya menampilkan angka mentah tanpa tahu langkah konkrit selanjutnya.</div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="compare-card good">
+        <div class="compare-header">
+          <span>✨</span> Cara Cerdas dengan FitKu
+        </div>
+        <ul class="compare-list">
+          <li>
+            <div class="compare-icon">✓</div>
+            <div><strong>Database Lokal Terlengkap:</strong> Warteg, masakan rumahan, restoran padang hingga jajanan kaki lima semua terdaftar.</div>
+          </li>
+          <li>
+            <div class="compare-icon">✓</div>
+            <div><strong>Keranjang Multi-Select Cepat:</strong> Catat nasi + ayam + sambal + es teh sekaligus dalam 1 kali klik.</div>
+          </li>
+          <li>
+            <div class="compare-icon">✓</div>
+            <div><strong>Didampingi AI Coach Personal:</strong> Tanya rekomendasi menu sehat yang tetap ramah di lidah dan kantongmu.</div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOD MARQUEE TICKER -->
+<div class="ticker-section">
+  <div class="ticker-intro">Dukungan Ribuan Kuliner Nusantara & Jajanan Populer</div>
+  <div class="marquee-box">
+    <div class="marquee-content">
+      <div class="food-badge">🍛 Nasi Padang Rendang <span class="cal-tag">720 kkal</span></div>
+      <div class="food-badge">🍜 Mie Ayam Bakso <span class="cal-tag">485 kkal</span></div>
+      <div class="food-badge">🥗 Gado-Gado Komplit <span class="cal-tag">380 kkal</span></div>
+      <div class="food-badge">🍳 Nasi Goreng Telur <span class="cal-tag">520 kkal</span></div>
+      <div class="food-badge">🍲 Soto Ayam Lamongan <span class="cal-tag">310 kkal</span></div>
+      <div class="food-badge">☕ Es Teh Manis <span class="cal-tag">140 kkal</span></div>
+      <div class="food-badge">🍗 Ayam Geprek Sambal Bawang <span class="cal-tag">540 kkal</span></div>
+      <div class="food-badge">🍢 Sate Madura 10 Tusuk <span class="cal-tag">390 kkal</span></div>
+      <div class="food-badge">🥣 Bubur Ayam Sukabumi <span class="cal-tag">370 kkal</span></div>
+    </div>
+    <div class="marquee-content" aria-hidden="true">
+      <div class="food-badge">🍛 Nasi Padang Rendang <span class="cal-tag">720 kkal</span></div>
+      <div class="food-badge">🍜 Mie Ayam Bakso <span class="cal-tag">485 kkal</span></div>
+      <div class="food-badge">🥗 Gado-Gado Komplit <span class="cal-tag">380 kkal</span></div>
+      <div class="food-badge">🍳 Nasi Goreng Telur <span class="cal-tag">520 kkal</span></div>
+      <div class="food-badge">🍲 Soto Ayam Lamongan <span class="cal-tag">310 kkal</span></div>
+      <div class="food-badge">☕ Es Teh Manis <span class="cal-tag">140 kkal</span></div>
+      <div class="food-badge">🍗 Ayam Geprek Sambal Bawang <span class="cal-tag">540 kkal</span></div>
+      <div class="food-badge">🍢 Sate Madura 10 Tusuk <span class="cal-tag">390 kkal</span></div>
+      <div class="food-badge">🥣 Bubur Ayam Sukabumi <span class="cal-tag">370 kkal</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- BENTO GRID FEATURES -->
+<section class="section" id="fitur">
+  <div class="container">
+    <div class="text-center">
+      <span class="section-tag">Fitur Unggulan</span>
+      <h2 class="section-heading">Dirancang untuk gaya hidup<br>masyarakat Indonesia</h2>
+      <p class="section-desc mx-auto">
+        Kombinasi database nutrisi teruji dan kecerdasan buatan untuk memastikan dietmu berhasil dan berkelanjutan.
+      </p>
+    </div>
+
+    <div class="bento-grid">
+      <div class="bento-card bento-col-2">
+        <div>
+          <div class="bento-icon purple">🤖</div>
+          <div class="bento-title">AI Diet Coach yang Mengerti Pola Makanmu</div>
+          <p class="bento-desc">
+            Punya asisten gizi pribadi 24/7. Tanyakan apa saja mengenai makanan warteg yang aman, ide menu defisit kalori, hingga evaluasi mingguan performa dietmu.
+          </p>
+        </div>
+        <div class="chat-preview">
+          <div class="chat-bubble chat-user">
+            "Malam ini diajak teman makan sate taichan, masih aman gak untuk sisa kalori saya?"
+          </div>
+          <div class="chat-bubble chat-bot">
+            "✦ Sisa kalorimu masih 450 kkal. 1 porsi sate taichan tanpa lontong (~320 kkal) sangat aman dan tinggi protein!"
+          </div>
+        </div>
+      </div>
+
+      <div class="bento-card">
+        <div>
+          <div class="bento-icon">🇮🇩</div>
+          <div class="bento-title">5.000+ Database Menu Nusantara</div>
+          <p class="bento-desc">
+            Dari nasi campur Bali sampai empal gentong Cirebon. Informasi takaran kalori, protein, lemak, dan karbohidrat telah disesuaikan porsi asli Indonesia.
+          </p>
+        </div>
+        <div style="margin-top: 20px; display: flex; gap: 8px; flex-wrap: wrap;">
+          <span class="food-badge" style="font-size: 0.75rem;">🍛 Masakan Padang</span>
+          <span class="food-badge" style="font-size: 0.75rem;">🍜 Olahan Mie</span>
+          <span class="food-badge" style="font-size: 0.75rem;">🥗 Jajanan Pasar</span>
+        </div>
+      </div>
+
+      <div class="bento-card">
+        <div>
+          <div class="bento-icon amber">⚡</div>
+          <div class="bento-title">Multi-Select Basket Cepat</div>
+          <p class="bento-desc">
+            Makan nasi rames dengan 3 lauk berbeda? Masukkan semuanya ke keranjang log sekaligus. Tanpa perlu simpan bolak-balik.
+          </p>
+        </div>
+      </div>
+
+      <div class="bento-card bento-col-2">
+        <div>
+          <div class="bento-icon">📈</div>
+          <div class="bento-title">Target Adaptif & Smart Insight</div>
+          <p class="bento-desc">
+            Tubuh manusia beradaptasi. FitKu secara berkala mengevaluasi tren penurunan berat badanmu dan memberikan saran penyesuaian target kalori mingguan secara otomatis.
+          </p>
+        </div>
+        <div style="margin-top: 20px; background: #F8FAF9; border: 1px solid #E2E8F0; border-radius: 14px; padding: 14px; font-size: 0.82rem; color: #0D7A53; font-weight: 600;">
+          💡 Pola Ditemukan: Di hari kamu minum 8+ gelas air, kamu 43% lebih konsisten menjaga defisit kalori harian.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section" id="testimoni" style="background: #FFFFFF;">
+  <div class="container">
+    <div class="text-center">
+      <span class="section-tag">Kisah Sukses Pengguna</span>
+      <h2 class="section-heading">Mereka yang sudah mencapai berat ideal</h2>
+      <p class="section-desc mx-auto">Pengalaman nyata dari pengguna yang berhasil mengubah gaya hidup bersama FitKu.</p>
+    </div>
+
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div>
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-quote">
+            "Dulu selalu gagal diet karena app sebelah gak tahu kalori soto betawi dan nasi uduk. Pakai FitKu gampang banget, dalam 3 bulan turun 6.2 kg tanpa lemas!"
+          </p>
+        </div>
+        <div class="testi-author">
+          <div class="testi-pic">AR</div>
+          <div>
+            <div class="testi-name">Ayu Rahmawati</div>
+            <div class="testi-meta">Jakarta · Turun 6.2 kg</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div>
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-quote">
+            "Fitur AI Coach-nya ngebantu banget pas lagi bingung makan siang di kantor. Tinggal tanya rekomendasi warteg yang proteinnya tinggi tapi aman kalori."
+          </p>
+        </div>
+        <div class="testi-author">
+          <div class="testi-pic" style="background: linear-gradient(135deg, var(--accent) 0%, #EA580C 100%);">RH</div>
+          <div>
+            <div class="testi-name">Rizky Halim</div>
+            <div class="testi-meta">Surabaya · Rutin pakai 5 bulan</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testi-card">
+        <div>
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-quote">
+            "Biaya langganannya super terjangkau dibanding konsultasi dokter gizi. Tampilannya bersih, tanpa iklan yang ganggu, dan sangat responsif di HP."
+          </p>
+        </div>
+        <div class="testi-author">
+          <div class="testi-pic" style="background: linear-gradient(135deg, var(--violet) 0%, #4338CA 100%);">DS</div>
+          <div>
+            <div class="testi-name">Dewi Santoso</div>
+            <div class="testi-meta">Bandung · Paket 1 Tahun</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<div class="pricing-bg" id="pricing">
+  <section class="section">
+    <div class="container">
+      <div class="text-center">
+        <span class="section-tag">Pilihan Langganan Pro</span>
+        <h2 class="section-heading">Investasi lebih murah dari secangkir kopi</h2>
+        <p class="section-desc mx-auto">
+          Coba gratis 7 hari pertama. Tanpa komitmen, tanpa biaya tersembunyi, batalkan kapan saja.
+        </p>
+      </div>
+
+      <div class="pricing-grid mx-auto">
+        <div class="pricing-card">
+          <div>
+            <div class="pricing-plan-name">1 Bulan</div>
+            <div class="pricing-plan-desc">Cocok untuk coba-coba</div>
+            <div class="pricing-amount">49k <span>/ bln</span></div>
+            <div class="pricing-daily-eq">≈ Rp 1.600 / hari</div>
+            <ul>
+              <li>Akses 5.000+ Database Makanan</li>
+              <li>AI Diet Coach 20 pesan/hari</li>
+              <li>Riwayat & Grafik Kalori</li>
+              <li>Buku Harian & Kebiasaan Sehat</li>
+            </ul>
+          </div>
+          <a href="https://fitku.fit" class="btn-pricing btn-pricing-outline">Pilih 1 Bulan</a>
+        </div>
+
+        <div class="pricing-card featured">
+          <div class="badge-featured">Paling Populer</div>
+          <div>
+            <div class="pricing-plan-name">3 Bulan</div>
+            <div class="pricing-plan-desc">Waktu ideal pembentukan habit</div>
+            <div class="pricing-amount">119k <span>/ 3 bln</span></div>
+            <div class="pricing-daily-eq">≈ Rp 1.300 / hari</div>
+            <div class="pricing-save-pill">🔥 Hemat 19% vs Bulanan</div>
+            <ul>
+              <li><strong>Semua fitur Paket 1 Bulan</strong></li>
+              <li>Evaluasi Target Adaptif Mingguan</li>
+              <li>Tren Analisa Skor & Nutrisi 30 Hari</li>
+              <li>Prioritas Update Fitur Baru</li>
+            </ul>
+          </div>
+          <a href="https://fitku.fit" class="btn-pricing btn-pricing-primary">Mulai Trial 7 Hari</a>
+        </div>
+
+        <div class="pricing-card">
+          <div>
+            <div class="pricing-plan-name">1 Tahun</div>
+            <div class="pricing-plan-desc">Komitmen hidup sehat permanen</div>
+            <div class="pricing-amount">399k <span>/ thn</span></div>
+            <div class="pricing-daily-eq">≈ Rp 1.100 / hari</div>
+            <div class="pricing-save-pill">🎉 Hemat 32% vs Bulanan</div>
+            <ul>
+              <li><strong>Semua fitur Paket 3 Bulan</strong></li>
+              <li>Akses Penuh Tanpa Batas 365 Hari</li>
+              <li>Harga Termurah per Hari</li>
+              <li>Dukungan CS Prioritas VIP</li>
+            </ul>
+          </div>
+          <a href="https://fitku.fit" class="btn-pricing btn-pricing-outline">Pilih 1 Tahun</a>
+        </div>
+      </div>
+
+      <p class="text-center" style="margin-top: 30px; font-size: 0.85rem; color: var(--ink-soft);">
+        🔒 Pembayaran aman via QRIS, Virtual Account, & E-Wallet lokal.
+      </p>
+    </div>
+  </section>
+</div>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="container">
+    <div class="text-center">
+      <span class="section-tag">Frequently Asked Questions</span>
+      <h2 class="section-heading">Pertanyaan yang Sering Diajukan</h2>
+    </div>
+
+    <div class="faq-box">
+      <details class="faq-item">
+        <summary class="faq-q">
+          <span>Apakah ada masa trial gratis?</span>
+          <span class="faq-icon-cross">+</span>
+        </summary>
+        <div class="faq-a">
+          Ya, setiap pengguna baru mendapatkan masa uji coba gratis (Free Trial) selama 7 hari dengan akses penuh ke semua fitur Pro, termasuk konsultasi AI Coach. Kamu tidak perlu memasukkan kartu kredit untuk mencoba.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q">
+          <span>Apakah makanan warteg dan masakan Padang akurat?</span>
+          <span class="faq-icon-cross">+</span>
+        </summary>
+        <div class="faq-a">
+          Sangat akurat. Tim nutrisi FitKu menyusun data kalori berdasarkan porsi rata-rata yang disajikan di Indonesia dengan standar Tabel Komposisi Pangan Indonesia (TKPI) dari Kemenkes. Kamu juga bisa mengatur porsi (misal 0.5x atau 1.5x) secara fleksibel.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q">
+          <span>Bagaimana cara kerja AI Coach?</span>
+          <span class="faq-icon-cross">+</span>
+        </summary>
+        <div class="faq-a">
+          AI Coach FitKu terhubung langsung dengan buku harian makanan dan target berat badanmu hari ini. Ia tidak hanya memberi teori, tapi membaca data real-time kamu: "Kamu masih butuh 30g protein hari ini", lalu merekomendasikan makanan lokal yang cocok untuk memenuhinya.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q">
+          <span>Bisa batalkan langganan kapan saja?</span>
+          <span class="faq-icon-cross">+</span>
+        </summary>
+        <div class="faq-a">
+          Bisa banget. Tidak ada kontrak yang mengikat. Kamu bisa membatalkan langganan kapan saja melalui menu Setelan di dalam aplikasi. Akses Pro kamu akan tetap aktif hingga masa periode berjalan selesai.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-q">
+          <span>Apakah FitKu bisa di-download di HP?</span>
+          <span class="faq-icon-cross">+</span>
+        </summary>
+        <div class="faq-a">
+          FitKu berbasis Progressive Web App (PWA) modern. Cukup buka <strong>fitku.fit</strong> di browser HP (Chrome/Safari), lalu pilih menu "Tambahkan ke Layar Utama" (Add to Home Screen). FitKu akan langsung terpasang seperti aplikasi native tanpa menghabiskan memori HP.
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta-section">
+  <div class="container">
+    <h2>Mulai Perjalanan Sehatmu Hari Ini</h2>
+    <p>Bergabung bersama 12.000+ pengguna yang sudah bebas dari rasa bersalah saat makan kuliner Nusantara.</p>
+    <a href="https://fitku.fit" class="btn-cta-white">
+      Coba FitKu Gratis 7 Hari →
+    </a>
+    <div class="final-guarantee">
+      ✓ Tanpa Kartu Kredit &nbsp;·&nbsp; ✓ Setup Hanya 1 Menit &nbsp;·&nbsp; ✓ Cancel Kapan Saja
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container footer-inner">
+    <div>
+      <strong style="color: #fff; font-family: 'Sora';">FitKu</strong> — AI Diet Coach Indonesia.
+    </div>
+    <div>
+      © 2026 FitKu.fit. Hak Cipta Dilindungi Undang-Undang.
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
