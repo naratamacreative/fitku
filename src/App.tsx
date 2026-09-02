@@ -1,6 +1,7 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { AiCoach } from './features/ai-coach/AiCoach'
 import { Auth } from './features/auth/Auth'
+import { ResetPassword } from './features/auth/ResetPassword'
 import { Dashboard } from './features/dashboard/Dashboard'
 import { FoodTracker } from './features/food-tracker/FoodTracker'
 import { Hydration } from './features/hydration/Hydration'
@@ -65,6 +66,7 @@ function AppRoutes() {
           </GuestOnly>
         }
       />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route
         path="/onboarding"
         element={

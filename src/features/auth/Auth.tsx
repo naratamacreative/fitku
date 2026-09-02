@@ -26,6 +26,7 @@ export function Auth() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
+  const [resetSending, setResetSending] = useState(false)
   const navigate = useNavigate()
   const { refreshUser } = useAppState()
 
@@ -99,6 +100,30 @@ export function Auth() {
     setInfo('')
   }
 
+  const handleForgotPassword = async () => {
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail) {
+      setError('Masukkan email kamu dulu, lalu klik Lupa password?.')
+      return
+    }
+    setResetSending(true)
+    setError('')
+    setInfo('')
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setResetSending(false)
+    if (resetError) {
+      setError(
+        resetError.code === 'over_email_send_rate_limit'
+          ? 'Terlalu banyak percobaan kirim ulang. Tunggu beberapa menit sebelum coba lagi.'
+          : 'Gagal mengirim link reset. Cek email dan koneksi internetmu, lalu coba lagi.',
+      )
+      return
+    }
+    setInfo('Link reset password sudah dikirim — cek email kamu.')
+  }
+
   return (
     <div className="mx-auto flex h-dvh max-w-md flex-col justify-center gap-3 bg-bg px-5">
       <h2 className="font-display text-xl font-semibold text-ink">{mode === 'login' ? 'Masuk ke FitKu' : 'Daftar FitKu'}</h2>
@@ -127,6 +152,17 @@ export function Auth() {
         placeholder="Minimal 6 karakter"
         className="rounded-2xl border-[1.5px] border-line bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-accent"
       />
+
+      {mode === 'login' && (
+        <button
+          type="button"
+          onClick={() => void handleForgotPassword()}
+          disabled={resetSending}
+          className="self-end text-xs font-semibold text-ink-dim underline disabled:opacity-50"
+        >
+          {resetSending ? 'Mengirim…' : 'Lupa password?'}
+        </button>
+      )}
 
       {error && <p className="text-xs font-semibold text-pro">{error}</p>}
       {info && <p className="text-xs font-semibold text-success">{info}</p>}
