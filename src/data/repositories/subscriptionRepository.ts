@@ -26,11 +26,18 @@ function fromRow(row: SubscriptionRow): SubscriptionStatus {
   }
 }
 
+// Plan ids are legacy/stable (see paywall.triggers.ts PRO_PLANS comment) but their sold
+// name/duration changed to a 3-tier scheme: pro_monthly = 1 bulan, pro_annual = 3 bulan,
+// pro_lifetime = 12 bulan. Durations below were previously mismatched (pro_annual expired
+// after 1 YEAR, pro_lifetime never expired) — fixed here to match what's actually sold.
+// 'dev_test' is the only plan that legitimately never expires: an internal-only grant for
+// pre-launch testing, never offered through Premium.tsx's plan picker.
 function expiryFor(plan: SubscriptionPlan, startedAt: Date): string | null {
-  if (plan === 'pro_lifetime') return null
+  if (plan === 'dev_test') return null
   const expires = new Date(startedAt)
   if (plan === 'pro_monthly') expires.setMonth(expires.getMonth() + 1)
-  if (plan === 'pro_annual') expires.setFullYear(expires.getFullYear() + 1)
+  if (plan === 'pro_annual') expires.setMonth(expires.getMonth() + 3)
+  if (plan === 'pro_lifetime') expires.setMonth(expires.getMonth() + 12)
   return expires.toISOString()
 }
 

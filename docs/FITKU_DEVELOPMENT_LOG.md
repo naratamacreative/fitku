@@ -1969,3 +1969,39 @@ Tidak satu pun dari hipotesis ini sudah dikonfirmasi.
 
 ### 10. Next Step
 Investigasi kenapa client tidak melihat status Pro yang sudah benar di database — mulai dari cek response aktual `subscriptionRepository.get()` (Network tab browser) untuk akun ini setelah refresh, dan cek definisi RLS policy `subscription_status` untuk SELECT. Jangan mengubah kode atau mengklaim fix sebelum root cause ini dikonfirmasi lewat observasi langsung.
+
+---
+
+## 2026-09-03 (lanjutan) — Investigasi Temuan Trial: Tidak Reproducible; Ditemukan Bug Nyata (Durasi Plan Berbayar Salah) + Plan `dev_test` Baru untuk Akun Testing
+
+### 1-2. Tanggal & Tujuan
+2026-09-03. Melanjutkan investigasi temuan sesi sebelumnya (user melaporkan UI masih tampil Trial setelah grant Pro Lifetime manual). User login langsung di browser (dipandu lewat automation, password diisi user sendiri — bukan oleh saya), diperiksa Network tab dan tampilan Settings.
+
+### 3-4. Root Cause & Keputusan
+
+**Temuan 1 — Bug lama (UI tampil Trial) TIDAK reproducible saat diperiksa ulang.** Login sungguhan ke `fitku.fit/settings`, reload halaman: request `GET /rest/v1/subscription_status?...user_id=eq.ea36597e-...` selalu **200 OK** (dicek 4× dalam satu page load), dan UI menampilkan "Plan aktif: PRO 12 Bulan" tanpa badge Trial. RLS policy `auth.uid() = user_id` bekerja normal. **Tidak ada perbaikan kode yang dibuat untuk temuan ini** — dicatat sebagai tidak reproducible, kemungkinan besar kondisi race sesaat (render pertama sebelum `useProAccess` selesai fetch) pada laporan awal, bukan bug yang menetap.
+
+**Temuan 2 — BUG KODE NYATA, ditemukan saat membaca `subscriptionRepository.ts` untuk investigasi di atas: durasi plan berbayar tidak cocok dengan yang dijual ke user.** Saat pass 2026-08-24, harga/nama plan direlabel ke skema 3-tier (49rb/119rb/399rb, lihat `paywall.triggers.ts` `PRO_PLANS`) TAPI cuma nama tampilan yang diubah — plan id (`pro_monthly`/`pro_annual`/`pro_lifetime`) sengaja dipertahankan (komentar eksplisit di `paywall.triggers.ts`: "Plan ids are kept stable... only their display name/price changed"). Konsekuensi yang TIDAK disadari saat itu: `expiryFor()` di `subscriptionRepository.ts` tidak ikut disesuaikan — `pro_annual` (dijual sebagai "3 Bulan", 119rb) di-enforce expired **1 TAHUN** kemudian, dan `pro_lifetime` (dijual sebagai "12 Bulan", 399rb) di-enforce **TIDAK PERNAH expired**. Dampak: begitu pembayaran Midtrans nyata aktif, pembeli paket "3 Bulan"/"12 Bulan" akan dapat masa aktif jauh lebih lama dari yang dibayar — kebocoran revenue nyata, belum pernah ketahuan karena `Premium.tsx` masih mock activation (`handleActivate()` tidak lewat payment gateway sungguhan).
+
+**Keputusan (diminta eksplisit oleh user):** (a) perbaiki `expiryFor()` supaya `pro_annual` expired +3 bulan dan `pro_lifetime` expired +12 bulan, sesuai label yang benar-benar ditampilkan ke pembeli; (b) buat plan id BARU `dev_test` (bukan reuse `pro_lifetime`) khusus untuk grant akun testing/dev — `expires_at` selalu NULL selamanya, terpisah total dari plan berbayar, supaya perbaikan durasi `pro_lifetime` di atas tidak ikut mencabut akses permanen akun test, dan sebaliknya perubahan pada `dev_test` nanti tidak pernah menyentuh pelanggan asli.
+
+### 5-7. Implementasi
+- `src/data/types/log.types.ts`: `SubscriptionPlan` union ditambah `'dev_test'`.
+- `src/data/repositories/subscriptionRepository.ts`: `expiryFor()` — `pro_annual` `setFullYear(+1)` → `setMonth(+3)`; `pro_lifetime` `return null` → `setMonth(+12)`; `dev_test` (baru) → `return null`.
+- `src/features/settings/Settings.tsx`: `PLAN_LABEL` ditambah `dev_test: 'PRO (Dev Test)'` supaya tampil beda dari plan berbayar asli di UI Langganan.
+- `supabase/migrations/0004_dev_test_plan.sql` (baru): `alter type subscription_plan_t add value if not exists 'dev_test';` — additive, belum dijalankan oleh saya (tidak ada akses SQL Editor/CLI ter-autentikasi untuk operasi DDL/write di sesi ini; sesuai pola kerja sebelumnya, migrasi dijalankan manual oleh user).
+- `PRO_PLANS` di `paywall.triggers.ts` TIDAK diubah — `dev_test` sengaja tidak dimasukkan ke array itu, supaya tidak pernah muncul sebagai pilihan beli di `Premium.tsx`.
+
+### 8. File yang berubah
+`src/data/types/log.types.ts`, `src/data/repositories/subscriptionRepository.ts`, `src/features/settings/Settings.tsx`, `supabase/migrations/0004_dev_test_plan.sql` (baru).
+
+### 9. Dampak terhadap data/schema
+Additive di level enum Postgres (`subscription_plan_t` +1 value) — tidak mengubah row yang sudah ada. Akun test (`novriekadito9@gmail.com`, row existing `plan=pro_lifetime`) PERLU di-migrasi manual ke `plan=dev_test` setelah migrasi 0004 dijalankan, supaya konsisten dengan keputusan di atas — lihat Next Step.
+
+### 10. Testing yang benar-benar dilakukan
+- Build: `npm run build` — 0 TypeScript error setelah `SubscriptionPlan` union diperluas.
+- Browser sungguhan (akun `novriekadito9@gmail.com`, login manual oleh user): dikonfirmasi request `subscription_status` 200 OK berkali-kali, UI tampil "PRO 12 Bulan" tanpa Trial — dasar bagi kesimpulan Temuan 1 di atas.
+- **BELUM dites**: migrasi `0004_dev_test_plan.sql` belum dijalankan ke database production (butuh user run manual di SQL Editor), jadi plan `dev_test` belum bisa benar-benar dipakai/diverifikasi end-to-end. Perhitungan durasi baru (`+3 bulan`/`+12 bulan`) baru diverifikasi lewat pembacaan kode, BELUM dites lewat `activate()` sungguhan (karena belum ada pembayaran nyata yang memicu jalur itu).
+
+### 11. Next Step
+User perlu, berurutan: (1) jalankan `supabase/migrations/0004_dev_test_plan.sql` di Supabase SQL Editor (harus statement terpisah dari langkah berikutnya — Postgres tidak bisa memakai enum value baru dalam transaksi yang sama dengan yang menambahkannya); (2) setelah itu, jalankan `UPDATE public.subscription_status SET plan = 'dev_test', status = 'active', expires_at = NULL, trial_used = true WHERE user_id = 'ea36597e-ae8c-4b35-b1a8-ed0d32ee5bb4';` untuk memindahkan akun test dari `pro_lifetime` ke `dev_test`; (3) refresh `fitku.fit`, konfirmasi Settings menampilkan "PRO (Dev Test)"; (4) sebelum pembayaran Midtrans nyata diaktifkan, verifikasi `activate()` benar-benar menghasilkan `expires_at` yang sesuai (+3 bulan untuk pro_annual, +12 bulan untuk pro_lifetime) lewat test end-to-end, bukan cuma pembacaan kode.
