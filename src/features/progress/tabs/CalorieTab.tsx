@@ -5,6 +5,7 @@ import type { ExerciseLog } from '../../../data/types/exercise.types'
 import type { FoodLog } from '../../../data/types/food.types'
 import { EXERCISE_CATEGORIES } from '../../../domain/exercise'
 import { aggregateLogs, todayIso } from '../../../domain/nutrition'
+import { computeCalorieRecap } from '../../../domain/progressRecap'
 import { ProLocked } from '../../../shared/components/ProLocked'
 import { useAppState } from '../../../shared/context/AppStateContext'
 import { useProAccess } from '../../../shared/hooks/useProAccess'
@@ -68,12 +69,14 @@ export function CalorieTab() {
   const { user } = useAppState()
   const proAccess = useProAccess()
   const [logs30, setLogs30] = useState<FoodLog[]>([])
+  const [loggedDatesAll, setLoggedDatesAll] = useState<string[]>([])
   const [exercise14, setExercise14] = useState<ExerciseLog[]>([])
   const [editingExercise, setEditingExercise] = useState<ExerciseLog | null>(null)
 
   useEffect(() => {
     if (!user) return
     foodLogRepository.getByDateRange(user.id, isoDaysAgo(29), todayIso()).then(setLogs30)
+    foodLogRepository.loggedDates(user.id).then(setLoggedDatesAll)
     exerciseRepository.getByDateRange(user.id, isoDaysAgo(13), todayIso()).then((list) => setExercise14(list.sort((a, b) => b.date.localeCompare(a.date))))
   }, [user])
 
@@ -86,7 +89,6 @@ export function CalorieTab() {
   const last7 = last7Dates.map((date) => ({ date, calories: aggregateLogs(byDate.get(date) ?? []).calories }))
   const maxCal = Math.max(user.targetCalories, ...last7.map((d) => d.calories), 1)
 
-  const loggedDates30 = Array.from(byDate.keys())
   const loggedDates7 = last7Dates.filter((d) => byDate.has(d))
   const loggedDays7 = loggedDates7.length
 
@@ -97,10 +99,10 @@ export function CalorieTab() {
       ? Math.round((totalsPerLoggedDay.reduce((s, t) => s + t[key], 0) / loggedDays7 / target) * 100)
       : 0
 
-  const show30DayTrend = loggedDates30.length > 7
   const last30Dates = Array.from({ length: 30 }, (_, i) => isoDaysAgo(29 - i))
   const trend30 = last30Dates.map((date) => aggregateLogs(byDate.get(date) ?? []).calories)
   const trend30Points = buildSparklinePoints(trend30)
+  const recap = computeCalorieRecap(logs30, user.targetCalories, loggedDatesAll)
 
   const handleSaveExercise = async (values: ExerciseFormValues) => {
     if (!editingExercise) return
@@ -137,11 +139,30 @@ export function CalorieTab() {
         </p>
       </div>
 
-      {show30DayTrend &&
+      {recap.hasEnoughData &&
         (proAccess?.active ? (
-          <div className="rounded-2xl bg-surface p-3 shadow-soft">
-            <b className="font-display text-xs text-ink">Tren 30 Hari</b>
-            <svg viewBox="0 0 220 40" width="100%" height="40" preserveAspectRatio="none" className="mt-2">
+          <div className="flex flex-col gap-2.5 rounded-2xl bg-surface p-3 shadow-soft">
+            <div className="flex items-center justify-between">
+              <b className="font-display text-xs text-ink">Progress Recap 30 Hari</b>
+              <span className="rounded-full bg-pro-soft px-2 py-0.5 text-[9.5px] font-bold text-pro-ink">PRO</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <p className="font-display text-lg font-bold tabular-nums text-ink">🔥 {recap.loggingStreakDays}</p>
+                <p className="text-[10px] text-ink-dim">hari streak logging</p>
+              </div>
+              <div>
+                <p className="font-display text-lg font-bold tabular-nums text-ink">{recap.daysOnTargetPct ?? 0}%</p>
+                <p className="text-[10px] text-ink-dim">hari sesuai target (30 hari)</p>
+              </div>
+            </div>
+            {recap.avgCaloriesRecent14 !== null && recap.avgCaloriesPrior14 !== null && (
+              <p className="text-[11px] leading-relaxed text-ink-dim">
+                14 hari terakhir rata-rata <b className="tabular-nums text-ink">{recap.avgCaloriesRecent14.toLocaleString('id-ID')} kkal</b>, dibanding{' '}
+                <b className="tabular-nums text-ink">{recap.avgCaloriesPrior14.toLocaleString('id-ID')} kkal</b> di 14 hari sebelumnya.
+              </p>
+            )}
+            <svg viewBox="0 0 220 40" width="100%" height="40" preserveAspectRatio="none">
               <line x1="0" y1="40" x2="220" y2="40" stroke="var(--fk-line)" strokeWidth="1" />
               {trend30Points && (
                 <polyline points={trend30Points} fill="none" stroke="var(--fk-accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -149,7 +170,10 @@ export function CalorieTab() {
             </svg>
           </div>
         ) : proAccess ? (
-          <ProLocked title="Tren 30 Hari" description="Grafik kalori 30 hari terakhir — sudah kamu rasakan waktu trial, sekarang terkunci." />
+          <ProLocked
+            title="Progress Recap 30 Hari"
+            description="Streak logging, persentase hari sesuai target, dan tren kalorimu — sudah kamu rasakan waktu trial, sekarang terkunci."
+          />
         ) : null)}
 
       <div className="rounded-2xl bg-surface p-3 shadow-soft">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { WeightEntry } from '../../../data/types/log.types'
 import { todayIso } from '../../../domain/nutrition'
+import { computeWeightRecap } from '../../../domain/progressRecap'
 import { assessWeightChange, type WeightAssessmentTone } from '../../../domain/weightAssessment'
 import { Button } from '../../../shared/components/Button'
 import { ProLocked } from '../../../shared/components/ProLocked'
@@ -103,9 +104,9 @@ export function WeightTab() {
   const chartEntries = fullHistory ? entries : entries.slice(-8)
   const chart = buildSparklineData(chartEntries.map((e) => e.weightKg), user.targetWeightKg)
   const listEntries = [...entries].reverse().slice(0, fullHistory ? entries.length : 10)
-  const hasMoreHistory = entries.length > 10
   // Basic health info, shown to every user regardless of Pro status — not paywalled.
   const assessment = entries.length > 1 ? assessWeightChange(user.goal, deltaKg) : null
+  const recap = computeWeightRecap(entries, user.goal)
 
   const handleLog = async () => {
     const value = Number(inputWeight)
@@ -166,12 +167,48 @@ export function WeightTab() {
         ))}
       </div>
 
-      {!fullHistory && hasMoreHistory && (
-        <ProLocked
-          title="Riwayat & Grafik Penuh"
-          description="Lihat seluruh catatan beratmu, bukan cuma 10 terakhir — sudah kamu rasakan waktu trial, sekarang terkunci."
-        />
-      )}
+      {recap.hasEnoughData &&
+        (proAccess?.active ? (
+          <div className="flex flex-col gap-2.5 rounded-2xl bg-surface p-3.5 shadow-soft">
+            <div className="flex items-center justify-between">
+              <b className="font-display text-xs text-ink">Progress Recap</b>
+              <span className="rounded-full bg-pro-soft px-2 py-0.5 text-[9.5px] font-bold text-pro-ink">PRO</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <p className="font-display text-lg font-bold tabular-nums text-ink">
+                  {recap.totalDeltaKg > 0 ? '+' : ''}
+                  {recap.totalDeltaKg} kg
+                </p>
+                <p className="text-[10px] text-ink-dim">sejak mulai · {recap.daysSinceStart} hari</p>
+              </div>
+              <div>
+                <p className="font-display text-lg font-bold tabular-nums text-ink">
+                  {recap.paceKgPerWeek > 0 ? '+' : ''}
+                  {recap.paceKgPerWeek} kg
+                </p>
+                <p className="text-[10px] text-ink-dim">rata-rata / minggu</p>
+              </div>
+            </div>
+            {recap.loggingStreakDays > 0 && (
+              <p className="text-[11px] text-ink-dim">
+                🔥 Streak catat berat: <b className="text-ink">{recap.loggingStreakDays} hari</b>
+              </p>
+            )}
+            {recap.trend30Text && (
+              <p className="text-[11px] leading-relaxed text-ink-dim">
+                {recap.trend30Text}
+                {recap.priorWindowDeltaKg !== null &&
+                  ` (30 hari sebelumnya: ${recap.priorWindowDeltaKg > 0 ? '+' : ''}${recap.priorWindowDeltaKg}kg)`}
+              </p>
+            )}
+          </div>
+        ) : proAccess ? (
+          <ProLocked
+            title="Progress Recap"
+            description="Ringkasan progres beratmu — total perubahan, kecepatan, streak logging, dan tren bulanan, plus riwayat & grafik lengkap."
+          />
+        ) : null)}
     </div>
   )
 }
