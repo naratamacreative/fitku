@@ -2,7 +2,7 @@ import type { SubscriptionStatus } from '../data/types/log.types'
 import type { User } from '../data/types/user.types'
 
 /** Every new user gets full Pro access for this many days from account creation, no free tier after. */
-export const TRIAL_DAYS = 7
+export const TRIAL_DAYS = 14
 
 export type ProAccessReason = 'trial' | 'paid' | 'expired'
 

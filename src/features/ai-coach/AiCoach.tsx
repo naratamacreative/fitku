@@ -76,13 +76,15 @@ export function AiCoach() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages.length])
 
-  useEffect(() => {
-    if (!user) return
-    foodLogRepository.loggedDates(user.id).then((dates) => setStreak(calculateStreak(dates)))
-  }, [user, totals.count])
+  const isPaidUser = proAccess?.reason === 'paid'
 
   useEffect(() => {
-    if (!user) return
+    if (!user || !isPaidUser) return
+    foodLogRepository.loggedDates(user.id).then((dates) => setStreak(calculateStreak(dates)))
+  }, [user, isPaidUser, totals.count])
+
+  useEffect(() => {
+    if (!user || !isPaidUser) return
     const from = isoDaysAgo(6)
     const to = todayIso()
     Promise.all([
@@ -106,12 +108,13 @@ export function AiCoach() {
           : null,
       )
     })
-  }, [user, streak, totals.count])
+  }, [user, isPaidUser, streak, totals.count])
 
-  // Pro-only insight: deeper 30-day analysis, score trend, and adaptive target — only worth
-  // fetching once we know the user actually has access, expired users just see ProLocked.
+  // AI Coach (Daily Coaching, Weekly Insight, chat, and these deeper insights) is Pro-only —
+  // trial no longer includes it, only a real paid subscription does. Only worth fetching
+  // once we know the user is actually paid; everyone else sees the ProLocked screen below.
   useEffect(() => {
-    if (!user || !proAccess?.active) return
+    if (!user || !isPaidUser) return
     const from30 = isoDaysAgo(29)
     const from14 = isoDaysAgo(13)
     const to = todayIso()
@@ -130,7 +133,7 @@ export function AiCoach() {
       const hydration14 = hydration30.filter((h) => h.date >= from14)
       setScoreTrend(analyzeScoreTrend({ user, logs: logs14, exerciseLogs: exercise14, hydrationLogs: hydration14 }))
     })
-  }, [user, proAccess?.active, totals.count])
+  }, [user, isPaidUser, totals.count])
 
   if (!user) return null
 
@@ -183,6 +186,10 @@ export function AiCoach() {
           },
         }),
       })
+      if (res.status === 403) {
+        setMessages((m) => [...m, { role: 'ai', text: 'AI Coach adalah fitur Pro. Upgrade dulu untuk mulai chat.' }])
+        return
+      }
       if (!res.ok) {
         setMessages((m) => [...m, { role: 'ai', text: 'AI Coach sedang mengalami gangguan. Coba lagi sebentar lagi.' }])
         return
@@ -207,173 +214,172 @@ export function AiCoach() {
           <b className="font-display text-sm text-ink">AI Coach</b>
         </div>
 
-        <div className="flex flex-col gap-2.5 rounded-2xl bg-surface p-3.5 shadow-soft">
-          <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Daily Coaching · hari ini</span>
-          {steps.map((text, i) => (
-            <div key={STEP_LABELS[i]} className="flex gap-2">
-              <span className="grad-hero flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-display text-[10px] font-bold text-white">
-                {i + 1}
-              </span>
-              <div>
-                <b className="block text-[10px] font-bold uppercase tracking-wide text-accent">{STEP_LABELS[i]}</b>
-                <span className="text-[11px] leading-relaxed text-ink">{text}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {weekly && (
-          <div className="flex flex-col gap-2.5 rounded-2xl bg-surface p-3.5 shadow-soft">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Weekly Insight · 7 hari terakhir</span>
-            {!weekly.hasEnoughData ? (
-              <>
-                <p className="text-[11px] leading-relaxed text-ink">{weekly.summary}</p>
-                <p className="text-[11px] leading-relaxed text-ink-dim">{weekly.recommendation}</p>
-              </>
-            ) : (
-              <>
-                <p className="text-[11.5px] leading-relaxed text-ink">{weekly.summary}</p>
-                <div className="flex flex-col gap-1.5 text-[11px] leading-relaxed text-ink-dim">
-                  <p>📊 {weekly.consistency}</p>
-                  <p>⚖️ {weekly.weightTrend}</p>
-                  <p>🔍 {weekly.pattern}</p>
-                </div>
-                <div className="mt-1 rounded-xl bg-accent-soft px-3 py-2 text-[11px] text-ink">
-                  <b className="text-accent">Rekomendasi: </b>
-                  {weekly.recommendation}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="flex items-center justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">✨ FitKu Pro · Insight Personal</p>
-          {proAccess?.reason === 'trial' && (
-            <span className="rounded-full bg-pro-soft px-2 py-0.5 text-[9.5px] font-bold text-pro-ink">
-              Trial {proAccess.trialDaysLeft} hari lagi
-            </span>
-          )}
-        </div>
-
-        {proAccess && !proAccess.active && (
+        {!isPaidUser ? (
           <ProLocked
-            title="Insight Personal Pro"
-            description="Analisa 30 hari, tren skor & korelasi kebiasaan, dan target adaptif — sudah kamu rasakan waktu trial, sekarang terkunci."
+            title="AI Coach — Fitur Pro"
+            description={
+              proAccess?.reason === 'trial'
+                ? `Daily Coaching, chat, dan semua insight personal khusus pelanggan Pro — tidak termasuk dalam ${proAccess.trialDaysLeft} hari trial yang tersisa. Upgrade untuk mulai pakai AI Coach.`
+                : 'Daily Coaching, chat, dan semua insight personal khusus pelanggan Pro. Upgrade untuk mulai pakai AI Coach.'
+            }
           />
-        )}
+        ) : (
+          <>
+            <div className="flex flex-col gap-2.5 rounded-2xl bg-surface p-3.5 shadow-soft">
+              <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Daily Coaching · hari ini</span>
+              {steps.map((text, i) => (
+                <div key={STEP_LABELS[i]} className="flex gap-2">
+                  <span className="grad-hero flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-display text-[10px] font-bold text-white">
+                    {i + 1}
+                  </span>
+                  <div>
+                    <b className="block text-[10px] font-bold uppercase tracking-wide text-accent">{STEP_LABELS[i]}</b>
+                    <span className="text-[11px] leading-relaxed text-ink">{text}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-        {proAccess?.active && allProInsightsEmpty && (
-          <div className="flex items-center gap-3 rounded-2xl bg-pro-soft px-3.5 py-3 shadow-soft">
-            <span className="text-xl" aria-hidden="true">
-              ✨
-            </span>
-            <p className="text-[11px] leading-snug text-pro-ink">
-              <b>Insight Pro belum siap.</b> Catat makanan &amp; berat badan rutin untuk membuka tren skor, target
-              adaptif, dan analisa 30 hari.
-            </p>
-          </div>
-        )}
-
-        {proAccess?.active && !allProInsightsEmpty && scoreTrend?.hasEnoughData && (
-          <div className="flex flex-col gap-2 rounded-2xl bg-surface p-3.5 shadow-soft">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Tren Skor · 14 hari</span>
-            <p className="font-display text-2xl font-bold tabular-nums text-ink">{scoreTrend.avgScore}</p>
-            <svg viewBox="0 0 220 40" width="100%" height="40" preserveAspectRatio="none">
-              <line x1="0" y1="40" x2="220" y2="40" stroke="var(--fk-line)" strokeWidth="1" />
-              <polyline
-                points={buildScoreSparkline(scoreTrend.points)}
-                fill="none"
-                stroke="var(--fk-pro)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <p className="text-[11px] leading-relaxed text-ink">{scoreTrend.trendText}</p>
-            {scoreTrend.correlationText && (
-              <div className="rounded-xl bg-accent-soft px-3 py-2 text-[11px] text-ink">
-                <b className="text-accent">Pola ditemukan: </b>
-                {scoreTrend.correlationText}
+            {weekly && (
+              <div className="flex flex-col gap-2.5 rounded-2xl bg-surface p-3.5 shadow-soft">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Weekly Insight · 7 hari terakhir</span>
+                {!weekly.hasEnoughData ? (
+                  <>
+                    <p className="text-[11px] leading-relaxed text-ink">{weekly.summary}</p>
+                    <p className="text-[11px] leading-relaxed text-ink-dim">{weekly.recommendation}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[11.5px] leading-relaxed text-ink">{weekly.summary}</p>
+                    <div className="flex flex-col gap-1.5 text-[11px] leading-relaxed text-ink-dim">
+                      <p>📊 {weekly.consistency}</p>
+                      <p>⚖️ {weekly.weightTrend}</p>
+                      <p>🔍 {weekly.pattern}</p>
+                    </div>
+                    <div className="mt-1 rounded-xl bg-accent-soft px-3 py-2 text-[11px] text-ink">
+                      <b className="text-accent">Rekomendasi: </b>
+                      {weekly.recommendation}
+                    </div>
+                  </>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {proAccess?.active && !allProInsightsEmpty && adaptiveTarget?.hasEnoughData && (
-          <div className="flex flex-col gap-2 rounded-2xl bg-surface p-3.5 shadow-soft">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Target Adaptif</span>
-            <p className="text-[11.5px] leading-relaxed text-ink">{adaptiveTarget.message}</p>
-            {adaptiveTarget.suggestedCalories && !targetApplied && (
+            <p className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">✨ FitKu Pro · Insight Personal</p>
+
+            {allProInsightsEmpty && (
+              <div className="flex items-center gap-3 rounded-2xl bg-pro-soft px-3.5 py-3 shadow-soft">
+                <span className="text-xl" aria-hidden="true">
+                  ✨
+                </span>
+                <p className="text-[11px] leading-snug text-pro-ink">
+                  <b>Insight Pro belum siap.</b> Catat makanan &amp; berat badan rutin untuk membuka tren skor, target
+                  adaptif, dan analisa 30 hari.
+                </p>
+              </div>
+            )}
+
+            {!allProInsightsEmpty && scoreTrend?.hasEnoughData && (
+              <div className="flex flex-col gap-2 rounded-2xl bg-surface p-3.5 shadow-soft">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Tren Skor · 14 hari</span>
+                <p className="font-display text-2xl font-bold tabular-nums text-ink">{scoreTrend.avgScore}</p>
+                <svg viewBox="0 0 220 40" width="100%" height="40" preserveAspectRatio="none">
+                  <line x1="0" y1="40" x2="220" y2="40" stroke="var(--fk-line)" strokeWidth="1" />
+                  <polyline
+                    points={buildScoreSparkline(scoreTrend.points)}
+                    fill="none"
+                    stroke="var(--fk-pro)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <p className="text-[11px] leading-relaxed text-ink">{scoreTrend.trendText}</p>
+                {scoreTrend.correlationText && (
+                  <div className="rounded-xl bg-accent-soft px-3 py-2 text-[11px] text-ink">
+                    <b className="text-accent">Pola ditemukan: </b>
+                    {scoreTrend.correlationText}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!allProInsightsEmpty && adaptiveTarget?.hasEnoughData && (
+              <div className="flex flex-col gap-2 rounded-2xl bg-surface p-3.5 shadow-soft">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Target Adaptif</span>
+                <p className="text-[11.5px] leading-relaxed text-ink">{adaptiveTarget.message}</p>
+                {adaptiveTarget.suggestedCalories && !targetApplied && (
+                  <button
+                    type="button"
+                    onClick={handleApplyTarget}
+                    disabled={applyingTarget}
+                    className="self-start rounded-full bg-pro px-3.5 py-1.5 text-xs font-bold text-white disabled:opacity-60"
+                  >
+                    {applyingTarget ? 'Menerapkan…' : `Terapkan ${adaptiveTarget.suggestedCalories.toLocaleString('id-ID')} kkal`}
+                  </button>
+                )}
+                {targetApplied && <p className="text-[11px] font-semibold text-success">✓ Target baru diterapkan ke profilmu.</p>}
+              </div>
+            )}
+
+            {!allProInsightsEmpty && deep?.hasEnoughData && (
+              <div className="flex flex-col gap-2 rounded-2xl bg-surface p-3.5 shadow-soft">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Analisa Mendalam · 30 hari</span>
+                <p className="text-[11.5px] leading-relaxed text-ink">{deep.headline}</p>
+                <div className="flex flex-col gap-1.5 text-[11px] leading-relaxed text-ink-dim">
+                  <p>⚖️ {deep.weightTrendText}</p>
+                  {deep.exerciseCorrelationText && <p>🏃 {deep.exerciseCorrelationText}</p>}
+                  {deep.hydrationCorrelationText && <p>💧 {deep.hydrationCorrelationText}</p>}
+                </div>
+              </div>
+            )}
+
+            <p className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Tanya lebih lanjut</p>
+            <div className="flex flex-col gap-2">
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`max-w-[82%] rounded-2xl px-3 py-2 text-[11.5px] leading-relaxed ${
+                    m.role === 'user'
+                      ? 'self-end rounded-br-md bg-surface-2 text-ink'
+                      : 'self-start rounded-bl-md text-ink shadow-soft'
+                  }`}
+                  style={
+                    m.role === 'ai'
+                      ? {
+                          backgroundImage:
+                            'linear-gradient(120deg, color-mix(in srgb, var(--fk-primary) 10%, var(--fk-surface)), color-mix(in srgb, var(--fk-accent) 10%, var(--fk-surface)))',
+                        }
+                      : undefined
+                  }
+                >
+                  {m.text}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="sticky bottom-2 z-10 mt-1 flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 shadow-soft ring-1 ring-line/60">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && void handleSend()}
+                placeholder={sending ? 'AI Coach sedang menjawab…' : 'Tanya AI Coach…'}
+                disabled={sending}
+                className="flex-1 bg-transparent text-[11.5px] text-ink outline-none placeholder:text-ink-dim disabled:opacity-60"
+              />
               <button
                 type="button"
-                onClick={handleApplyTarget}
-                disabled={applyingTarget}
-                className="self-start rounded-full bg-pro px-3.5 py-1.5 text-xs font-bold text-white disabled:opacity-60"
+                onClick={() => void handleSend()}
+                disabled={sending}
+                className="text-accent disabled:opacity-60"
+                aria-label="Kirim"
               >
-                {applyingTarget ? 'Menerapkan…' : `Terapkan ${adaptiveTarget.suggestedCalories.toLocaleString('id-ID')} kkal`}
+                {sending ? '…' : '➤'}
               </button>
-            )}
-            {targetApplied && <p className="text-[11px] font-semibold text-success">✓ Target baru diterapkan ke profilmu.</p>}
-          </div>
-        )}
-
-        {proAccess?.active && !allProInsightsEmpty && deep?.hasEnoughData && (
-          <div className="flex flex-col gap-2 rounded-2xl bg-surface p-3.5 shadow-soft">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Analisa Mendalam · 30 hari</span>
-            <p className="text-[11.5px] leading-relaxed text-ink">{deep.headline}</p>
-            <div className="flex flex-col gap-1.5 text-[11px] leading-relaxed text-ink-dim">
-              <p>⚖️ {deep.weightTrendText}</p>
-              {deep.exerciseCorrelationText && <p>🏃 {deep.exerciseCorrelationText}</p>}
-              {deep.hydrationCorrelationText && <p>💧 {deep.hydrationCorrelationText}</p>}
             </div>
-          </div>
+          </>
         )}
-
-        <p className="text-[10px] font-bold uppercase tracking-wide text-ink-dim">Tanya lebih lanjut</p>
-        <div className="flex flex-col gap-2">
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              className={`max-w-[82%] rounded-2xl px-3 py-2 text-[11.5px] leading-relaxed ${
-                m.role === 'user'
-                  ? 'self-end rounded-br-md bg-surface-2 text-ink'
-                  : 'self-start rounded-bl-md text-ink shadow-soft'
-              }`}
-              style={
-                m.role === 'ai'
-                  ? {
-                      backgroundImage:
-                        'linear-gradient(120deg, color-mix(in srgb, var(--fk-primary) 10%, var(--fk-surface)), color-mix(in srgb, var(--fk-accent) 10%, var(--fk-surface)))',
-                    }
-                  : undefined
-              }
-            >
-              {m.text}
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        <div className="sticky bottom-2 z-10 mt-1 flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 shadow-soft ring-1 ring-line/60">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && void handleSend()}
-            placeholder={sending ? 'AI Coach sedang menjawab…' : 'Tanya AI Coach…'}
-            disabled={sending}
-            className="flex-1 bg-transparent text-[11.5px] text-ink outline-none placeholder:text-ink-dim disabled:opacity-60"
-          />
-          <button
-            type="button"
-            onClick={() => void handleSend()}
-            disabled={sending}
-            className="text-accent disabled:opacity-60"
-            aria-label="Kirim"
-          >
-            {sending ? '…' : '➤'}
-          </button>
-        </div>
       </div>
     </AppShell>
   )

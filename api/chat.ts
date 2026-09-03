@@ -1,6 +1,8 @@
 /// <reference types="node" />
 // Vercel Edge Function — proxies AI Coach chat messages to OpenAI.
 // Runs server-side only: OPENAI_API_KEY never reaches the frontend bundle.
+import { createClient } from '@supabase/supabase-js'
+
 export const config = { runtime: 'edge' }
 
 const RATE_LIMIT = 20
@@ -57,6 +59,30 @@ Konteks user saat ini:
 - Berat sekarang: ${context.currentWeight} kg`
 }
 
+// AI Coach is Pro-only (trial no longer includes it) — verified server-side against the
+// database, same "own rows only" subscription_status table the client reads, using the
+// service-role client so this can't be spoofed by a client-crafted request body. Same
+// admin-client pattern as api/support-chat.ts's createTicket(). Mirrors the exact rule in
+// src/domain/entitlement.ts isPaidActive() — kept in sync manually since the edge runtime
+// here doesn't share a module graph with the Vite app bundle.
+async function isProUser(userId: string): Promise<boolean> {
+  const url = process.env.VITE_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !serviceKey) return false // fail closed — can't verify, don't grant access
+
+  const admin = createClient(url, serviceKey)
+  const { data, error } = await admin
+    .from('subscription_status')
+    .select('plan, status, expires_at')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error || !data) return false
+  if (data.plan === 'free' || data.status !== 'active') return false
+  if (!data.expires_at) return true // lifetime/dev_test-style plan, never expires
+  return new Date(data.expires_at).getTime() > Date.now()
+}
+
 function checkRateLimit(userId: string): boolean {
   const now = Date.now()
   const entry = requestCounts.get(userId)
@@ -92,11 +118,14 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ error: 'Missing userId, message, or context' }, 400)
   }
 
+  if (!(await isProUser(userId))) {
+    return json({ error: 'AI Coach adalah fitur Pro. Upgrade untuk mulai chat.', locked: true }, 403)
+  }
+
   if (!checkRateLimit(userId)) {
     return json(
       {
-        reply:
-          'Kamu sudah mencapai batas 20 pesan hari ini. Coba lagi besok, ya — sementara itu kamu masih bisa lihat Daily Coaching dan insight lain di atas.',
+        reply: 'Kamu sudah mencapai batas 20 pesan hari ini. Coba lagi besok, ya.',
         rateLimited: true,
       },
       200,

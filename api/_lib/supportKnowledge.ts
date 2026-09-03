@@ -9,13 +9,13 @@ export const SUPPORT_KNOWLEDGE = `
 - **Catat Makanan** (tab Tracker): cari makanan dari katalog Indonesia, atur porsi, kategori (nasi/karbo, lauk, sayur, gorengan, sup, camilan, minuman), simpan ke "Makananku" untuk dipakai ulang, atau laporkan kalau datanya salah.
 - **Hidrasi**: catat gelas air per hari.
 - **Progress**: riwayat & grafik kalori dan berat badan.
-- **AI Coach**: asisten terpisah dari Tanya Admin — untuk pertanyaan soal nutrisi, olahraga, dan coaching kesehatan personal (bukan soal cara pakai aplikasi). Insight mendalam (Weekly Insight 30 hari, Target Adaptif, Tren Skor) adalah benefit Premium.
+- **AI Coach**: asisten terpisah dari Tanya Admin — untuk pertanyaan soal nutrisi, olahraga, dan coaching kesehatan personal (bukan soal cara pakai aplikasi). **Fitur Premium eksklusif — TIDAK termasuk dalam trial maupun akun Free**, cuma bisa diakses user yang sudah aktif berlangganan Pro berbayar. Daily Coaching, chat, dan insight mendalam (Weekly Insight, Target Adaptif, Tren Skor) semuanya di dalam kunci ini.
 - **Settings**: profil, tema tampilan, status langganan, Tanya Admin, keluar akun.
 
 ## Alur akun & trial
 - User baru bisa langsung isi data & lihat hasil TDEE tanpa login dulu; login/daftar baru diminta saat mau menyimpan hasil.
-- Begitu akun dibuat, user otomatis dapat **7 hari trial dengan akses Premium penuh** — tidak perlu aktivasi manual, mulai otomatis dari tanggal akun dibuat.
-- Setelah 7 hari, kalau belum upgrade, fitur Premium (Weekly Insight mendalam, Target Adaptif, Tren Skor, riwayat kalori/berat tanpa batas) terkunci — fitur dasar (catat makanan, air, dashboard) tetap bisa dipakai normal.
+- Begitu akun dibuat, user otomatis dapat **14 hari trial dengan akses Premium penuh** — tidak perlu aktivasi manual, mulai otomatis dari tanggal akun dibuat. **Pengecualian: AI Coach TIDAK termasuk trial** — fitur ini cuma untuk pelanggan Pro berbayar sejak hari pertama, trial tidak membukanya.
+- Setelah 14 hari, kalau belum upgrade, fitur Premium lain (Weekly Insight mendalam, Target Adaptif, Tren Skor, riwayat kalori/berat tanpa batas) ikut terkunci — fitur dasar (catat makanan, air, dashboard) tetap bisa dipakai normal.
 
 ## Premium — harga & status pembayaran (PENTING, jangan salah info)
 - 3 pilihan: **1 Bulan (Rp49rb)**, **3 Bulan (Rp119rb, paling direkomendasikan)**, **12 Bulan (Rp399rb)**.
