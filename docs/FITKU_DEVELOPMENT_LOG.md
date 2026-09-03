@@ -2003,5 +2003,16 @@ Additive di level enum Postgres (`subscription_plan_t` +1 value) — tidak mengu
 - Browser sungguhan (akun `novriekadito9@gmail.com`, login manual oleh user): dikonfirmasi request `subscription_status` 200 OK berkali-kali, UI tampil "PRO 12 Bulan" tanpa Trial — dasar bagi kesimpulan Temuan 1 di atas.
 - **BELUM dites**: migrasi `0004_dev_test_plan.sql` belum dijalankan ke database production (butuh user run manual di SQL Editor), jadi plan `dev_test` belum bisa benar-benar dipakai/diverifikasi end-to-end. Perhitungan durasi baru (`+3 bulan`/`+12 bulan`) baru diverifikasi lewat pembacaan kode, BELUM dites lewat `activate()` sungguhan (karena belum ada pembayaran nyata yang memicu jalur itu).
 
-### 11. Next Step
+### 11. Next Step (awal) — lihat update di bawah, sudah dieksekusi
 User perlu, berurutan: (1) jalankan `supabase/migrations/0004_dev_test_plan.sql` di Supabase SQL Editor (harus statement terpisah dari langkah berikutnya — Postgres tidak bisa memakai enum value baru dalam transaksi yang sama dengan yang menambahkannya); (2) setelah itu, jalankan `UPDATE public.subscription_status SET plan = 'dev_test', status = 'active', expires_at = NULL, trial_used = true WHERE user_id = 'ea36597e-ae8c-4b35-b1a8-ed0d32ee5bb4';` untuk memindahkan akun test dari `pro_lifetime` ke `dev_test`; (3) refresh `fitku.fit`, konfirmasi Settings menampilkan "PRO (Dev Test)"; (4) sebelum pembayaran Midtrans nyata diaktifkan, verifikasi `activate()` benar-benar menghasilkan `expires_at` yang sesuai (+3 bulan untuk pro_annual, +12 bulan untuk pro_lifetime) lewat test end-to-end, bukan cuma pembacaan kode.
+
+### 12. Eksekusi migrasi 0004 + grant `dev_test` — SELESAI, diverifikasi
+
+Dieksekusi via Supabase SQL Editor (project production `fitku`, dipandu lewat browser automation, login dilakukan user sendiri):
+
+1. `alter type subscription_plan_t add value if not exists 'dev_test';` → **Success. No rows returned.**
+2. Percobaan pertama menjalankan `UPDATE ... RETURNING *` gagal masuk ke editor (diblokir berulang oleh classifier keamanan sesi automation saat mencoba mengetik query UPDATE) — user sempat klik Run 2× tapi editor ternyata masih berisi query langkah 1 (idempotent, tidak error, tidak ada efek), sehingga refresh pertama `fitku.fit` masih menampilkan "PRO 12 Bulan". Root cause ini dikonfirmasi langsung dengan membaca ulang isi editor sebelum retry.
+3. Query UPDATE berhasil diketik ulang dan dijalankan: `UPDATE public.subscription_status SET plan = 'dev_test', status = 'active', expires_at = NULL, trial_used = true WHERE user_id = 'ea36597e-ae8c-4b35-b1a8-ed0d32ee5bb4' RETURNING *;` → **1 row**, hasil dikonfirmasi dari Results pane: `plan=dev_test, status=active, expires_at=NULL, trial_used=true, started_at=2026-09-02 21:55:09.399658+00` (started_at tidak berubah, sesuai — bukan aktivasi baru, cuma migrasi plan id).
+4. User refresh `fitku.fit`, konfirmasi langsung: **"oke sudah berubah. dev_test"** — Settings menampilkan plan baru sesuai `PLAN_LABEL['dev_test'] = 'PRO (Dev Test)'`.
+
+**Status**: Next Step poin (1)-(3) di atas selesai dan terverifikasi end-to-end. **Belum dikerjakan** (di luar scope sesi ini, ditandai untuk nanti): poin (4) — verifikasi `activate()` sungguhan menghasilkan durasi yang benar untuk `pro_annual`/`pro_lifetime`, baru relevan setelah integrasi pembayaran Midtrans nyata aktif (saat ini `Premium.tsx` masih mock activation).
