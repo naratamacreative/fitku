@@ -2015,4 +2015,89 @@ Dieksekusi via Supabase SQL Editor (project production `fitku`, dipandu lewat br
 3. Query UPDATE berhasil diketik ulang dan dijalankan: `UPDATE public.subscription_status SET plan = 'dev_test', status = 'active', expires_at = NULL, trial_used = true WHERE user_id = 'ea36597e-ae8c-4b35-b1a8-ed0d32ee5bb4' RETURNING *;` → **1 row**, hasil dikonfirmasi dari Results pane: `plan=dev_test, status=active, expires_at=NULL, trial_used=true, started_at=2026-09-02 21:55:09.399658+00` (started_at tidak berubah, sesuai — bukan aktivasi baru, cuma migrasi plan id).
 4. User refresh `fitku.fit`, konfirmasi langsung: **"oke sudah berubah. dev_test"** — Settings menampilkan plan baru sesuai `PLAN_LABEL['dev_test'] = 'PRO (Dev Test)'`.
 
+---
+
+## 2026-09-04 — Ringkasan Sesi: Audit Bisnis Subscription, Trial 14 Hari, AI Coach Pro-Lock, Template Email Bahasa Indonesia
+
+Entry ini adalah ringkasan lengkap satu sesi kerja (lanjutan langsung dari entry 2026-09-03 di atas), ditulis untuk jadi titik pijak sesi berikutnya — mencakup semua keputusan, implementasi, hasil testing, dan pending item. Branch: `feat/landing-page`. Commit terakhir sesi ini: `d88cccb`.
+
+### 1. Audit Bisnis Subscription (analisa murni, tidak ada perubahan kode)
+
+**Tujuan**: user minta audit jujur — seberapa besar potensi orang mau bayar Pro, pakai kondisi produk apa adanya sebagai baseline.
+
+**Metodologi**: code inspection langsung (bukan asumsi) ke `entitlement.ts`, `subscriptionRepository.ts`, `Premium.tsx`, `paywall.triggers.ts`, `AiCoach.tsx`, `api/chat.ts`, landing page yang benar-benar live (`landing/Fitku.html`, bukan `landing/src/LandingPage.tsx` yang ternyata versi lama tidak dipakai) + verifikasi database langsung + web search untuk benchmark industri (dicatat eksplisit sebagai bukan data FitKu).
+
+**Temuan kunci (semua dikonfirmasi di kode/live site, bukan dugaan)**:
+- **Tidak ada payment gateway sama sekali** — grep "midtrans" di seluruh repo = 0 hasil, meski API key ada di `.env`. Tombol "Upgrade ke Premium" (`Premium.tsx`) langsung `subscriptionRepository.activate()` tanpa transaksi — user dapat Pro gratis tanpa bayar. **Ini alasan utama kenapa "apakah orang mau bayar" belum bisa dijawab empiris — belum ada mekanisme untuk menagih.**
+- **AI Coach (chat) 100% gratis untuk semua orang** saat itu (SEBELUM fix di bagian 2 di bawah) — `api/chat.ts` tidak punya pengecekan subscription sama sekali, padahal dijual di landing page sebagai perk berbayar.
+- **Testimoni palsu** di `landing/Fitku.html` (baris ~1076–1122) — 3 testimoni dengan nama, kota, hasil spesifik ("turun 6.2 kg dalam 3 bulan"), padahal FitKu belum punya satu pun pembeli nyata. Spec lama (`landing-page-spec.json`) secara eksplisit melarang ini ("jangan pakai angka karangan") — dilanggar di versi yang live. **BELUM DIPERBAIKI, masih ada di landing page saat ini — lihat Pending.**
+- Tidak ada Privacy Policy / Terms of Service di mana pun. **BELUM DIPERBAIKI.**
+- Fitur "Daily Movement Plan" (dijanjikan di `landing-page-spec.json`/React landing lama) tidak ada di codebase — untungnya versi live tidak pakai copy itu, tapi versi React masih berpotensi jadi risiko laten kalau suatu saat di-deploy. **BELUM DIBERESKAN.**
+- Cuma 1 dari 4 fitur Pro (Target Adaptif) yang actionable; sisanya (Tren Skor, Analisa Mendalam 30 hari, riwayat grafik) pasif/informatif.
+- Estimasi konversi trial→bayar: konservatif 1-3%, realistis 3-6%, optimistis 6-10% — SEMUANYA dengan syarat payment gateway sudah jalan (realisasi hari ini tetap 0% karena belum bisa menagih).
+
+**Verdict akhir**: belum layak jual sekarang. 3 syarat wajib sebelum jualan sungguhan: (1) integrasi Midtrans nyata, (2) Privacy Policy & ToS, (3) hapus/ganti testimoni palsu.
+
+**Deliverable**: audit lengkap dipublikasikan sebagai Artifact — https://claude.ai/code/artifact/303295da-9923-4981-a89e-20b61ded3d15 (private, belum di-share). Tidak ada file di repo untuk ini (murni dokumen analisis).
+
+**Follow-up analysis (juga murni analisa, belum diimplementasi)**: user minta strategi spesifik supaya "Analisa Mendalam 30 hari" (salah satu fitur Pro yang dinilai "Sedang") lebih kuat mendorong willingness-to-pay. Rekomendasi yang diberikan (belum dikerjakan): (a) ubah correlation text dari observasi jadi instruksi aksi konkret — murah, tinggal edit `deepInsight.ts`; (b) tambah visual heatmap kalender 30 hari (data `byDate` sudah ada, tinggal render) — murah; (c) framing naratif bulan-ke-bulan — butuh snapshot historis, medium effort; (d) timing paywall di titik sunk-cost (pas user sudah log 8-9 dari 10 hari minimum, sebelum insight pertama muncul) — medium effort; (e) kartu "shareable" ala Spotify Wrapped — investasi desain besar, belum layak dikerjakan sekarang. **Belum ada yang diimplementasi — murni rekomendasi, menunggu keputusan user fitur mana yang mau dikerjakan duluan.**
+
+### 2. Trial 7→14 Hari + AI Coach Full-Lock (Pro-only) — SELESAI, sudah commit & push
+
+**Permintaan eksplisit user**: (a) ubah trial dari 7 ke 14 hari; (b) AI Coach harus terkunci total untuk Free & Trial, cuma bisa diakses user Pro berbayar aktif; (c) gating harus di frontend DAN backend/API supaya tidak bisa di-bypass panggil API langsung.
+
+**Implementasi**:
+- `src/domain/entitlement.ts`: `TRIAL_DAYS` 7 → 14.
+- `src/features/ai-coach/AiCoach.tsx`: seluruh halaman `/coach` (Daily Coaching, Weekly Insight, chat, semua insight) sekarang di balik gate `proAccess?.reason === 'paid'` (BUKAN `.active`, yang juga true saat trial) — trial TIDAK lagi menghitung. User non-paid melihat `ProLocked` full-page ("AI Coach — Fitur Pro"). Fitur Pro lain (grafik 30 hari di CalorieTab/WeightTab, Tren Skor, Target Adaptif) TIDAK ikut berubah — tetap trial-accessible seperti semula, cuma AI Coach yang diperketat.
+- `api/chat.ts`: tambah fungsi `isProUser()` yang query `subscription_status` langsung ke Supabase pakai service-role client (pola sama dengan `api/support-chat.ts`'s `createTicket()`) — dipanggil di awal `handler()`, return `403` sebelum pernah menyentuh OpenAI kalau bukan Pro aktif. Ini benar-benar independen dari client — memanggil `/api/chat` langsung dengan `userId` bukan-Pro akan ditolak.
+- `api/_lib/supportKnowledge.ts` & `landing/Fitku.html`: disinkronkan (14 hari, AI Coach eksplisit Pro-only) — termasuk perbaikan 1 baris FAQ yang tadinya salah eksplisit ("trial termasuk AI Coach").
+
+**Testing yang BENAR-BENAR dilakukan**:
+- `npm run build` — 0 TypeScript error.
+- `api/chat.ts` di-type-check terpisah (di luar scope `tsconfig` project) pakai `tsc --ignoreConfig` manual — 0 error, dibandingkan dengan `api/support-chat.ts` sebagai baseline yang sudah jalan production.
+- **Browser sungguhan, bukan cuma baca kode**: bikin akun test baru (`novriekadito9+aicoachtest1@gmail.com`) lewat alur onboarding→daftar asli (email dikonfirmasi manual via Admin API, sama pola dengan test sebelumnya), lalu dikonfirmasi: Settings menampilkan **"Trial · 14 hari lagi"**; `/coach` menampilkan **"AI Coach — Fitur Pro... tidak termasuk dalam 14 hari trial yang tersisa"**; `/progress` (grafik kalori) tetap terbuka normal (tidak ikut terkunci, sesuai rencana).
+
+**BELUM/TIDAK BISA dites** (ditandai eksplisit, jangan dianggap PASS):
+- **Respons `403` dari `/api/chat` di production sungguhan** — tidak ada Vercel CLI/`vercel dev` di mesin dev untuk menjalankan Edge Function secara lokal (`vercel` command tidak terinstall). Baru terverifikasi lewat pembacaan kode + type-check, BUKAN observasi runtime langsung. **WAJIB dites ulang setelah deploy ke Vercel** — cara paling cepat: dari akun non-Pro yang login, buka `/coach` (harusnya sudah ke-block di UI), TAPI juga test langsung `curl -X POST https://fitku.fit/api/chat -d '{"userId":"<uuid-user-non-pro>","message":"test","context":{...}}'` dan pastikan dapat `403`, bukan balasan AI.
+- Akun test `novriekadito9+aicoachtest1@gmail.com` sengaja dibiarkan ada di database production (sama pola dengan akun test sebelumnya: `+fitku4`, `+fitku5`, `+fitkulazy1`) — belum dibersihkan, keputusan ada di user.
+
+**Commit**: `d88cccb` — "feat(auth,ai-coach): extend trial to 14 days, gate AI Coach to Pro-only". Sudah di-push ke `origin/feat/landing-page`.
+
+### 3. Template Email Supabase Auth → Bahasa Indonesia — SELESAI (di luar repo Git)
+
+**Permintaan user**: ubah semua email yang diterima user (Confirm signup, Reset Password, dll) ke Bahasa Indonesia.
+
+**PENTING untuk sesi berikutnya**: ini **BUKAN perubahan kode/file di repo** — dikerjakan langsung di Supabase Dashboard (Authentication → Emails → Templates) via browser automation, karena project ini tidak pakai `supabase/config.toml`+template lokal (dikonfirmasi tidak ada file itu). Tidak ada yang perlu di-commit untuk bagian ini.
+
+**6 template yang diubah** (semua dikonfirmasi tersimpan dengan reload halaman setelah save):
+1. **Confirm sign up** (dipakai aktif) — Subject: "Konfirmasi alamat email kamu"
+2. **Reset password** (dipakai aktif) — Subject: "Atur ulang password FitKu" (awalnya "...FitKu kamu", diperbaiki setelah feedback user "jelek jika dibaca" — pola "FitKu kamu"/"akun FitKu kamu" diganti jadi "FitKu"/"akunmu di FitKu" di semua template demi konsistensi)
+3. Invite user (tidak dipakai UI saat ini, dilengkapi untuk jaga-jaga)
+4. Magic link or OTP (tidak dipakai — auth pakai email+password)
+5. Change email address (tidak ada UI ganti email saat ini)
+6. Reauthentication (tidak dipakai saat ini)
+
+Template di bagian "Security" (Password changed, Email address changed, dll.) **TIDAK disentuh** — semua masih toggle OFF, tidak terkirim, jadi tidak diterjemahkan. Kalau mau diaktifkan+diterjemahkan nanti, itu pending.
+
+### 4. Status Working Tree di Akhir Sesi (bukan bagian kerjaan sesi ini — FYI untuk sesi berikutnya)
+
+Ada perubahan uncommitted/untracked yang SUDAH ADA sebelum sesi ini mulai, sengaja tidak disentuh karena di luar scope semua permintaan user sesi ini:
+- Modified: `index.html`, `src/App.tsx`
+- Deleted (di working tree, belum di-commit): `netlify.toml`, `public/icons.svg`
+- Untracked: `ads creative/`, `fitku_food_additions.ts`, `landing/spec/Screen Recording 2026-09-03 at 04.02.49.mov`, `landing/spec/Screenshot 2026-09-02 at 22.00.31.png`, `public/manifest.webmanifest`, `supabase/.temp/`
+
+Sesi berikutnya perlu tanya user apa maksud perubahan ini sebelum menyentuhnya — jangan asumsikan aman untuk di-discard.
+
+### 5. Pending / Belum Selesai — Prioritas untuk Sesi Berikutnya
+
+Urutan dampak (dari audit bagian 1):
+1. **Integrasi Midtrans nyata** — blocker terbesar, tanpa ini tidak ada yang bisa dijual.
+2. **Hapus/ganti testimoni palsu** di `landing/Fitku.html` — murah diperbaiki, risiko reputasi/kebijakan platform nyata kalau dibiarkan.
+3. **Privacy Policy & Terms of Service** — wajib sebelum terima pembayaran & karena data kesehatan kini di cloud (Supabase, bukan lokal lagi).
+4. **Verifikasi `403` `/api/chat` di production sungguhan** setelah deploy (lihat bagian 2) — belum dites runtime nyata.
+5. **Implementasi rekomendasi "Analisa Mendalam 30 hari"** (bagian 1, follow-up) kalau user mau naikkan conversion — belum dikerjakan sama sekali, masih tahap analisa.
+6. Verifikasi `activate()` menghasilkan `expires_at` yang benar (+3 bulan `pro_annual`, +12 bulan `pro_lifetime`) lewat pembayaran sungguhan — belum bisa dites karena Midtrans belum ada (poin 1).
+7. Bersihkan akun test (`+aicoachtest1`, `+fitku4`, `+fitku5`, `+fitkulazy1`, dll.) — opsional, keputusan user.
+8. Keputusan soal `landing/src/LandingPage.tsx` (versi React lama, tidak dipakai, masih punya CTA rusak ke `/waitlist` dan janji "Daily Movement Plan" fiktif) — biarkan mati, hapus, atau update supaya konsisten? Belum diputuskan.
+
 **Status**: Next Step poin (1)-(3) di atas selesai dan terverifikasi end-to-end. **Belum dikerjakan** (di luar scope sesi ini, ditandai untuk nanti): poin (4) — verifikasi `activate()` sungguhan menghasilkan durasi yang benar untuk `pro_annual`/`pro_lifetime`, baru relevan setelah integrasi pembayaran Midtrans nyata aktif (saat ini `Premium.tsx` masih mock activation).
