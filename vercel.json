@@ -1,5 +1,9 @@
 {
   "rewrites": [
+    { "source": "/landing-page-fitku", "destination": "/landing-page-fitku/index.html" },
+    { "source": "/guide", "destination": "/guide/index.html" },
+    { "source": "/privacy-policy", "destination": "/privacy-policy/index.html" },
+    { "source": "/terms-of-service", "destination": "/terms-of-service/index.html" },
     { "source": "/(.*)", "destination": "/" }
   ],
   "headers": [

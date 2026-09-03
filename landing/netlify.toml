@@ -1,4 +1,5 @@
 [[redirects]]
-  from = "/"
-  to = "/Fitku.html"
-  status = 200
+  from = "/*"
+  to = "https://fitku.fit/landing-page-fitku"
+  status = 301
+  force = true

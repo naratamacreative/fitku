@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panduan Pengguna FitKu — Cara Menggunakan Aplikasi</title>
+<meta name="description" content="Panduan lengkap cara menggunakan aplikasi FitKu, AI Diet Coach Indonesia — dari daftar akun sampai catat makanan harian.">
+<style>
+:root{
+  --bg:#0b0c14;
+  --bg-soft:#111325;
+  --card:#1b1d30;
+  --card-border:#2a2c46;
+  --text:#101223;
+  --muted:#5c5f72;
+  --accent1:#2dd4bf;
+  --accent2:#8b5cf6;
+  --grad: linear-gradient(90deg,var(--accent1),var(--accent2));
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  color:#1e2130;
+  background:#fafafa;
+  line-height:1.6;
+}
+a{color:var(--accent2); text-decoration:none;}
+img{max-width:100%;}
+
+/* ---------- NAV ---------- */
+.topnav{
+  position:sticky; top:0; z-index:50;
+  background:rgba(10,11,20,0.92);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid #23253a;
+  padding:14px 20px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.topnav .brand{color:#fff; font-weight:800; font-size:17px; letter-spacing:.3px;}
+.topnav .brand span{background:var(--grad); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.topnav button.menu-btn{
+  display:none; background:none; border:1px solid #33344a; color:#fff;
+  border-radius:8px; padding:6px 10px; font-size:14px; cursor:pointer;
+}
+.navlinks{display:flex; gap:4px; flex-wrap:wrap;}
+.navlinks a{
+  color:#c7c8db; font-size:13px; padding:6px 10px; border-radius:20px;
+}
+.navlinks a:hover{background:#1e2038; color:#fff;}
+
+/* ---------- HERO ---------- */
+.hero{
+  background: radial-gradient(1200px 500px at 80% -10%, rgba(139,92,246,0.35), transparent),
+              radial-gradient(900px 400px at 0% 0%, rgba(45,212,191,0.25), transparent),
+              linear-gradient(160deg, #0e0f1a 0%, #171a2b 55%, #1b1330 100%);
+  color:#fff;
+  padding:64px 20px 72px 20px;
+  text-align:center;
+}
+.hero .badge{
+  display:inline-block; padding:6px 16px; border-radius:20px;
+  background:var(--grad); font-size:12px; font-weight:700; letter-spacing:1px;
+  margin-bottom:22px;
+}
+.hero h1{font-size:clamp(28px,5vw,46px); line-height:1.15; margin:0 0 16px 0;}
+.hero p{font-size:16px; color:#b9bccb; max-width:520px; margin:0 auto 30px auto;}
+.hero .cta{
+  display:inline-block; background:var(--grad); color:#fff; font-weight:700;
+  padding:13px 26px; border-radius:30px; font-size:15px;
+}
+.hero .foot{margin-top:26px; font-size:12.5px; color:#7d8093;}
+
+/* ---------- TOC STRIP ---------- */
+.toc-wrap{max-width:920px; margin:-40px auto 0 auto; padding:0 20px; position:relative; z-index:2;}
+.toc-card{
+  background:#fff; border-radius:18px; box-shadow:0 20px 50px rgba(20,10,50,0.12);
+  padding:26px 28px; display:grid; grid-template-columns:repeat(2,1fr); gap:6px 26px;
+}
+.toc-card a{
+  display:flex; justify-content:space-between; gap:10px; color:#2a2c42;
+  padding:9px 0; border-bottom:1px solid #f0f0f5; font-size:14.5px;
+}
+.toc-card a:hover{color:var(--accent2);}
+.toc-card .n{color:var(--accent2); font-weight:700; margin-right:8px;}
+
+/* ---------- SECTIONS ---------- */
+.container{max-width:1000px; margin:0 auto; padding:0 20px;}
+section.block{padding:70px 0; border-bottom:1px solid #eeeef3;}
+section.block:last-of-type{border-bottom:none;}
+.kicker{
+  display:inline-block; font-size:11.5px; font-weight:800; letter-spacing:1.5px;
+  color:var(--accent2); background:#f2eeff; padding:5px 12px; border-radius:14px; margin-bottom:14px;
+}
+h2.section-title{font-size:clamp(22px,3.4vw,30px); margin:0 0 8px 0; color:#14162a;}
+.section-desc{color:var(--muted); font-size:15.5px; max-width:640px; margin-bottom:36px;}
+
+.step-row{display:flex; gap:40px; align-items:flex-start; margin-bottom:44px; flex-wrap:wrap;}
+.step-row.reverse{flex-direction:row-reverse;}
+.step-text{flex:1 1 320px; min-width:280px;}
+.step-visual{flex:0 0 auto; display:flex; justify-content:center; width:290px; max-width:100%; margin:0 auto;}
+
+.step-num{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:26px; height:26px; border-radius:50%; background:var(--grad);
+  color:#fff; font-size:12px; font-weight:800; margin-right:10px; flex:none;
+}
+.step-title{font-size:17px; font-weight:800; color:#14162a; margin-bottom:10px; display:flex; align-items:center;}
+.step-body{color:#454858; font-size:15px; margin-left:36px;}
+.step-body ul{margin-left:18px; margin-top:8px; padding:0;}
+.step-body li{margin-bottom:6px;}
+.tip-box{
+  margin-left:36px; margin-top:14px; background:#f6f4ff; border-left:3px solid var(--accent2);
+  padding:12px 16px; font-size:13.8px; color:#4a2f8f; border-radius:6px; max-width:520px;
+}
+
+/* ---------- PHONE MOCKUP ---------- */
+.phone{
+  width:270px; max-width:100%; border-radius:32px; background:#101223; padding:12px;
+  box-shadow:0 20px 40px rgba(20,10,50,0.28);
+}
+.phone-screen{
+  background:#0e1020; border-radius:22px; padding:18px 15px; color:#e7e7ee;
+  font-size:8.6pt; min-height:360px; position:relative; overflow:hidden;
+}
+.notch{width:70px; height:7px; background:#1c1e33; border-radius:5px; margin:0 auto 12px auto;}
+.small-muted{color:#8a8da3; font-size:8pt;}
+.card{background:#1b1d30; border-radius:12px; padding:10px 11px; margin-bottom:9px;}
+.card-title{font-weight:700; font-size:8.6pt; margin-bottom:5px; color:#f1f1f6;}
+.pill{display:inline-block; background:var(--grad); color:#fff; font-size:7.6pt; font-weight:700; padding:5px 10px; border-radius:12px;}
+.pill-outline{display:inline-block; border:1px solid #33344a; color:#cfd0e0; font-size:7.6pt; padding:5px 10px; border-radius:12px;}
+.row-between{display:flex; justify-content:space-between; align-items:center;}
+.macro-grid{display:flex; gap:6px; margin-bottom:10px;}
+.macro-cell{flex:1; background:#1b1d30; border-radius:10px; padding:7px 8px; text-align:center;}
+.macro-cell .lbl{font-size:7pt; color:#9a9cb0;}
+.macro-cell .val{font-size:8.2pt; font-weight:700; margin-top:3px;}
+.bar{height:4px; border-radius:4px; background:#2b2d42; margin-top:4px; overflow:hidden;}
+.bar-fill{height:100%; border-radius:4px;}
+.diary-item{display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #22243a; font-size:8pt;}
+.diary-item:last-child{border-bottom:none;}
+.btn-mini{background:#26284a; color:#c9baff; font-size:7pt; font-weight:700; padding:3px 9px; border-radius:10px;}
+.bottomnav{display:flex; justify-content:space-around; margin-top:12px; padding-top:10px; border-top:1px solid #1e2038; font-size:6.8pt; color:#82849c;}
+.bottomnav .active{color:#a78bfa; font-weight:700;}
+.fab{width:32px; height:32px; border-radius:50%; background:var(--grad); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14pt; margin:-22px auto 3px auto;}
+.search-box{background:#1b1d30; border-radius:10px; padding:8px 10px; font-size:8pt; color:#8a8da3; margin-bottom:9px;}
+.coach-msg{background:#191c33; border-left:2px solid #7c6df2; border-radius:8px; padding:8px 9px; font-size:7.8pt; color:#cfd0e6; margin-top:8px;}
+.choice-list .choice{background:#1b1d30; border:1px solid #2a2c46; border-radius:10px; padding:8px 10px; margin-bottom:7px;}
+.choice .t{font-weight:700; font-size:8.2pt;}
+.choice .d{font-size:7.2pt; color:#9a9cb0;}
+.choice.sel{border:1px solid var(--accent2); background:#221d3d;}
+.progressbar-top{display:flex; gap:4px; margin-bottom:12px;}
+.progressbar-top div{height:4px; flex:1; border-radius:3px; background:#26284a;}
+.progressbar-top div.done{background:var(--grad);}
+.field{background:#1b1d30; border-radius:10px; padding:8px 10px; font-size:8pt; color:#e7e7ee; margin-bottom:8px; border:1px solid #2a2c46;}
+.field.focus{border-color:var(--accent2);}
+.toggle-row{display:flex; gap:8px; margin-bottom:10px;}
+.toggle{flex:1; text-align:center; padding:8px 0; border-radius:10px; font-size:8pt; border:1px solid #2a2c46;}
+.toggle.on{border-color:var(--accent2); background:#221d3d; font-weight:700;}
+.qmenu{display:flex; flex-direction:column; gap:8px; align-items:flex-end; margin-bottom:4px;}
+.qmenu .qitem{display:flex; align-items:center; gap:8px; background:#1b1d30; padding:6px 11px; border-radius:16px; font-size:7.8pt;}
+.qmenu .qicon{width:16px; height:16px; border-radius:50%; background:#2a2c46; display:flex; align-items:center; justify-content:center; font-size:7pt;}
+
+/* ---------- FAQ / TIPS ---------- */
+.faq-item{margin-bottom:20px; max-width:680px;}
+.faq-q{font-weight:800; font-size:15.5px; color:#14162a; margin-bottom:5px;}
+.faq-a{color:#4a4d5f; font-size:15px;}
+.tips-list{max-width:680px; margin-bottom:10px;}
+.tips-list ul{margin-left:20px; line-height:2;}
+
+/* ---------- FOOTER ---------- */
+footer.site-footer{
+  background:#0e0f1a; color:#8b8ea1; text-align:center; padding:36px 20px; font-size:13px;
+}
+footer.site-footer a{color:#c9baff;}
+
+/* ---------- BACK TO TOP ---------- */
+.top-btn{
+  position:fixed; right:20px; bottom:20px; width:44px; height:44px; border-radius:50%;
+  background:var(--grad); color:#fff; display:flex; align-items:center; justify-content:center;
+  font-size:18px; box-shadow:0 10px 24px rgba(20,10,50,0.3); opacity:0; pointer-events:none;
+  transition:opacity .2s ease; z-index:60; border:none; cursor:pointer;
+}
+.top-btn.show{opacity:1; pointer-events:auto;}
+
+@media (max-width:720px){
+  .toc-card{grid-template-columns:1fr;}
+  .navlinks{display:none;}
+  .topnav button.menu-btn{display:inline-block;}
+  section.block{padding:48px 0;}
+  .step-row, .step-row.reverse{flex-direction:column;}
+  .step-visual{order:-1; margin-bottom:8px;}
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="brand">Fit<span>Ku</span> &nbsp;Panduan</div>
+  <div class="navlinks">
+    <a href="#kenalan">Kenalan</a>
+    <a href="#membuka">Buka App</a>
+    <a href="#onboarding">Onboarding</a>
+    <a href="#akun">Akun</a>
+    <a href="#home">Home</a>
+    <a href="#catat-makanan">Catat Makanan</a>
+    <a href="#berat">Berat/Olahraga</a>
+    <a href="#coach">AI Coach</a>
+    <a href="#progress">Progress</a>
+    <a href="#pengaturan">Pengaturan</a>
+    <a href="#faq">FAQ</a>
+  </div>
+</nav>
+
+<!-- ===================== HERO ===================== -->
+<header class="hero">
+  <div class="badge">PANDUAN PENGGUNA</div>
+  <h1>Cara Menggunakan<br>Aplikasi FitKu</h1>
+  <p>AI Diet Coach untuk bantu kamu catat kalori, pantau berat badan, dan dapat insight harian — langsung dari browser HP kamu.</p>
+  <a class="cta" href="#kenalan">Mulai Baca Panduan ↓</a>
+  <div class="foot">fitku.fit &nbsp;•&nbsp; Panduan Pengguna v1</div>
+</header>
+
+<!-- ===================== TOC ===================== -->
+<div class="toc-wrap">
+  <div class="toc-card">
+    <a href="#kenalan"><span><span class="n">01</span>Kenalan dengan FitKu</span></a>
+    <a href="#membuka"><span><span class="n">02</span>Membuka Aplikasi (Halaman Pembuka)</span></a>
+    <a href="#onboarding"><span><span class="n">03</span>Onboarding — Setup Profil</span></a>
+    <a href="#akun"><span><span class="n">04</span>Buat Akun / Masuk</span></a>
+    <a href="#home"><span><span class="n">05</span>Halaman Utama (Home)</span></a>
+    <a href="#catat-makanan"><span><span class="n">06</span>Mencatat Makanan</span></a>
+    <a href="#berat"><span><span class="n">07</span>Berat, Olahraga &amp; Air</span></a>
+    <a href="#coach"><span><span class="n">08</span>Tanya AI Coach</span></a>
+    <a href="#progress"><span><span class="n">09</span>Melihat Progress</span></a>
+    <a href="#pengaturan"><span><span class="n">10</span>Pengaturan &amp; Akun</span></a>
+    <a href="#faq"><span><span class="n">11</span>Tips Harian &amp; FAQ</span></a>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ===================== 01 KENALAN ===================== -->
+<section class="block" id="kenalan">
+  <div class="kicker">01 · KENALAN DENGAN FITKU</div>
+  <h2 class="section-title">Apa itu FitKu?</h2>
+  <div class="section-desc">FitKu adalah aplikasi AI diet coach untuk bantu kamu mencapai target berat badan dengan cara yang realistis — bukan diet ekstrem.</div>
+
+  <div class="step-body" style="margin-left:0; font-size:15.5px; max-width:640px;">
+    Dengan FitKu, kamu bisa:
+    <ul style="margin-left:20px; margin-top:10px; line-height:1.9;">
+      <li>Mencatat kalori &amp; makronutrien (protein, karbo, lemak) dari makanan harian</li>
+      <li>Mencatat berat badan dan olahraga untuk memantau progress</li>
+      <li>Mendapat insight &amp; saran otomatis dari AI Coach berdasarkan catatanmu</li>
+      <li>Melihat tren kalori dan makro 7 hari terakhir</li>
+    </ul>
+  </div>
+
+  <div class="tip-box" style="margin-left:0; max-width:640px; margin-top:20px;">
+    <b>Catatan:</b> Data makanan, berat badan, dan olahraga di paket Free tersimpan langsung di HP kamu (tidak otomatis tersinkron ke akun lain). Untuk sinkronisasi antar perangkat, tersedia paket FitKu Premium.
+  </div>
+  <div class="tip-box" style="margin-left:0; max-width:640px; margin-top:14px;">
+    <b>Cara akses:</b> Buka browser di HP atau laptop, kunjungi <b>fitku.fit</b>. Tidak perlu instal apa pun — FitKu langsung bisa dipakai dari browser.
+  </div>
+</section>
+
+<!-- ===================== 02 MEMBUKA APLIKASI ===================== -->
+<section class="block" id="membuka">
+  <div class="kicker">02 · MEMBUKA APLIKASI</div>
+  <h2 class="section-title">Halaman Pembuka</h2>
+  <div class="section-desc">Buka <b>fitku.fit</b> di browser. Halaman pertama yang muncul adalah halaman pembuka berisi ringkasan manfaat FitKu dan dua pilihan jalan masuk.</div>
+
+  <div class="step-row">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">1</span>Pilih jalur yang sesuai</div>
+      <div class="step-body">
+        Tampil logo FitKu dan ringkasan manfaat: <b>Rencana kalori personal</b>, <b>Menu &amp; porsi ala Indonesia</b>, dan <b>Coaching harian dari AI</b>. Di bagian bawah ada dua pilihan:
+        <ul>
+          <li><b>Mulai Sekarang</b> — kalau kamu <u>belum punya akun</u>. Ini akan membawamu langsung ke pertanyaan Onboarding dulu (bagian 03), <b>baru</b> diminta membuat akun di akhir (bagian 04).</li>
+          <li><b>Saya sudah punya akun</b> — kalau kamu <u>sudah pernah daftar</u>. Ini melewati Onboarding dan langsung membuka form Masuk (lihat bagian 04).</li>
+        </ul>
+      </div>
+      <div class="tip-box">
+        Jadi urutannya: <b>pengguna baru</b> mengisi Onboarding dulu sebelum diminta bikin akun, sedangkan <b>pengguna lama</b> langsung ke form Masuk tanpa mengulang Onboarding.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen" style="display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div class="notch"></div>
+          <div style="text-align:center; font-weight:700; font-size:13pt; margin:10px 0 16px 0;">Fit<span style="color:#2dd4bf">Ku</span></div>
+          <div class="card" style="display:flex; align-items:center; gap:7px;"><span style="color:#2dd4bf;">&#10003;</span> Rencana kalori personal</div>
+          <div class="card" style="display:flex; align-items:center; gap:7px;"><span style="color:#2dd4bf;">&#10003;</span> Menu &amp; porsi ala Indonesia</div>
+          <div class="card" style="display:flex; align-items:center; gap:7px;"><span style="color:#2dd4bf;">&#10003;</span> Coaching harian dari AI</div>
+        </div>
+        <div>
+          <div class="pill" style="display:block; text-align:center; margin-bottom:10px;">Mulai Sekarang</div>
+          <div class="small-muted" style="text-align:center;">Saya sudah punya akun</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 03 ONBOARDING ===================== -->
+<section class="block" id="onboarding">
+  <div class="kicker">03 · ONBOARDING</div>
+  <h2 class="section-title">Setup Profil Pertama Kali</h2>
+  <div class="section-desc">Saat tap "Mulai Sekarang", kamu akan diajak menjawab beberapa pertanyaan singkat — seperti sesi pertama dengan personal trainer. Ini menentukan target kalori harianmu.</div>
+
+  <div class="step-row">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">1</span>Pilih tujuanmu</div>
+      <div class="step-body">
+        Pilih salah satu: <b>Turun berat badan</b>, <b>Naik otot</b>, atau <b>Jaga berat badan</b>. Pilihan ini menentukan apakah FitKu menghitung defisit atau surplus kalori untukmu.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div class="progressbar-top"><div class="done"></div><div></div><div></div><div></div><div></div><div></div></div>
+        <div style="font-weight:700; font-size:9.5pt; margin-bottom:3px;">Apa tujuanmu?</div>
+        <div class="small-muted" style="margin-bottom:10px;">Seperti sesi pertama dengan personal trainer.</div>
+        <div class="choice-list">
+          <div class="choice sel"><div class="t">Turun berat badan</div><div class="d">Defisit kalori bertahap</div></div>
+          <div class="choice"><div class="t">Naik otot</div><div class="d">Surplus kalori + protein tinggi</div></div>
+          <div class="choice"><div class="t">Jaga berat badan</div><div class="d">Kalori seimbang</div></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="step-row reverse">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">2</span>Isi data diri</div>
+      <div class="step-body">
+        Masukkan jenis kelamin, usia, tinggi badan, dan berat badan sekarang. Data ini dipakai untuk menghitung kebutuhan kalori harianmu secara akurat.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div class="progressbar-top"><div class="done"></div><div class="done"></div><div class="done"></div><div></div><div></div><div></div></div>
+        <div style="font-weight:700; font-size:9.5pt; margin-bottom:10px;">Ceritakan kondisimu sekarang</div>
+        <div class="toggle-row">
+          <div class="toggle on">Pria</div>
+          <div class="toggle">Wanita</div>
+        </div>
+        <div class="small-muted">Usia (tahun)</div>
+        <div class="field">32</div>
+        <div class="small-muted">Tinggi badan (cm)</div>
+        <div class="field">170</div>
+        <div class="small-muted">Berat badan sekarang (kg)</div>
+        <div class="field focus">75</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">3</span>Tentukan target berat &amp; alasan</div>
+      <div class="step-body">
+        Isi target berat badan yang realistis, lalu pilih alasan kenapa target ini penting buatmu (kesehatan, penampilan, acara penting, dsb).
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div class="progressbar-top"><div class="done"></div><div class="done"></div><div></div><div></div><div></div><div></div></div>
+        <div style="font-weight:700; font-size:9.5pt; margin-bottom:10px;">Kenapa target ini penting buatmu?</div>
+        <div class="choice-list">
+          <div class="choice sel"><div class="t">Kesehatan jangka panjang</div></div>
+          <div class="choice"><div class="t">Percaya diri &amp; penampilan</div></div>
+          <div class="choice"><div class="t">Ada acara penting</div></div>
+          <div class="choice"><div class="t">Performa olahraga</div></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="step-row reverse">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">4</span>Level aktivitas &amp; pola makan</div>
+      <div class="step-body">
+        Pilih seberapa aktif kegiatan harianmu, lalu berapa kali biasanya kamu makan berat per hari. Setelah tap <b>"Lihat hasilku"</b>, FitKu menghitung target kalori &amp; makro harianmu, lalu membawamu ke halaman <b>Buat Akun</b> untuk menyimpan hasilnya — belum langsung ke Dashboard.
+      </div>
+      <div class="tip-box">
+        Pilih level aktivitas sejujur mungkin — makin akurat datanya, makin pas target kalori yang dihitung AI Coach.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div class="progressbar-top"><div class="done"></div><div class="done"></div><div class="done"></div><div class="done"></div><div class="done"></div><div class="done"></div></div>
+        <div style="font-weight:700; font-size:9.5pt; margin-bottom:10px;">Seberapa aktif harianmu?</div>
+        <div class="choice-list">
+          <div class="choice"><div class="t">Jarang gerak</div><div class="d">Kerja duduk, jarang olahraga</div></div>
+          <div class="choice"><div class="t">Ringan</div><div class="d">Olahraga 1–3×/minggu</div></div>
+          <div class="choice sel"><div class="t">Sedang</div><div class="d">Olahraga 3–5×/minggu</div></div>
+          <div class="choice"><div class="t">Aktif</div><div class="d">Olahraga 6–7×/minggu</div></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 04 BUAT AKUN ===================== -->
+<section class="block" id="akun">
+  <div class="kicker">04 · BUAT AKUN</div>
+  <h2 class="section-title">Simpan Hasil dengan Buat Akun / Masuk</h2>
+  <div class="section-desc">Setelah menjawab pertanyaan terakhir dan tap "Lihat hasilku" di Onboarding, FitKu tidak langsung membuka Dashboard — kamu diminta membuat akun dulu supaya hasil perhitunganmu tersimpan.</div>
+
+  <div class="step-row">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">1</span>Daftar FitKu</div>
+      <div class="step-body">
+        Isi <b>Email</b> dan <b>Password</b> (minimal 6 karakter), lalu tap <b>Daftar</b>. Setelah ini kamu otomatis masuk ke Dashboard dengan data dari Onboarding tadi sudah tersimpan.
+      </div>
+      <div class="tip-box">
+        Sudah pernah daftar di perangkat lain? Tap <b>Sudah punya akun? Masuk</b> di bagian bawah untuk pindah ke form Login, supaya tidak membuat akun ganda.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div style="font-weight:700; font-size:10pt; margin-bottom:3px;">Daftar FitKu</div>
+        <div class="small-muted" style="margin-bottom:12px;">Buat akun baru dengan email dan password.</div>
+        <div class="small-muted">Email</div>
+        <div class="field">nama@email.com</div>
+        <div class="small-muted">Password</div>
+        <div class="field focus">Minimal 6 karakter</div>
+        <div class="pill" style="display:block; text-align:center; margin:10px 0;">Daftar</div>
+        <div class="small-muted" style="text-align:center;">Sudah punya akun? <span style="color:#c9baff;">Masuk</span></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="step-row reverse">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">2</span>Atau: Masuk kalau sudah punya akun</div>
+      <div class="step-body">
+        Kalau dari halaman pembuka kamu tap <b>Saya sudah punya akun</b>, kamu akan langsung diarahkan ke sini tanpa perlu mengisi Onboarding lagi. Isi email &amp; password, tap <b>Masuk</b>.
+      </div>
+      <div class="tip-box">
+        Data yang sudah pernah dicatat (makanan, berat badan) akan tetap ada setelah masuk, selama memakai perangkat/browser yang sama.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div style="font-weight:700; font-size:10pt; margin-bottom:3px;">Masuk ke FitKu</div>
+        <div class="small-muted" style="margin-bottom:12px;">Masukkan email dan password kamu.</div>
+        <div class="small-muted">Email</div>
+        <div class="field">nama@email.com</div>
+        <div class="small-muted">Password</div>
+        <div class="field focus">••••••••</div>
+        <div class="small-muted" style="text-align:right; color:#c9baff; margin-bottom:10px;">Lupa password?</div>
+        <div class="pill" style="display:block; text-align:center; margin-bottom:10px;">Masuk</div>
+        <div class="small-muted" style="text-align:center;">Belum punya akun? <span style="color:#c9baff;">Daftar</span></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 05 HOME ===================== -->
+<section class="block" id="home">
+  <div class="kicker">05 · HALAMAN UTAMA</div>
+  <h2 class="section-title">Mengenal Halaman Home</h2>
+  <div class="section-desc">Setelah punya akun, kamu langsung masuk ke Dashboard — ini "markas" harianmu di FitKu.</div>
+
+  <div class="step-row">
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div class="small-muted">Selamat malam, <b style="color:white">Kamu</b></div>
+        <div style="position:relative; width:100px; height:100px; margin:8px auto 10px auto;">
+          <svg width="100" height="100" viewBox="0 0 88 88">
+            <circle cx="44" cy="44" r="38" fill="none" stroke="#23253a" stroke-width="9"/>
+            <circle cx="44" cy="44" r="38" fill="none" stroke="url(#g1)" stroke-width="9"
+              stroke-dasharray="238.76" stroke-dashoffset="190.4" stroke-linecap="round"
+              transform="rotate(-90 44 44)"/>
+            <defs><linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2dd4bf"/><stop offset="100%" stop-color="#8b5cf6"/>
+            </linearGradient></defs>
+          </svg>
+          <div style="position:absolute; top:0; left:0; width:100px; height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <div style="font-size:13pt; font-weight:700;">420</div><div class="small-muted">/ 2.069 kkal</div>
+          </div>
+        </div>
+        <div class="small-muted" style="text-align:center; margin-bottom:10px;">1.649 kkal tersisa · 1 makanan</div>
+        <div class="macro-grid">
+          <div class="macro-cell"><div class="lbl">Protein</div><div class="val">12/135g</div><div class="bar"><div class="bar-fill" style="width:9%; background:#2dd4bf;"></div></div></div>
+          <div class="macro-cell"><div class="lbl">Karbo</div><div class="val">58/253g</div><div class="bar"><div class="bar-fill" style="width:23%; background:#8b5cf6;"></div></div></div>
+          <div class="macro-cell"><div class="lbl">Lemak</div><div class="val">15/57g</div><div class="bar"><div class="bar-fill" style="width:26%; background:#f0b429;"></div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Buku Harian</div>
+          <div class="diary-item"><span>Sarapan</span><span class="btn-mini">+ Catat</span></div>
+          <div class="diary-item"><span>Makan Siang</span><span class="btn-mini">+ Catat</span></div>
+          <div class="diary-item"><span>Makan Malam · 420 kkal</span><span class="btn-mini">+ Catat</span></div>
+          <div class="diary-item"><span>Kudapan</span><span class="btn-mini">+ Catat</span></div>
+        </div>
+        <div class="coach-msg"><b>AI Coach:</b> Protein hari ini masih kurang 123g — tambah telur, ayam, atau tempe.</div>
+        <div class="bottomnav">
+          <div class="active">Home</div><div>Progress</div><div>Tambah</div><div>Coach</div><div>Setelan</div>
+        </div>
+      </div></div>
+    </div>
+    <div class="step-text">
+      <div class="step-title">Ring Kalori</div>
+      <div class="step-body">Lingkaran di atas menunjukkan kalori yang sudah dimakan hari ini dibanding target harianmu. Warna terisi bertambah tiap kali kamu mencatat makanan.</div>
+      <div class="step-title" style="margin-top:20px;">Kartu Makro</div>
+      <div class="step-body">Tiga kartu kecil menunjukkan progress protein, karbo, dan lemak dibanding target harian — berguna untuk menjaga pola makan seimbang, bukan cuma jumlah kalori.</div>
+      <div class="step-title" style="margin-top:20px;">Buku Harian</div>
+      <div class="step-body">Daftar 4 waktu makan (Sarapan, Makan Siang, Makan Malam, Kudapan). Tap <b>+ Catat</b> di sebelah waktu makan untuk mencatat makanan ke situ.</div>
+      <div class="step-title" style="margin-top:20px;">Pesan AI Coach</div>
+      <div class="step-body">Kotak ungu di bawah Buku Harian berisi saran singkat dari AI berdasarkan catatanmu hari ini — misalnya kekurangan protein atau belum mencatat apa pun.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 06 CATAT MAKANAN ===================== -->
+<section class="block" id="catat-makanan">
+  <div class="kicker">06 · MENCATAT MAKANAN</div>
+  <h2 class="section-title">Cara Mencatat Makanan</h2>
+  <div class="section-desc">Ada dua cara: lewat tombol <b>+ Catat</b> di tiap waktu makan, atau lewat tombol bulat <b>Tambah</b> di tengah menu bawah.</div>
+
+  <div class="step-row">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">1</span>Tap tombol Tambah / + Catat</div>
+      <div class="step-body">
+        Tap tombol bulat gradasi di tengah menu bawah untuk membuka menu cepat: <b>Berat</b>, <b>Olahraga</b>, <b>Air</b>, dan <b>Catat Makanan</b>. Atau langsung tap <b>+ Catat</b> di waktu makan tertentu di Home.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div style="height:230px;"></div>
+        <div class="qmenu">
+          <div class="qitem">Berat</div>
+          <div class="qitem">Olahraga</div>
+          <div class="qitem">Air</div>
+          <div class="qitem" style="background:#26284a;">Catat Makanan</div>
+        </div>
+        <div class="fab">+</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="step-row reverse">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">2</span>Cari makananmu</div>
+      <div class="step-body">
+        Ketik nama makanan di kolom pencarian, misalnya "nasi goreng". FitKu akan menampilkan pilihan makanan beserta estimasi kalorinya. Kalau makananmu tidak ada di database, pakai <b>Tambah Cepat</b> untuk catat kalori manual.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div class="small-muted" style="margin-bottom:8px;">Catat ke: Makan Malam</div>
+        <div class="search-box">Cari: nasi goreng</div>
+        <div class="pill-outline" style="display:block; text-align:center; margin-bottom:10px; color:#c9baff;">Tambah Cepat — catat kalori tanpa cari makanan</div>
+        <div class="diary-item"><span>Nasi Goreng Kampung<br><span class="small-muted">1 porsi (200g)</span></span><span>420 kkal <b style="color:#8b5cf6">+</b></span></div>
+        <div class="diary-item"><span>Nasi Goreng Seafood<br><span class="small-muted">1 porsi (200g)</span></span><span>450 kkal <b style="color:#8b5cf6">+</b></span></div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="step-row">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">3</span>Tap tombol + untuk pilih, lalu Simpan</div>
+      <div class="step-body">
+        Tap ikon <b>+</b> di sebelah makanan yang kamu mau. Makanan akan muncul di bagian "Dipilih" beserta total kalorinya. Tap <b>Simpan</b> untuk mencatatnya ke Buku Harian.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div class="small-muted" style="margin-bottom:8px;">Catat ke: Makan Malam</div>
+        <div class="search-box">Cari: nasi goreng</div>
+        <div class="card" style="border:1px solid #8b5cf6;">
+          <div class="small-muted">DIPILIH (1) · 420 KKAL</div>
+          <div class="diary-item"><span>Nasi Goreng Kampung<br><span class="small-muted">1× · Makan Malam</span></span><span>420 kkal ✕</span></div>
+        </div>
+        <div class="diary-item"><span>Nasi Goreng Kampung</span><span>420 kkal +</span></div>
+        <div class="diary-item"><span>Nasi Goreng Seafood</span><span>450 kkal +</span></div>
+        <div class="pill" style="display:block; text-align:center; margin-top:10px;">Simpan 1 item</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="step-row reverse">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">4</span>Cek hasilnya di Home</div>
+      <div class="step-body">
+        Setelah disimpan, ring kalori, kartu makro, dan Buku Harian di Home otomatis ter-update. AI Coach juga langsung memberi catatan singkat.
+      </div>
+      <div class="tip-box">
+        Tap ikon ✕ di sebelah item makanan yang sudah dicatat kalau kamu mau menghapusnya.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div style="position:relative; width:80px; height:80px; margin:6px auto 10px auto;">
+          <svg width="80" height="80" viewBox="0 0 70 70">
+            <circle cx="35" cy="35" r="29" fill="none" stroke="#23253a" stroke-width="7"/>
+            <circle cx="35" cy="35" r="29" fill="none" stroke="url(#g2)" stroke-width="7"
+              stroke-dasharray="182.2" stroke-dashoffset="145.2" stroke-linecap="round"
+              transform="rotate(-90 35 35)"/>
+            <defs><linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2dd4bf"/><stop offset="100%" stop-color="#8b5cf6"/>
+            </linearGradient></defs>
+          </svg>
+          <div style="position:absolute; top:0; left:0; width:80px; height:80px; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <div style="font-size:10pt; font-weight:700;">420</div><div class="small-muted">/2.069</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="diary-item"><span>Makan Malam · 420 kkal</span></div>
+          <div class="diary-item" style="border:none; padding-left:8px;"><span class="small-muted">Nasi Goreng Kampung</span><span class="small-muted">420 kkal ✕</span></div>
+        </div>
+        <div class="coach-msg"><b>AI Coach:</b> Protein hari ini masih kurang 123g — tambah telur, ayam, atau tempe di makan berikutnya.</div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 07 BERAT/OLAHRAGA/AIR ===================== -->
+<section class="block" id="berat">
+  <div class="kicker">07 · BERAT, OLAHRAGA &amp; AIR</div>
+  <h2 class="section-title">Mencatat Berat Badan, Olahraga &amp; Air</h2>
+  <div class="section-desc">Selain makanan, tiga hal ini juga bisa dicatat lewat menu cepat yang sama (tombol Tambah).</div>
+
+  <div class="step-row">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">1</span>Catat Berat Badan</div>
+      <div class="step-body">
+        Dari menu cepat, tap <b>Berat</b>. Masukkan angka berat badan terbaru (kg), lalu tap <b>Catat</b>. Riwayat berat badan ini akan muncul sebagai grafik di halaman Progress.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div class="toggle-row">
+          <div class="toggle">Kalori</div>
+          <div class="toggle on">Berat</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Berat Badan</div>
+          <div class="small-muted">— belum ada data —</div>
+        </div>
+        <div class="small-muted">Berat (kg)</div>
+        <div class="field">misal: 74.5</div>
+        <div class="pill" style="display:block; text-align:center;">Catat</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="step-row reverse">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">2</span>Catat Olahraga &amp; Air</div>
+      <div class="step-body">
+        Tap <b>Olahraga</b> untuk mencatat jenis dan durasi aktivitas fisik. Tap <b>Air</b> untuk mencatat asupan air minum harianmu.
+      </div>
+      <div class="tip-box">
+        Semakin rutin dicatat, semakin akurat Weekly Insight dari AI Coach — usahakan catat minimal 3 hari dalam seminggu.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div class="qmenu" style="margin-top:50px;">
+          <div class="qitem" style="background:#26284a;">Berat</div>
+          <div class="qitem" style="background:#26284a;">Olahraga</div>
+          <div class="qitem" style="background:#26284a;">Air</div>
+          <div class="qitem">Catat Makanan</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 08 AI COACH ===================== -->
+<section class="block" id="coach">
+  <div class="kicker">08 · AI COACH</div>
+  <h2 class="section-title">Tanya AI Coach</h2>
+  <div class="section-desc">Tab <b>Coach</b> di menu bawah berisi analisa otomatis dari kebiasaan makanmu, plus kolom tanya-jawab bebas.</div>
+
+  <div class="step-row">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">1</span>Baca Daily Coaching</div>
+      <div class="step-body">
+        Setiap hari, AI Coach memberi 3 bagian: <b>Analisa</b>, <b>Insight</b>, dan <b>Action</b>.
+      </div>
+      <div class="step-title" style="margin-top:20px;"><span class="step-num">2</span>Cek Weekly Insight</div>
+      <div class="step-body">
+        Ringkasan pola makan 7 hari terakhir. Insight ini baru akurat kalau kamu sudah mencatat makanan minimal 3 hari dalam seminggu.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div style="font-weight:700; font-size:9.5pt; margin-bottom:8px;">AI Coach</div>
+        <div class="card">
+          <div class="card-title">Daily Coaching · Hari Ini</div>
+          <div class="small-muted" style="margin-bottom:5px;"><b style="color:#c9baff">1 Analisa</b><br>Belum ada makanan tercatat hari ini.</div>
+          <div class="small-muted" style="margin-bottom:5px;"><b style="color:#c9baff">2 Insight</b><br>Pola makanmu belum terbaca.</div>
+          <div class="small-muted"><b style="color:#c9baff">3 Action</b><br>Catat satu makanan sekarang.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Weekly Insight · 7 Hari Terakhir</div>
+          <div class="small-muted">Kamu baru mencatat makanan di 0 dari 7 hari terakhir.</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="step-row reverse">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">3</span>Tanya bebas ke AI Coach</div>
+      <div class="step-body">
+        Di kolom "Tanya AI Coach..." paling bawah, kamu bisa mengetik pertanyaan apa saja seputar diet, makanan, atau progressmu.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div style="height:200px;"></div>
+        <div class="small-muted" style="margin-bottom:5px;">TANYA LEBIH LANJUT</div>
+        <div class="search-box">Tanya AI Coach... →</div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 09 PROGRESS ===================== -->
+<section class="block" id="progress">
+  <div class="kicker">09 · PROGRESS</div>
+  <h2 class="section-title">Melihat Progress</h2>
+  <div class="section-desc">Tab <b>Progress</b> menampilkan tren kalori, makro, berat badan, dan olahraga dalam bentuk ringkasan mingguan.</div>
+
+  <div class="step-row">
+    <div class="step-text">
+      <div class="step-title"><span class="step-num">1</span>Tab Kalori</div>
+      <div class="step-body">
+        Menampilkan grafik kalori 7 hari terakhir, rata-rata kalori harian dibanding target, dan rata-rata persentase makro selama seminggu.
+      </div>
+      <div class="step-title" style="margin-top:20px;"><span class="step-num">2</span>Tab Berat</div>
+      <div class="step-body">
+        Menampilkan riwayat berat badan yang sudah kamu catat.
+      </div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div class="toggle-row">
+          <div class="toggle on">Kalori</div>
+          <div class="toggle">Berat</div>
+        </div>
+        <div class="card">
+          <div class="row-between"><span class="card-title">Kalori 7 Hari</span><span class="small-muted">0/7 hari tercatat</span></div>
+          <div style="display:flex; gap:4px; margin:8px 0;">
+            <div style="flex:1;height:4px;background:#2dd4bf;border-radius:3px;"></div>
+            <div style="flex:1;height:4px;background:#2dd4bf;border-radius:3px;"></div>
+            <div style="flex:1;height:4px;background:#2dd4bf;border-radius:3px;"></div>
+            <div style="flex:1;height:4px;background:#2dd4bf;border-radius:3px;"></div>
+            <div style="flex:1;height:4px;background:#2dd4bf;border-radius:3px;"></div>
+            <div style="flex:1;height:4px;background:#2dd4bf;border-radius:3px;"></div>
+            <div style="flex:1;height:4px;background:#2dd4bf;border-radius:3px;"></div>
+          </div>
+          <div class="small-muted">Rata-rata 0 kkal dari target 2.069 kkal</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Rata-rata Makro (7 hari)</div>
+          <div class="macro-grid">
+            <div class="macro-cell"><div class="val">0%</div><div class="lbl">Protein</div></div>
+            <div class="macro-cell"><div class="val">0%</div><div class="lbl">Karbo</div></div>
+            <div class="macro-cell"><div class="val">0%</div><div class="lbl">Lemak</div></div>
+          </div>
+        </div>
+        <div class="card-title" style="margin-top:2px;">Riwayat Olahraga</div>
+        <div class="small-muted">Belum ada olahraga tercatat 14 hari terakhir.</div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 10 PENGATURAN ===================== -->
+<section class="block" id="pengaturan">
+  <div class="kicker">10 · PENGATURAN</div>
+  <h2 class="section-title">Pengaturan &amp; Akun</h2>
+  <div class="section-desc">Tab <b>Setelan</b> berisi ringkasan profil, tema tampilan, status langganan, bantuan, dan opsi keluar akun.</div>
+
+  <div class="step-row">
+    <div class="step-text">
+      <div class="step-title">Profil</div>
+      <div class="step-body">Lihat &amp; edit tujuan, berat sekarang, target berat, dan motivasimu. Tap <b>Edit</b> untuk mengubah data ini kapan saja.</div>
+      <div class="step-title" style="margin-top:16px;">Tampilan</div>
+      <div class="step-body">Atur tema Gelap/Terang sesuai preferensimu.</div>
+      <div class="step-title" style="margin-top:16px;">Langganan</div>
+      <div class="step-body">Cek plan aktif (Free/Premium) dan status trial. Tap <b>Lihat FitKu Premium</b> untuk info upgrade.</div>
+      <div class="step-title" style="margin-top:16px;">Bantuan &amp; Akun</div>
+      <div class="step-body">Tap <b>Tanya Admin</b> kalau butuh bantuan, atau <b>Keluar</b> untuk logout dari akun.</div>
+    </div>
+    <div class="step-visual">
+      <div class="phone"><div class="phone-screen">
+        <div class="notch"></div>
+        <div class="card">
+          <div class="row-between"><span class="card-title">PROFIL</span><span class="small-muted" style="color:#c9baff;">Edit</span></div>
+          <div class="diary-item"><span>Tujuan</span><span>Turun berat badan</span></div>
+          <div class="diary-item"><span>Berat sekarang</span><span>75 kg</span></div>
+          <div class="diary-item"><span>Target berat</span><span>68 kg</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">TAMPILAN</div>
+          <div class="diary-item"><span>Tema</span><span class="pill">Gelap</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">LANGGANAN</div>
+          <div class="diary-item"><span>Plan aktif</span><span>Free</span></div>
+          <div class="diary-item"><span>Status</span><span class="pill-outline" style="color:#f0b429;">Trial · 7 hari lagi</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">AKUN</div>
+          <div class="small-muted" style="color:#c9baff;">Keluar</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 11 TIPS & FAQ ===================== -->
+<section class="block" id="faq">
+  <div class="kicker">11 · TIPS &amp; FAQ</div>
+  <h2 class="section-title">Tips Pakai Harian</h2>
+
+  <div class="tips-list">
+    <ul>
+      <li>Catat makanan sesegera mungkin setelah makan, jangan ditunda sampai malam — lebih gampang ingat porsinya.</li>
+      <li>Timbang berat badan di jam yang sama tiap hari (idealnya pagi, sebelum makan) supaya angkanya konsisten.</li>
+      <li>Baca pesan AI Coach di Home setiap hari — sering berisi saran kecil yang langsung bisa dipraktikkan.</li>
+      <li>Kalau makanan tidak ketemu di pencarian, pakai <b>Tambah Cepat</b> daripada dilewatkan begitu saja.</li>
+      <li>Cek tab Progress tiap akhir minggu untuk lihat tren, bukan cuma angka harian.</li>
+    </ul>
+  </div>
+
+  <h2 class="section-title" style="font-size:22px; margin-top:40px;">Pertanyaan Umum</h2>
+
+  <div class="faq-item">
+    <div class="faq-q">Apakah data saya tersimpan otomatis di semua HP?</div>
+    <div class="faq-a">Pada paket Free, data tersimpan lokal di perangkat yang kamu pakai. Untuk sinkronisasi ke perangkat lain, dibutuhkan FitKu Premium.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Bagaimana kalau saya salah catat makanan?</div>
+    <div class="faq-a">Buka Home, cari item di Buku Harian pada waktu makan terkait, lalu tap ikon ✕ di sampingnya untuk menghapus.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Apa bedanya Free dan Premium?</div>
+    <div class="faq-a">Cek detail lengkap dan harga terbaru di menu Setelan → Lihat FitKu Premium.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Ke mana saya bertanya kalau ada kendala?</div>
+    <div class="faq-a">Buka Setelan → Tanya Admin.</div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<footer class="site-footer">
+  Panduan Pengguna FitKu · <a href="https://fitku.fit" target="_blank" rel="noopener">fitku.fit</a>
+</footer>
+
+<button class="top-btn" id="topBtn" aria-label="Kembali ke atas">↑</button>
+
+<script src="back-to-top.js"></script>
+
+</body>
+</html>
