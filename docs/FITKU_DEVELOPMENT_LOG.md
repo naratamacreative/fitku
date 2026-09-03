@@ -1937,3 +1937,35 @@ Sebelumnya `OnboardingGate` di `App.tsx` mewajibkan `session` sebelum `/onboardi
 
 ### 9-10. Bug belum diverifikasi / Next Step
 Tidak ada bug yang diketahui tersisa. Belum diuji: 2 tab/device berbeda mengisi onboarding bersamaan tanpa login (sessionStorage per-tab, jadi tidak akan bentrok — tapi belum diverifikasi langsung). Belum diuji: draft yang stuck di `sessionStorage` kalau user menutup tab sebelum sempat login (diharapkan: draft hilang begitu tab ditutup, karena `sessionStorage` memang per-tab-session — user akan mulai onboarding dari awal lagi, bukan bug tapi trade-off desain `sessionStorage` yang disadari).
+
+---
+
+## 2026-09-03 — Grant Pro Lifetime ke Akun Test Pre-Launch; Temuan: UI Masih Tampil Trial Setelah Refresh (Root Cause BELUM Diverifikasi)
+
+### 1-2. Tanggal & Tujuan
+2026-09-03. User (akun `novriekadito9@gmail.com`) minta akses Pro/Premium penuh diberikan langsung ke akunnya sendiri, di luar jalur pembayaran Midtrans, supaya bisa mencoba seluruh fitur premium sebelum launching ke market.
+
+### 3-4. Root Cause & Keputusan
+Bukan bugfix — murni provisioning akses testing. Entitlement Pro dibaca lewat `subscriptionRepository.get()` (tabel `subscription_status`: `user_id`, `plan`, `status`, `started_at`, `expires_at`, `trial_used`) lalu diproses `getProAccess()` di `src/domain/entitlement.ts`: `isPaidActive()` mengembalikan `true` kalau `plan !== 'free'` DAN `status === 'active'` DAN (`expires_at` NULL atau masih di masa depan) — `expires_at = NULL` berarti lifetime, tidak pernah expired.
+
+Keputusan: grant langsung lewat SQL `INSERT ... ON CONFLICT (user_id) DO UPDATE ... RETURNING *` ke tabel `subscription_status` di database production, dieksekusi manual di Supabase SQL Editor — BUKAN lewat kode aplikasi maupun file migrasi. Ini seed data satu akun test, bukan perubahan behavior sistem.
+
+**Temuan baru, belum diverifikasi**: Setelah row dikonfirmasi tersimpan benar (lihat bagian Testing), user refresh aplikasi dan melaporkan perilaku UI masih sama seperti kondisi Trial, bukan Pro. **Tidak ada root cause yang dikonfirmasi dan tidak ada solusi teknis yang diklaim pada entry ini** — temuan ini murni dicatat untuk investigasi lanjutan, sesuai instruksi eksplisit user untuk tidak mengubah/mengklaim solusi sebelum akar masalah terverifikasi.
+
+### 5-7. Implementasi / File yang berubah
+Tidak ada file kode yang diubah. Perubahan hanya 1 row data di tabel `subscription_status` (production Supabase), lewat SQL manual di dashboard — tidak lewat repo/migrasi.
+
+### 8. Testing yang benar-benar dilakukan
+- Query `INSERT INTO public.subscription_status (...) SELECT id, 'pro_lifetime', 'active', now(), null, true FROM auth.users WHERE email = 'novriekadito9@gmail.com' ON CONFLICT (user_id) DO UPDATE ... RETURNING *` dijalankan di Supabase SQL Editor (production project `fitku`). Hasil 1 row dikonfirmasi lewat output query itu sendiri: `user_id = ea36597e-ae8c-4b35-b1a8-ed0d32ee5bb4`, `plan = pro_lifetime`, `status = active`, `expires_at = NULL`, `trial_used = true`, `started_at = 2026-09-02 21:55:09+00`.
+- Setelah user refresh aplikasi: user melaporkan perilaku masih menunjukkan status Trial. **Belum direproduksi/diinvestigasi independen** pada sesi ini — dicatat apa adanya sebagai laporan user, bukan temuan yang sudah diverifikasi oleh saya.
+
+### 9. Bug/temuan belum diverifikasi
+Kenapa UI masih menampilkan status Trial padahal row `subscription_status` di database sudah benar (`plan=pro_lifetime`, `status=active`, `expires_at=NULL`) — **belum diketahui**. Kemungkinan yang masih perlu diperiksa, BUKAN kesimpulan:
+- Cache/state client-side (`useProAccess` / `AppStateContext`) belum refetch data terbaru meski halaman di-refresh.
+- RLS policy tabel `subscription_status` untuk operasi SELECT dari client (role `authenticated`/anon) mungkin berbeda dari akses SQL Editor (yang berjalan sebagai `postgres`/service role) — row bisa saja ADA di database tapi tidak terbaca client karena policy membatasi.
+- Kemungkinan lain di luar dua hipotesis di atas belum dicek sama sekali.
+
+Tidak satu pun dari hipotesis ini sudah dikonfirmasi.
+
+### 10. Next Step
+Investigasi kenapa client tidak melihat status Pro yang sudah benar di database — mulai dari cek response aktual `subscriptionRepository.get()` (Network tab browser) untuk akun ini setelah refresh, dan cek definisi RLS policy `subscription_status` untuk SELECT. Jangan mengubah kode atau mengklaim fix sebelum root cause ini dikonfirmasi lewat observasi langsung.
