@@ -41,7 +41,7 @@ export interface DailyNote {
 // expiryFor()) — never sold, never shown in Premium.tsx's plan picker, always expires_at
 // NULL. Kept separate from `pro_lifetime` so fixing that paid tier's real duration never
 // affects test accounts, and vice versa.
-export type SubscriptionPlan = 'free' | 'pro_monthly' | 'pro_annual' | 'pro_lifetime' | 'dev_test'
+export type SubscriptionPlan = 'free' | 'pro_monthly' | 'pro_annual' | 'pro_lifetime' | 'dev_test' | 'partner_grant'
 
 export interface SubscriptionStatus {
   userId: string // primary key

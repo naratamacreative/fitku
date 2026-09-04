@@ -20,6 +20,7 @@ const PLAN_LABEL: Record<string, string> = {
   pro_annual: 'PRO 3 Bulan',
   pro_lifetime: 'PRO 12 Bulan',
   dev_test: 'PRO (Dev Test)',
+  partner_grant: 'PRO (Partner)',
 }
 
 export function Settings() {
