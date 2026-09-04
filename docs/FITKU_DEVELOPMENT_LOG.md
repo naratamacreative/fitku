@@ -2101,3 +2101,102 @@ Urutan dampak (dari audit bagian 1):
 8. Keputusan soal `landing/src/LandingPage.tsx` (versi React lama, tidak dipakai, masih punya CTA rusak ke `/waitlist` dan janji "Daily Movement Plan" fiktif) — biarkan mati, hapus, atau update supaya konsisten? Belum diputuskan.
 
 **Status**: Next Step poin (1)-(3) di atas selesai dan terverifikasi end-to-end. **Belum dikerjakan** (di luar scope sesi ini, ditandai untuk nanti): poin (4) — verifikasi `activate()` sungguhan menghasilkan durasi yang benar untuk `pro_annual`/`pro_lifetime`, baru relevan setelah integrasi pembayaran Midtrans nyata aktif (saat ini `Premium.tsx` masih mock activation).
+
+---
+
+## 2026-09-04 (lanjutan 2) — Progress Recap, Insiden main Ketinggalan Commit, Migrasi Netlify→Vercel, Katalog Makanan Pro-Gated, Partner Grant
+
+Entry ini adalah ringkasan satu sesi kerja panjang (lanjutan langsung dari entry di atas), mencakup banyak pekerjaan berbeda. Branch: `feat/landing-page`, semuanya sudah di-fast-forward ke `main` dan live di production. Commit-commit sesi ini secara urut: `ce8fc20`, `2422c50`, `2c5e705`, `ea93096` (lihat detail per commit di masing-masing bagian).
+
+### 1. Fitur "Progress Recap" — ganti Pro perk yang lemah ("riwayat tanpa batas") dengan ringkasan bermakna
+
+**Konteks**: audit bisnis sebelumnya menilai "Grafik riwayat kalori/berat tanpa batas" sebagai Pro perk paling lemah ("kebanyakan orang tidak butuh scroll riwayat >30 hari"). User minta diperbaiki tanpa menghapus histori/grafik yang sudah ada, dengan arahan eksplisit: bentuknya "Recap / Milestone Card".
+
+**Implementasi** (`commit ce8fc20`):
+- **File baru** `src/domain/progressRecap.ts`: `computeWeightRecap()` (total perubahan berat sejak mulai, kecepatan kg/minggu, streak catat, narasi tren 30 hari — reuse `assessMonthlyWeightTrend()` yang sudah ada supaya goal-aware tanpa kode baru, plus perbandingan mentah vs 30 hari sebelumnya) dan `computeCalorieRecap()` (streak logging dari sumber yang sama dengan Dashboard/AI Coach, % hari sesuai target 30 hari, perbandingan rata-rata kalori 14 hari terakhir vs sebelumnya).
+- `src/features/progress/tabs/WeightTab.tsx` dan `CalorieTab.tsx`: blok `ProLocked` lama diganti card Recap. Trigger paywall sekarang berbasis "cukup data untuk recap bermakna" (≥3 entri, ≥7 hari), bukan lagi "sudah 10+ entri" — muncul lebih awal untuk user aktif, persis titik "sunk cost" yang direkomendasikan.
+
+**Testing**: `npm run build` 0 error, verifikasi visual browser sungguhan di akun `dev_test` — data uji (16 entri berat + 18 log makanan, sintetis, ditandai jelas) diseed lewat REST API pakai sesi login user, discreenshot, lalu **dihapus lagi** setelah selesai (kemudian di-seed ulang sekali lagi khusus untuk kebutuhan screenshot ads creative user, atas permintaan eksplisit — dibiarkan tidak dihapus per instruksi terakhir soal itu).
+
+### 2. Insiden: `main` ketinggalan 5 commit dari `feat/landing-page` — AI Coach lock TIDAK live di production
+
+**Temuan**: user melaporkan AI Coach masih terbuka di akun trial di `fitku.fit`. Investigasi (curl ke bundle production + `git log` `origin/main` vs `origin/feat/landing-page`) menemukan root cause: **`main` (branch yang di-deploy Vercel) tertinggal 5 commit**, termasuk `d88cccb` (trial 14 hari + AI Coach lock) yang secara harfiah belum pernah sampai ke production sama sekali. Bukan bug kode, bukan cache Vercel — commit-nya memang belum pernah di-push ke `main`.
+
+**Fix**: `git push origin feat/landing-page:main` (fast-forward bersih, tidak ada commit unik di `main` yang hilang). Diverifikasi: bundle hash production berubah (`index-kjXvHSCF.js` → `index-ebKTJUzo.js`), isi bundle baru dikonfirmasi mengandung string "Fitur Pro"/"14 hari"/dst yang sebelumnya nol.
+
+**Pelajaran untuk sesi berikutnya**: SELALU cek `git log origin/main..origin/feat/landing-page` sebelum menganggap sesuatu "sudah live di production" hanya karena sudah di-commit/push ke `feat/landing-page`.
+
+### 3. Perlindungan folder `ads creative/`
+
+User menegaskan folder `ads creative/` (video paid traffic, karakter Google Flow) tidak boleh pernah masuk Git (ukuran besar, bisa bikin repo penuh). Ditambahkan ke `.gitignore`. Dicatat juga sebagai memory permanen (`fitku-ads-creative-local-only`) di sistem memori Claude Code supaya sesi berikutnya otomatis tahu tanpa diingatkan ulang.
+
+### 4-5. Analisis (tanpa implementasi): entitlement khusus untuk influencer/partner, dan hubungannya dengan payment gateway masa depan
+
+User minta dianalisis: bagaimana cara terbaik memberi akses Pro gratis ke influencer/partner (bukan lewat Trial biasa), dan bagaimana ini nanti terhubung ke payment gateway sungguhan.
+
+**Temuan kunci**: `entitlement.ts`/`isPaidActive()` (dan salinannya di `api/chat.ts`) sudah **plan-id-agnostic** — cukup ada baris `subscription_status` dengan `plan != 'free'`, `status='active'`, `expires_at` NULL/masa depan, user langsung dapat Pro, apa pun nama plan-nya. Ini terbukti dari precedent `dev_test`. Jadi grant khusus **tidak butuh perubahan kode entitlement sama sekali** — cuma butuh plan id baru yang terpisah dari `dev_test` (supaya reporting tidak campur) dan cara aman untuk menulisnya.
+
+**Rekomendasi yang disepakati**: plan id khusus (bukan kode voucher — itu baru relevan setelah payment gateway nyata ada, karena kupon 100%-off itu ujungnya sama saja dengan grant manual). Sekaligus ditemukan: RLS `subscription_status` sekarang `for all using(auth.uid()=user_id)` — **user bisa menulis plan-nya sendiri lewat REST langsung**, celah yang WAJIB ditutup (jadi `select`-only untuk client) begitu payment gateway sungguhan dipasang, siapa pun gateway-nya.
+
+Tidak ada kode yang diubah di bagian ini — murni analisis, jadi dasar keputusan bagian 12.
+
+### 6. Riset Mayar.id sebagai kandidat payment gateway (KYC sudah approved, Midtrans masih pending)
+
+Riset dokumentasi resmi (`docs.mayar.id`) + verifikasi langsung ke dashboard akun Mayar milik FitKu sendiri (browser, sudah login). Temuan penting:
+- Mayar **tidak punya mekanisme verifikasi keaslian webhook (signature/HMAC)** — dikonfirmasi 2×, dari dokumentasi DAN dari layar konfigurasi webhook nyata (cuma ada kolom URL, tidak ada secret key). Beda dari Midtrans yang punya signature key resmi. Implikasi: kalau nanti pakai Mayar, backend WAJIB re-verifikasi status transaksi ke API Mayar setelah terima webhook — tidak boleh percaya body webhook mentah.
+- Mendukung Membership (1/3/6/12 bulan — cocok dengan 3 tier FitKu), Payment Link/Invoice biasa, kupon/diskon (tapi maks 99% — tidak bisa "100% gratis" bersih lewat kupon), metode bayar lengkap (QRIS 0,7%, VA Rp4rb, e-wallet 1,5%, kartu 2,6%+Rp2rb, dst).
+- Tidak ada implementasi apa pun — murni riset untuk keputusan strategis kapan waktunya tiba.
+
+### 7. Migrasi Netlify → Vercel: landing, guide, Privacy Policy, Terms of Service (`commit 2422c50`)
+
+**Kondisi sebelumnya**: landing page (`fitku-landing.netlify.app`) dan panduan (`fitkuguide.netlify.app`) ada di domain terpisah dari `fitku.fit` (Vercel). Privacy Policy & Terms of Service belum ada sama sekali di mana pun.
+
+**Implementasi**:
+- 4 halaman statis baru di `public/` (Vite otomatis copy ke `dist/`): `landing-page-fitku/` (isi `Fitku.html` dipertahankan utuh + 1 gambar logo), `guide/` (isi `Panduan/fitku-panduan-index.html` dipertahankan, kecuali 1 blok `<script>` inline dipindah ke file eksternal `back-to-top.js` — WAJIB, karena CSP `fitku.fit` (`script-src 'self'`, tanpa `unsafe-inline`) akan diam-diam memblokir script inline itu, beda dari Netlify lama yang tidak punya CSP sama sekali), `privacy-policy/` dan `terms-of-service/` (konten baru, ditulis berdasar kondisi FitKu nyata — data yang benar dikumpulkan, Supabase/OpenAI sebagai subprocessor, trial 14 hari, belum ada payment gateway nyata).
+- `vercel.json`: ditambah 4 rewrite eksplisit untuk keempat path itu (ditaruh sebelum catch-all SPA) — perbaikan penting yang ditemukan lewat testing: tanpa itu, path tanpa trailing slash (`/guide` bukan `/guide/`) jatuh ke SPA, bukan halaman statis.
+- `landing/netlify.toml` diubah jadi redirect 301 semua path ke `fitku.fit/landing-page-fitku`; `fitkuguide.netlify.app` juga di-deploy redirect terpisah (301 ke `fitku.fit/guide`) — kedua domain lama TETAP HIDUP (redirect, bukan dimatikan) supaya traffic iklan lama tidak putus mendadak.
+- Bug deploy ditemukan & diperbaiki saat eksekusi: `netlify deploy` dari root repo salah baca config (auto-detect Remix/Hydrogen, macet di prompt interaktif) — diperbaiki dengan `cd landing && netlify deploy --no-build`.
+
+**Testing**: `npm run build` 0 error, verifikasi langsung ke production `fitku.fit` (semua 4 path 200 dengan title benar, aset gambar/JS ke-load, SPA app utama tidak regresi) DAN ke kedua domain Netlify lama (redirect 301 terkonfirmasi jalan).
+
+### 8-9. Diskusi produk (analisis/keputusan, sebagian di-skip)
+
+- **Database makanan 2.300+ item**: user mengungkap 2 file (`landing/makanan-indonesia-1.html`/`-2.html`) berisi data gizi asli ribuan makanan Indonesia yang selama ini ditahan karena khawatir FitKu jadi "database makanan" bukan app coaching. Disepakati: FoodTracker sudah search-first (bukan browse-first), jadi ukuran katalog di baliknya tidak pernah terlihat user selama interaksi tetap lewat search — solusinya bukan UI baru, tapi men-tier akses search (Free/Trial cuma dapat 193 item inti, Pro dapat seluruh katalog). Lihat implementasi di bagian 11.
+- **Auto-hitung minuman sebagai air minum** (misal boba dihitung gelas air): direkomendasikan JANGAN diimplementasi — katalog "Minuman" isinya nyaris semua manis/berkafein, auto-crediting akan memberi sinyal kesehatan yang salah. **User memilih skip** — tidak dikerjakan.
+
+### 10. Audit bisnis lanjutan: willingness-to-pay pasca-perbaikan sesi ini
+
+Audit ulang (bukan mengulang audit lama, tapi menilai dampak semua perbaikan sesi ini) menemukan: AI Coach lock nyata + trial 14 hari + Progress Recap = perbaikan produk yang riil, tapi **blocker utama tidak berubah** (masih tidak ada payment gateway apa pun — Mayar baru diriset, belum diimplementasi). **Temuan baru yang lebih serius dari audit sebelumnya**: landing page (`landing/Fitku.html`, kartu harga) mengklaim **"Akses 5.000+ Database Makanan"** — fabrikasi yang LEBIH presisi (dan karena itu lebih gampang ketahuan bohong) dibanding "ribuan makanan" yang ditemukan sebelumnya; angka asli 193 (saat itu) / 2.779 (setelah migrasi bagian 11, masih jauh dari 5.000). Testimoni palsu juga masih ada, belum disentuh. Estimasi konversi hipotetis (kalau gateway sudah ada): konservatif 1-2%, realistis 3-5%, optimistis 6-9% — range serupa audit sebelumnya karena blocker utama sama, tapi peluang mendarat di sisi realistis-optimistis naik berkat perbaikan produk. **Kesimpulan eksplisit: FitKu belum siap mengejar pelanggan berbayar** — bukan karena produk buruk, tapi karena tidak ada cara menerima pembayaran sama sekali, ditambah temuan klaim salah yang duduk tepat di kartu harga.
+
+### 11. Implementasi: Katalog Makanan Pro-Gated (`commit 2c5e705`, via Plan Mode — disetujui eksplisit sebelum eksekusi)
+
+**Tahap 1 — Skema/RLS** (`supabase/migrations/0005_food_tiers.sql`): kolom `foods.tier` (`core`/`pro`, existing 193 otomatis `core`), fungsi `is_pro_user()` (mirror `isProUser()` di `api/chat.ts` — cek `subscription_status` langsung, BUKAN trial window, jadi trial TIDAK dapat katalog Pro), RLS baru `tier='core' or is_pro_user()`. **Pattern pertama di codebase ini** yang pakai function-based RLS/`security definer` — sebelumnya semua policy cuma column comparison biasa.
+
+**Tahap 2 — Pipeline data** (`supabase/migrations/0006_seed_pro_foods.sql`): script Node sementara (scratchpad, tidak di-commit — sama pola dengan `fitku_food_additions.ts` dulu) meng-extract 2 array JS dari `makanan-indonesia-1.html` (2.251 entri) + `-2.html` (425 entri), petakan 5 kategori sumber ke 5 dari 7 kategori enum yang ada (`gorengan`/`sup_kuah` sengaja tidak dapat tambahan — keputusan eksplisit user, karena tidak ada cara aman memisahkan otomatis dari data sumber), dedup 2 lapis (dalam pool sendiri + terhadap 193 nama existing), generate id `pro-food-0001..2586` SEKALI dan di-hardcode (tidak pernah regenerate runtime, prinsip yang sama dari pelajaran `fitku_food_additions.ts` dulu). Hasil akhir: **2.586 item baru** (dari 2.676 mentah, 38 dobel dalam pool + 52 sudah ada di 193 lama di-skip otomatis).
+
+**Tahap 3 — Refactor repository/UI**: `foodRepository.ts` — `all()` (load semua tanpa filter) dihapus total, diganti `core()` (193 item, buat tab/browse), `search()`/`byId()` yang sebelumnya dead code diaktifkan, `byIds()` baru (batch lookup Favorit/Terakhir). `FoodTracker.tsx` — berhenti load seluruh katalog ke memori, search sekarang debounced (~250ms, hook baru `useDebouncedValue`) ke server dengan guard token anti-race-condition; tab kategori tetap cuma dari 193 item inti (RLS + `core()` bekerja sama memastikan katalog Pro CUMA bisa diakses lewat search, tidak pernah jadi daftar untuk di-scroll — sesuai prinsip dari bagian 8). `Dashboard.tsx` — lookup makanan yang di-edit diganti dari "load semua lalu `.find()`" jadi `byId()` async langsung.
+
+**Eksekusi migrasi ke production** (bukan cuma nulis file): Supabase CLI di-login (browser interaktif oleh user sendiri di terminal terpisah — token tidak pernah masuk transkrip percakapan), `supabase link --project-ref anyyjqmuqnmqhqjxnexx`, lalu `supabase migration repair --status applied 0001 0002 0003 0004` (karena 4 migrasi lama itu dijalankan manual lewat SQL Editor sebelumnya, bukan lewat CLI — tanpa langkah ini, `db push` akan mencoba menjalankan ulang dan gagal), `supabase db push --dry-run` untuk konfirmasi cuma `0005`/`0006`/`0007` yang akan jalan, baru `supabase db push` sungguhan.
+
+**Verifikasi via `supabase db query --linked`** (koneksi CLI sendiri, bukan kredensial aplikasi manapun): `select tier, count(*) from foods group by tier` → **core: 193, pro: 2.586** — persis sesuai ekspektasi.
+
+### 12. Partner grant untuk influencer (`commit ea93096`)
+
+User minta akses Pro 1 bulan untuk `insani07022017@gmail.com` (influencer, testing sebelum launching). Sesuai rekomendasi bagian 4-5: dibuat plan id baru `partner_grant` (`supabase/migrations/0007_partner_grant_plan.sql`, pattern sama seperti `dev_test` — enum value ditambah statement terpisah), `SubscriptionPlan` type + `PLAN_LABEL` di `Settings.tsx` diperluas (`"PRO (Partner)"`). Grant sungguhan (`INSERT ... subscription_status`, `expires_at = 2026-10-04`) **dijalankan oleh user sendiri langsung ke database**, bukan oleh saya. Diverifikasi lewat `supabase db query --linked` (bukan login sebagai user itu — saya tidak dan tidak akan pernah punya kredensial akun pihak lain): baris `plan=partner_grant, status=active, expires_at=2026-10-04, trial_used=true` untuk `user_id=1a2174e6-e8e2-49a6-9c2e-e9e743161573` sudah benar persis sesuai rencana.
+
+### 13. Status akhir sesi
+
+Semua 4 commit (`ce8fc20`, `2422c50`, `2c5e705`, `ea93096`) sudah di `feat/landing-page` **dan** di-fast-forward ke `main` — live di production `fitku.fit`, dikonfirmasi lewat perubahan bundle hash + smoke test rute utama setelah tiap deploy. Migrasi `0005`-`0007` semuanya sudah diterapkan ke database production dan diverifikasi lewat query langsung.
+
+**Perubahan lama yang TIDAK disentuh sepanjang sesi ini** (sengaja dibiarkan, konsisten dengan keputusan sesi sebelumnya): `.gitignore`, `index.html`, `src/App.tsx` (modifikasi lama), `netlify.toml`/`public/icons.svg` (terhapus di working tree), `fitku_food_additions.ts`, `landing/makanan-indonesia-1.html`/`-2.html` (sengaja dibiarkan untracked sebagai sumber referensi, sama seperti `fitku_food_additions.ts` dulu), file spec lama, `public/manifest.webmanifest`, `supabase/.temp/`, dan folder `ads creative/` (tidak pernah disentuh/dibaca sama sekali, sesuai instruksi eksplisit).
+
+### 14. Pending / Belum Selesai — Prioritas Sesi Berikutnya
+
+Urut dampak (dari audit bagian 10):
+1. **Perbaiki klaim "Akses 5.000+ Database Makanan" jadi angka asli** (2.779) di `landing/Fitku.html` — prioritas darurat, klaim salah duduk tepat di kartu harga.
+2. **Hapus/ganti testimoni palsu** di `landing/Fitku.html` — belum disentuh sejak ditemukan pertama kali.
+3. **Sinkronkan copy landing page dengan Progress Recap** — masih menjanjikan "Riwayat & Grafik Kalori" (fitur lama), bukan deskripsi Recap yang sebenarnya sudah live.
+4. **Integrasi payment gateway nyata** (Mayar sudah diriset, KYC approved) — blocker mutlak, tanpa ini tidak ada yang bisa dijual.
+5. **Tutup celah RLS `subscription_status`** (client bisa tulis plan sendiri) — wajib dikerjakan BERSAMAAN dengan poin 4, bukan setelahnya.
+6. Verifikasi `activate()` menghasilkan durasi benar untuk `pro_annual`/`pro_lifetime` lewat pembayaran sungguhan — masih menunggu poin 4.
+7. Bersihkan akun test lama (`+aicoachtest1`, `+fitku4`, dst.) — opsional.
