@@ -45,8 +45,9 @@ export function Dashboard() {
   const { logs: todayExercise, addExercise } = useTodayExercise(user?.id)
   const [streak, setStreak] = useState(0)
   const [glasses, setGlasses] = useState(0)
-  const [allFoods, setAllFoods] = useState<Food[]>([])
   const [editingLog, setEditingLog] = useState<FoodLog | null>(null)
+  const [editingFood, setEditingFood] = useState<Food | undefined>(undefined)
+  const [editingFoodLookupDone, setEditingFoodLookupDone] = useState(true)
   const [noteDraft, setNoteDraft] = useState('')
   const [noteSaved, setNoteSaved] = useState(false)
   const [showExerciseSheet, setShowExerciseSheet] = useState(false)
@@ -62,15 +63,31 @@ export function Dashboard() {
   }, [user, totals.count])
 
   useEffect(() => {
-    foodRepository.all().then(setAllFoods)
-  }, [])
-
-  useEffect(() => {
     if (!user) return
     foodReportRepository.reportedFoodIds(user.id).then(setReportedIds)
   }, [user])
 
-  const editingFood = editingLog?.foodId ? allFoods.find((f) => f.id === editingLog.foodId) : undefined
+  // Async lookup replaces a synchronous find() over a fully-loaded catalog — the
+  // `editingFoodLookupDone` guard exists so the "no matching Food" fallback sheet
+  // (rendered below) never flashes while this fetch is still in flight.
+  useEffect(() => {
+    const foodId = editingLog?.foodId
+    if (!foodId) {
+      setEditingFood(undefined)
+      setEditingFoodLookupDone(true)
+      return
+    }
+    let cancelled = false
+    setEditingFoodLookupDone(false)
+    foodRepository.byId(foodId).then((food) => {
+      if (cancelled) return
+      setEditingFood(food)
+      setEditingFoodLookupDone(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [editingLog?.foodId])
 
   const handleDeleteItem = (log: FoodLog) => {
     // Confirmation is handled inline in MealDiary (tap ✕ twice) — no native
@@ -341,7 +358,7 @@ export function Dashboard() {
           onSubmit={handleSubmitReport}
         />
       )}
-      {editingLog && !editingFood && (
+      {editingLog && editingFoodLookupDone && !editingFood && (
         <QuickAddSheet
           initial={{
             name: editingLog.foodName,

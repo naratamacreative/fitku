@@ -13,6 +13,7 @@ import { AppShell } from '../../shared/components/AppShell'
 import { Button } from '../../shared/components/Button'
 import { Chip } from '../../shared/components/Chip'
 import { useAppState } from '../../shared/context/AppStateContext'
+import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue'
 import { generateId } from '../../shared/lib/id'
 import { PortionSheet } from './components/PortionSheet'
 import { QuickAddSheet, type QuickAddValues } from './components/QuickAddSheet'
@@ -194,8 +195,12 @@ export function FoodTracker() {
   const presetMealType: MealType = mealParam && isMealType(mealParam) ? mealParam : defaultMealType()
   const presetMeal = MEAL_TYPES.find((m) => m.value === presetMealType)!
 
-  const [allFoods, setAllFoods] = useState<Food[]>([])
+  const [coreFoods, setCoreFoods] = useState<Food[]>([])
   const [query, setQuery] = useState('')
+  const debouncedQuery = useDebouncedValue(query, 250)
+  const [searchResults, setSearchResults] = useState<Food[]>([])
+  const [favoritFoods, setFavoritFoods] = useState<Food[]>([])
+  const [terakhirFoods, setTerakhirFoods] = useState<Food[]>([])
   const [tab, setTab] = useState<Tab>('favorit')
   const [recentIds, setRecentIds] = useState<string[]>([])
   const [frequentIds, setFrequentIds] = useState<string[]>([])
@@ -212,8 +217,48 @@ export function FoodTracker() {
   const [savingBasket, setSavingBasket] = useState(false)
 
   useEffect(() => {
-    foodRepository.all().then(setAllFoods)
+    foodRepository.core().then(setCoreFoods)
   }, [])
+
+  // Debounced, server-side — RLS alone decides whether pro-tier rows come back (see
+  // supabase/migrations/0005_food_tiers.sql), so this needs no client-side tier check.
+  // A request token (not a plain `cancelled` boolean) guards against an older, slower
+  // request resolving after a newer one and clobbering its results.
+  const searchTokenRef = useRef(0)
+  useEffect(() => {
+    const q = debouncedQuery.trim()
+    if (!q) {
+      setSearchResults([])
+      return
+    }
+    const token = ++searchTokenRef.current
+    foodRepository.search(q).then((results) => {
+      if (searchTokenRef.current !== token) return
+      setSearchResults(results)
+    })
+  }, [debouncedQuery])
+
+  useEffect(() => {
+    if (frequentIds.length === 0) {
+      setFavoritFoods([])
+      return
+    }
+    foodRepository.byIds(frequentIds).then((foods) => {
+      const byId = new Map(foods.map((f) => [f.id, f]))
+      setFavoritFoods(frequentIds.map((id) => byId.get(id)).filter((f): f is Food => !!f))
+    })
+  }, [frequentIds])
+
+  useEffect(() => {
+    if (recentIds.length === 0) {
+      setTerakhirFoods([])
+      return
+    }
+    foodRepository.byIds(recentIds).then((foods) => {
+      const byId = new Map(foods.map((f) => [f.id, f]))
+      setTerakhirFoods(recentIds.map((id) => byId.get(id)).filter((f): f is Food => !!f))
+    })
+  }, [recentIds])
 
   useEffect(() => {
     if (!user) return
@@ -241,19 +286,13 @@ export function FoodTracker() {
     })
   }, [user])
 
-  const foodsById = useMemo(() => new Map(allFoods.map((f) => [f.id, f])), [allFoods])
-
   const visibleFoods = useMemo(() => {
-    if (query.trim()) {
-      const q = query.toLowerCase()
-      return allFoods.filter((f) => f.name.toLowerCase().includes(q))
-    }
-    if (tab === 'favorit')
-      return frequentIds.map((id) => foodsById.get(id)).filter((f): f is Food => !!f && !reportedIds.has(f.id))
-    if (tab === 'terakhir') return recentIds.map((id) => foodsById.get(id)).filter((f): f is Food => !!f)
+    if (query.trim()) return searchResults
+    if (tab === 'favorit') return favoritFoods.filter((f) => !reportedIds.has(f.id))
+    if (tab === 'terakhir') return terakhirFoods
     if (tab === 'milikku') return []
-    return allFoods.filter((f) => f.category === tab)
-  }, [query, tab, allFoods, foodsById, frequentIds, recentIds, reportedIds])
+    return coreFoods.filter((f) => f.category === tab)
+  }, [query, tab, searchResults, favoritFoods, terakhirFoods, coreFoods, reportedIds])
 
   const basketTotalCalories = useMemo(
     () => Math.round(basket.reduce((sum, item) => sum + item.calories * item.servings, 0)),

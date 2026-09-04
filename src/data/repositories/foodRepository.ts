@@ -2,9 +2,12 @@ import { supabase } from '../../shared/lib/supabaseClient'
 import type { Food } from '../types/food.types'
 
 export interface FoodRepository {
-  all(): Promise<Food[]>
+  /** The free/trial-visible catalog only (tier='core') — RLS also enforces this, this is just the intentional query shape for browsing/tabs. */
+  core(): Promise<Food[]>
+  /** RLS decides what comes back: free/trial gets core-only matches, Pro gets the full catalog. */
   search(query: string): Promise<Food[]>
   byId(id: string): Promise<Food | undefined>
+  byIds(ids: string[]): Promise<Food[]>
 }
 
 interface FoodRow {
@@ -36,17 +39,20 @@ function fromRow(row: FoodRow): Food {
 }
 
 class SupabaseFoodRepository implements FoodRepository {
-  async all(): Promise<Food[]> {
-    const { data, error } = await supabase.from('foods').select('*')
+  async core(): Promise<Food[]> {
+    const { data, error } = await supabase.from('foods').select('*').eq('tier', 'core')
     if (error) throw error
     return (data as FoodRow[]).map(fromRow)
   }
 
   async search(query: string): Promise<Food[]> {
     const q = query.trim()
-    if (!q) return this.all()
+    if (!q) return this.core()
     // Server-side filter, same substring/case-insensitive semantics as the old
-    // client-side `name.toLowerCase().includes(q)`.
+    // client-side `name.toLowerCase().includes(q)`. No tier filter here — RLS
+    // (see supabase/migrations/0005_food_tiers.sql) already restricts which rows
+    // are visible per-caller, so a free/trial user's search can only ever match
+    // core rows regardless of what's in the underlying table.
     const { data, error } = await supabase.from('foods').select('*').ilike('name', `%${q}%`)
     if (error) throw error
     return (data as FoodRow[]).map(fromRow)
@@ -56,6 +62,13 @@ class SupabaseFoodRepository implements FoodRepository {
     const { data, error } = await supabase.from('foods').select('*').eq('id', id).maybeSingle()
     if (error) throw error
     return data ? fromRow(data as FoodRow) : undefined
+  }
+
+  async byIds(ids: string[]): Promise<Food[]> {
+    if (ids.length === 0) return []
+    const { data, error } = await supabase.from('foods').select('*').in('id', ids)
+    if (error) throw error
+    return (data as FoodRow[]).map(fromRow)
   }
 }
 
