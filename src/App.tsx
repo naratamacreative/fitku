@@ -1,19 +1,26 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
-import { AiCoach } from './features/ai-coach/AiCoach'
-import { Auth } from './features/auth/Auth'
-import { ResetPassword } from './features/auth/ResetPassword'
-import { Dashboard } from './features/dashboard/Dashboard'
-import { FoodTracker } from './features/food-tracker/FoodTracker'
-import { Hydration } from './features/hydration/Hydration'
-import { OnboardingFlow } from './features/onboarding/OnboardingFlow'
-import { Premium } from './features/premium/Premium'
-import { Progress } from './features/progress/Progress'
-import { ResultMoment } from './features/result-moment/ResultMoment'
-import { EditProfile } from './features/settings/EditProfile'
-import { Settings } from './features/settings/Settings'
-import { Welcome } from './features/welcome/Welcome'
 import { AppStateProvider, useAppState } from './shared/context/AppStateContext'
 import { ThemeProvider } from './shared/context/ThemeContext'
+
+// Route-level code splitting: each feature ships as its own chunk, fetched
+// only when its route is visited, instead of all being in the one main
+// bundle every visitor downloads up front (incl. Welcome/Auth, the first
+// screen for most new users, who don't need Dashboard/FoodTracker/AiCoach/
+// Premium code yet). No behavior change — same components, same props.
+const AiCoach = lazy(() => import('./features/ai-coach/AiCoach').then((m) => ({ default: m.AiCoach })))
+const Auth = lazy(() => import('./features/auth/Auth').then((m) => ({ default: m.Auth })))
+const Dashboard = lazy(() => import('./features/dashboard/Dashboard').then((m) => ({ default: m.Dashboard })))
+const FoodTracker = lazy(() => import('./features/food-tracker/FoodTracker').then((m) => ({ default: m.FoodTracker })))
+const Hydration = lazy(() => import('./features/hydration/Hydration').then((m) => ({ default: m.Hydration })))
+const OnboardingFlow = lazy(() => import('./features/onboarding/OnboardingFlow').then((m) => ({ default: m.OnboardingFlow })))
+const Premium = lazy(() => import('./features/premium/Premium').then((m) => ({ default: m.Premium })))
+const Progress = lazy(() => import('./features/progress/Progress').then((m) => ({ default: m.Progress })))
+const ResetPassword = lazy(() => import('./features/auth/ResetPassword').then((m) => ({ default: m.ResetPassword })))
+const ResultMoment = lazy(() => import('./features/result-moment/ResultMoment').then((m) => ({ default: m.ResultMoment })))
+const EditProfile = lazy(() => import('./features/settings/EditProfile').then((m) => ({ default: m.EditProfile })))
+const Settings = lazy(() => import('./features/settings/Settings').then((m) => ({ default: m.Settings })))
+const Welcome = lazy(() => import('./features/welcome/Welcome').then((m) => ({ default: m.Welcome })))
 
 // Requires both an authenticated session AND a profile row (onboarding completed).
 function Gate({ children }: { children: React.ReactNode }) {
@@ -150,7 +157,9 @@ function App() {
     <ThemeProvider>
       <AppStateProvider>
         <Router>
-          <AppRoutes />
+          <Suspense fallback={null}>
+            <AppRoutes />
+          </Suspense>
         </Router>
       </AppStateProvider>
     </ThemeProvider>

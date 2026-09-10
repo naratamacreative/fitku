@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Makanan FitKu - Part 3</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
+        h1 { color: #2c3e50; }
+        .info { background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #3498db; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+
+    <h1>Database Makanan FitKu - Vol 3 (Batch 35)</h1>
+    <div class="info">
+        <p><strong>Fokus Data:</strong> Aneka Bakery Nusantara, Roti Kemasan, dan Franchise Roti Modern.</p>
+        <p>Gunakan array <code>foodDatabasePart3</code> di dalam tag script untuk diintegrasikan ke aplikasimu.</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nama Makanan</th>
+                <th>Kategori</th>
+                <th>Porsi</th>
+                <th>Kalori (kcal)</th>
+                <th>Protein (g)</th>
+                <th>Karbo (g)</th>
+                <th>Lemak (g)</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <!-- Data akan dirender di sini oleh JavaScript -->
+        </tbody>
+    </table>
+
+    <script>
+        // ==========================================
+        // DATABASE FITKU PART 3
+        // BATCH 35: ROTI KEMASAN, HOLLAND BAKERY, MAKO, ROTI'O & ROTI LOKAL
+        // ==========================================
+        
+        const foodDatabasePart3 = [
+            
+            // HOLLAND BAKERY
+            { name: "Holland Bakery Roti Abon Sapi", cat: "Kudapan", serving: "1 Buah (80g)", cal: 320, pro: 9, carb: 35, fat: 16 },
+            { name: "Holland Bakery Roti Coklat", cat: "Kudapan", serving: "1 Buah (80g)", cal: 290, pro: 6, carb: 42, fat: 11 },
+            { name: "Holland Bakery Roti Keju", cat: "Kudapan", serving: "1 Buah (80g)", cal: 310, pro: 8, carb: 38, fat: 14 },
+            { name: "Holland Bakery Roti Sisir Mentega", cat: "Kudapan", serving: "1 Potong", cal: 220, pro: 4, carb: 28, fat: 10 },
+            { name: "Holland Bakery Lemper Ayam", cat: "Kudapan", serving: "1 Buah (70g)", cal: 180, pro: 6, carb: 24, fat: 6 },
+            { name: "Holland Bakery Risoles Ayam", cat: "Kudapan", serving: "1 Buah (70g)", cal: 210, pro: 6, carb: 22, fat: 11 },
+            { name: "Holland Bakery Pastel Goreng", cat: "Kudapan", serving: "1 Buah", cal: 230, pro: 5, carb: 24, fat: 12 },
+            { name: "Holland Bakery Kue Soes (Cream Puff)", cat: "Kudapan", serving: "1 Buah (60g)", cal: 190, pro: 4, carb: 18, fat: 11 },
+            { name: "Holland Bakery Bika Ambon", cat: "Kudapan", serving: "1 Slice (50g)", cal: 160, pro: 2, carb: 25, fat: 6 },
+            { name: "Holland Bakery Lapis Legit", cat: "Kudapan", serving: "1 Slice (50g)", cal: 240, pro: 3, carb: 20, fat: 16 },
+            { name: "Holland Bakery Chiffon Pandan", cat: "Kudapan", serving: "1 Slice (60g)", cal: 170, pro: 3, carb: 24, fat: 7 },
+            { name: "Holland Bakery Roti Tawar Premium", cat: "Makanan", serving: "1 Lembar Tebal", cal: 110, pro: 4, carb: 20, fat: 1.5 },
+            { name: "Holland Bakery Roti Baso Sapi", cat: "Kudapan", serving: "1 Buah", cal: 280, pro: 9, carb: 36, fat: 10 },
+            { name: "Holland Bakery Roti Sosis Keju", cat: "Kudapan", serving: "1 Buah", cal: 310, pro: 10, carb: 34, fat: 14 },
+            { name: "Holland Bakery Pudding Coklat", cat: "Kudapan", serving: "1 Cup", cal: 150, pro: 3, carb: 28, fat: 3 },
+
+            // MAKO CAKE & BAKERY / BREADTALK
+            { name: "Mako / BreadTalk Fire Flosss (Abon Pedas)", cat: "Kudapan", serving: "1 Buah (90g)", cal: 380, pro: 10, carb: 40, fat: 20 },
+            { name: "Mako / BreadTalk C's Flosss (Abon Ori)", cat: "Kudapan", serving: "1 Buah (90g)", cal: 370, pro: 10, carb: 40, fat: 19 },
+            { name: "Mako / BreadTalk Cheese John", cat: "Kudapan", serving: "1 Buah", cal: 340, pro: 8, carb: 38, fat: 17 },
+            { name: "Mako / BreadTalk D'Diva (Sosis Coklat/Keju)", cat: "Kudapan", serving: "1 Buah", cal: 310, pro: 9, carb: 35, fat: 15 },
+            { name: "Mako / BreadTalk Choco Croissant", cat: "Kudapan", serving: "1 Buah", cal: 320, pro: 5, carb: 35, fat: 18 },
+            { name: "Mako / BreadTalk Almond Blanc", cat: "Kudapan", serving: "1 Buah", cal: 340, pro: 6, carb: 42, fat: 16 },
+            { name: "Mako / BreadTalk Sugar Pillow", cat: "Kudapan", serving: "1 Buah", cal: 220, pro: 4, carb: 35, fat: 7 },
+            { name: "Mako / BreadTalk Meet the Cheese", cat: "Kudapan", serving: "1 Buah", cal: 330, pro: 8, carb: 38, fat: 16 },
+            { name: "Mako / BreadTalk Muffin Coklat", cat: "Kudapan", serving: "1 Buah Sedang", cal: 390, pro: 5, carb: 50, fat: 18 },
+            { name: "Mako / BreadTalk Slice Black Forest", cat: "Kudapan", serving: "1 Slice", cal: 350, pro: 4, carb: 42, fat: 18 },
+            { name: "Mako / BreadTalk Slice Tiramisu", cat: "Kudapan", serving: "1 Slice", cal: 330, pro: 5, carb: 38, fat: 17 },
+            { name: "Mako / BreadTalk Roti Tawar", cat: "Makanan", serving: "1 Lembar", cal: 95, pro: 3, carb: 18, fat: 1.5 },
+
+            // ROTI'O & ROTI BOY
+            { name: "Roti'O Coffee Bun (Original)", cat: "Kudapan", serving: "1 Buah (90g)", cal: 380, pro: 6, carb: 46, fat: 18 },
+            { name: "Roti'O Pastry Coklat", cat: "Kudapan", serving: "1 Buah", cal: 320, pro: 4, carb: 35, fat: 17 },
+            { name: "Roti Boy Original Bun", cat: "Kudapan", serving: "1 Buah (90g)", cal: 390, pro: 6, carb: 48, fat: 18 },
+            { name: "Roti Boy Buttermilk Bun (Rotigal)", cat: "Kudapan", serving: "1 Buah", cal: 410, pro: 5, carb: 50, fat: 20 },
+
+            // TOUS LES JOURS (TLJ)
+            { name: "Tous Les Jours Croissant Original", cat: "Kudapan", serving: "1 Buah (70g)", cal: 290, pro: 5, carb: 32, fat: 16 },
+            { name: "Tous Les Jours Pain au Chocolat", cat: "Kudapan", serving: "1 Buah", cal: 330, pro: 5, carb: 38, fat: 17 },
+            { name: "Tous Les Jours Milk Pan Bread", cat: "Makanan", serving: "1 Lembar Tebal", cal: 120, pro: 4, carb: 22, fat: 2 },
+            { name: "Tous Les Jours Cheese Time", cat: "Kudapan", serving: "1 Buah", cal: 350, pro: 8, carb: 40, fat: 17 },
+            { name: "Tous Les Jours Cream Cheese Walnut", cat: "Kudapan", serving: "1 Slice", cal: 260, pro: 5, carb: 30, fat: 12 },
+            { name: "Tous Les Jours Choco Cornet", cat: "Kudapan", serving: "1 Buah", cal: 310, pro: 6, carb: 42, fat: 14 },
+            { name: "Tous Les Jours Sausage Bread", cat: "Kudapan", serving: "1 Buah", cal: 330, pro: 9, carb: 38, fat: 15 },
+            { name: "Tous Les Jours Macaron", cat: "Kudapan", serving: "1 Buah", cal: 95, pro: 1.5, carb: 14, fat: 4 },
+
+            // BREADLIFE & ROTI KEMASAN MINIMARKET (SARI ROTI, PAROTI, MYROTI)
+            { name: "BreadLife Roti Abon (Bite Size)", cat: "Kudapan", serving: "1 Buah Kecil", cal: 180, pro: 5, carb: 20, fat: 9 },
+            { name: "Sari Roti Roti Tawar Spesial", cat: "Makanan", serving: "1 Lembar (35g)", cal: 90, pro: 3, carb: 17, fat: 1.5 },
+            { name: "Sari Roti Roti Tawar Kupas", cat: "Makanan", serving: "1 Lembar", cal: 80, pro: 2.5, carb: 15, fat: 1 },
+            { name: "Sari Roti Roti Tawar Pandan", cat: "Makanan", serving: "1 Lembar", cal: 85, pro: 3, carb: 16, fat: 1.5 },
+            { name: "Sari Roti Roti Sobek Coklat", cat: "Kudapan", serving: "1 Sobekan (55g)", cal: 170, pro: 4, carb: 28, fat: 5 },
+            { name: "Sari Roti Roti Sobek Keju", cat: "Kudapan", serving: "1 Sobekan (55g)", cal: 180, pro: 5, carb: 26, fat: 6 },
+            { name: "Sari Roti Burger Bun Polos", cat: "Makanan", serving: "1 Buah (60g)", cal: 160, pro: 5, carb: 30, fat: 2 },
+            { name: "Sari Roti Hotdog Bun Polos", cat: "Makanan", serving: "1 Buah (60g)", cal: 160, pro: 5, carb: 30, fat: 2 },
+            { name: "MyRoti Roti Kasur", cat: "Kudapan", serving: "1 Sobekan (40g)", cal: 130, pro: 3, carb: 22, fat: 3 },
+            { name: "MyRoti Roti Sisir Mentega", cat: "Kudapan", serving: "1 Bungkus", cal: 190, pro: 3, carb: 28, fat: 7 },
+            { name: "Paroti Roti Krim Vanilla", cat: "Kudapan", serving: "1 Buah", cal: 180, pro: 3, carb: 26, fat: 6 },
+            { name: "Paroti Roti Krim Coklat", cat: "Kudapan", serving: "1 Buah", cal: 190, pro: 3, carb: 28, fat: 7 },
+            { name: "Garmelia Roti Tawar", cat: "Makanan", serving: "1 Lembar", cal: 85, pro: 3, carb: 16, fat: 1 },
+
+            // AOKA (ROTI VIRAL)
+            { name: "Aoka Roti Panggang (Coklat / Keju)", cat: "Kudapan", serving: "1 Bungkus (65g)", cal: 240, pro: 4, carb: 38, fat: 8 },
+            { name: "Aoka Roti Panggang (Strawberry / Vanilla)", cat: "Kudapan", serving: "1 Bungkus (65g)", cal: 230, pro: 3, carb: 40, fat: 7 },
+            { name: "Aoka Roti Gulung Keju", cat: "Kudapan", serving: "1 Bungkus (60g)", cal: 220, pro: 4, carb: 35, fat: 8 },
+
+            // ROTI LOKAL, JADUL & GEMBONG
+            { name: "Roti Lauw / Tan Ek Tjoan Coklat", cat: "Kudapan", serving: "1 Buah (70g)", cal: 210, pro: 4, carb: 34, fat: 6 },
+            { name: "Roti Gambang (Roti Jadul Kayu Manis)", cat: "Kudapan", serving: "1 Buah (80g)", cal: 280, pro: 4, carb: 55, fat: 4 },
+            { name: "Roti Buaya Mini (Polos)", cat: "Kudapan", serving: "1 Buah Sedang (100g)", cal: 290, pro: 6, carb: 55, fat: 5 },
+            { name: "Roti Gembong (Isi Coklat Lumer)", cat: "Kudapan", serving: "1 Slice Tebal", cal: 240, pro: 4, carb: 38, fat: 8 },
+            { name: "Roti Gembong (Isi Krim Keju)", cat: "Kudapan", serving: "1 Slice Tebal", cal: 250, pro: 5, carb: 35, fat: 10 },
+            { name: "Roti Sisir Jogja (Mentega Manis)", cat: "Kudapan", serving: "1 Potong (40g)", cal: 150, pro: 2, carb: 22, fat: 6 },
+            { name: "Roti Bluder Cokro (Original)", cat: "Kudapan", serving: "1 Buah (80g)", cal: 280, pro: 5, carb: 40, fat: 11 },
+            { name: "Roti Bluder Cokro (Coklat / Keju)", cat: "Kudapan", serving: "1 Buah (80g)", cal: 320, pro: 6, carb: 42, fat: 14 },
+            { name: "Roti Mandarin / Spiku (Orion Solo)", cat: "Kudapan", serving: "1 Slice (50g)", cal: 190, pro: 3, carb: 24, fat: 9 },
+            { name: "Bagelen (Roti Kering Mentega Gula)", cat: "Kudapan", serving: "2 Keping (30g)", cal: 145, pro: 2, carb: 22, fat: 6 },
+            { name: "Pia Mangkok / Pia Malang (Kacang Hijau)", cat: "Kudapan", serving: "1 Buah (40g)", cal: 160, pro: 3, carb: 24, fat: 5 },
+
+        // KELUARGA BISKUIT KLASIK (Marie, Kelapa, Gandum)
+        { name: "Marie Regal", cat: "Kudapan", serving: "3 Keping", cal: 110, pro: 2, carb: 18, fat: 3 },
+        { name: "Roma Marie Susu", cat: "Kudapan", serving: "3 Keping", cal: 120, pro: 2.5, carb: 19, fat: 3.5 },
+        { name: "Roma Kelapa", cat: "Kudapan", serving: "3 Keping", cal: 130, pro: 2, carb: 20, fat: 5 },
+        { name: "Nissin Biskuit Kelapa (Ijo)", cat: "Kudapan", serving: "3 Keping", cal: 125, pro: 2, carb: 21, fat: 4 },
+        { name: "Roma Sari Gandum (Original)", cat: "Kudapan", serving: "3 Keping", cal: 140, pro: 3, carb: 19, fat: 6 },
+        { name: "Roma Sari Gandum Sandwich (Coklat/Kacang)", cat: "Kudapan", serving: "2 Keping", cal: 150, pro: 3, carb: 20, fat: 7 },
+
+        // KELUARGA MALKIST & CRACKERS
+        { name: "Roma Malkist Original (Gula)", cat: "Kudapan", serving: "2 Keping", cal: 110, pro: 2, carb: 18, fat: 3.5 },
+        { name: "Roma Malkist Abon", cat: "Kudapan", serving: "2 Keping", cal: 130, pro: 2.5, carb: 18, fat: 5 },
+        { name: "Roma Malkist Coklat", cat: "Kudapan", serving: "2 Keping", cal: 140, pro: 2, carb: 20, fat: 6 },
+        { name: "Roma Malkist Keju Manis", cat: "Kudapan", serving: "2 Keping", cal: 135, pro: 2, carb: 19, fat: 5.5 },
+        { name: "Gery Saluut Malkist Keju / Coklat", cat: "Kudapan", serving: "2 Keping", cal: 145, pro: 2, carb: 18, fat: 7 },
+        { name: "Nissin Crispy Crackers", cat: "Kudapan", serving: "3 Keping", cal: 115, pro: 2, carb: 16, fat: 5 },
+        { name: "Ritz Crackers Original", cat: "Kudapan", serving: "5 Keping", cal: 80, pro: 1, carb: 10, fat: 4 },
+        { name: "Ritz Sandwich Keju", cat: "Kudapan", serving: "3 Keping", cal: 140, pro: 2, carb: 15, fat: 7 },
+
+        // KELUARGA KHONG GUAN & MONDE
+        { name: "Khong Guan Assorted (Biskuit Baur Kaleng Merah)", cat: "Kudapan", serving: "3 Keping Campur", cal: 135, pro: 2, carb: 20, fat: 5 },
+        { name: "Khong Guan Cream Sandwich (Lemon/Coklat)", cat: "Kudapan", serving: "2 Keping", cal: 110, pro: 1.5, carb: 17, fat: 4.5 },
+        { name: "Khong Guan Malkist Sayur", cat: "Kudapan", serving: "3 Keping", cal: 120, pro: 2, carb: 18, fat: 4 },
+        { name: "Monde Butter Cookies (Kaleng Biru)", cat: "Kudapan", serving: "3 Keping", cal: 150, pro: 2, carb: 18, fat: 8 },
+        { name: "Monde Bourbon (Biskuit Coklat Krim)", cat: "Kudapan", serving: "2 Keping", cal: 130, pro: 2, carb: 18, fat: 6 },
+        { name: "Monde Genji Pie (Puff Kering Berpasir)", cat: "Kudapan", serving: "2 Keping", cal: 140, pro: 1.5, carb: 19, fat: 6 },
+
+        // BISKUIT COKLAT, SANDWICH & CHOCOCHIP
+        { name: "Oreo Original (Hitam Krim Vanilla)", cat: "Kudapan", serving: "3 Keping", cal: 160, pro: 2, carb: 22, fat: 7 },
+        { name: "Oreo Double Stuf", cat: "Kudapan", serving: "2 Keping", cal: 140, pro: 1.5, carb: 19, fat: 7 },
+        { name: "Slai O'Lai (Nanas/Strawberry)", cat: "Kudapan", serving: "3 Keping", cal: 145, pro: 1.5, carb: 23, fat: 5 },
+        { name: "Good Time Classic Chocochip", cat: "Kudapan", serving: "3 Keping", cal: 150, pro: 2, carb: 20, fat: 7 },
+        { name: "Good Time Double Choc", cat: "Kudapan", serving: "3 Keping", cal: 160, pro: 2, carb: 21, fat: 8 },
+        { name: "Biskuat Original / Energi", cat: "Kudapan", serving: "3 Keping", cal: 140, pro: 2, carb: 22, fat: 4.5 },
+        { name: "Biskuat Coklat", cat: "Kudapan", serving: "3 Keping", cal: 145, pro: 2, carb: 23, fat: 5 },
+        { name: "Better Biskuit Lapis Coklat", cat: "Kudapan", serving: "1 Keping", cal: 110, pro: 1.5, carb: 15, fat: 5 },
+        { name: "Tim Tam (Coklat / Vanilla)", cat: "Kudapan", serving: "1 Keping", cal: 90, pro: 1, carb: 12, fat: 4 },
+
+        // WAFER, ROLL & KREPES
+        { name: "Tango Wafer Coklat", cat: "Kudapan", serving: "3 Lapis / Potong", cal: 120, pro: 2, carb: 18, fat: 5 },
+        { name: "Tango Wafer Vanilla", cat: "Kudapan", serving: "3 Lapis / Potong", cal: 125, pro: 2, carb: 19, fat: 5 },
+        { name: "Nabati Wafer Keju (Richeese)", cat: "Kudapan", serving: "3 Lapis / Potong", cal: 130, pro: 2, carb: 17, fat: 6 },
+        { name: "Nabati Wafer Coklat (Richoco)", cat: "Kudapan", serving: "3 Lapis / Potong", cal: 130, pro: 2, carb: 18, fat: 5.5 },
+        { name: "Nissin Wafer Coklat (Kaleng)", cat: "Kudapan", serving: "3 Lapis / Potong", cal: 140, pro: 2, carb: 19, fat: 6 },
+        { name: "Selamat Wafer Coklat", cat: "Kudapan", serving: "3 Lapis / Potong", cal: 135, pro: 2, carb: 18, fat: 6 },
+        { name: "Astor Wafer Stick Coklat", cat: "Kudapan", serving: "3 Batang", cal: 110, pro: 1.5, carb: 18, fat: 4 },
+        { name: "Chocolatos Wafer Roll", cat: "Kudapan", serving: "1 Batang", cal: 75, pro: 1, carb: 10, fat: 3 },
+        { name: "Fullo Wafer Roll", cat: "Kudapan", serving: "1 Batang", cal: 70, pro: 1, carb: 11, fat: 2.5 },
+
+        // COKLAT BAR & SNACK MANIS
+        { name: "Beng-Beng Reguler", cat: "Kudapan", serving: "1 Bungkus (20g)", cal: 100, pro: 1, carb: 14, fat: 4.5 },
+        { name: "Beng-Beng Share It", cat: "Kudapan", serving: "1 Bungkus Mini (9.5g)", cal: 45, pro: 0.5, carb: 6, fat: 2 },
+        { name: "Top Coklat (Reguler)", cat: "Kudapan", serving: "1 Bungkus (16g)", cal: 80, pro: 1, carb: 11, fat: 3.5 },
+        { name: "SilverQueen Kacang Mete", cat: "Kudapan", serving: "1 Potong / Patah (10g)", cal: 55, pro: 1, carb: 5, fat: 3.5 },
+        { name: "SilverQueen Chunky Bar", cat: "Kudapan", serving: "1 Potong Tebal (10g)", cal: 60, pro: 1, carb: 5, fat: 4 },
+        { name: "Delfi Chacha (Kacang / Milk Choco)", cat: "Kudapan", serving: "1 Genggam (20g)", cal: 105, pro: 2, carb: 13, fat: 5 },
+        { name: "Choki-Choki", cat: "Kudapan", serving: "1 Stik (10g)", cal: 50, pro: 1, carb: 6, fat: 2.5 },
+        { name: "Nyam-Nyam (Biskuit Stick + Coklat Krim)", cat: "Kudapan", serving: "1 Cup Kecil", cal: 120, pro: 2, carb: 18, fat: 5 },
+        { name: "Pocky Coklat", cat: "Kudapan", serving: "Setengah Box (20g)", cal: 100, pro: 2, carb: 14, fat: 4 },
+        { name: "Pocky Strawberry", cat: "Kudapan", serving: "Setengah Box (20g)", cal: 100, pro: 2, carb: 15, fat: 4 },
+
+        // CIKI, KERIPIK & KACANG MINIMARKET (Porsi Ngunyah 15g-20g)
+        { name: "Chitato (Sapi Panggang)", cat: "Kudapan", serving: "1 Genggam (15g)", cal: 80, pro: 1, carb: 9, fat: 4.5 },
+        { name: "Lay's / Lays (Rumput Laut / Asin)", cat: "Kudapan", serving: "1 Genggam (15g)", cal: 85, pro: 1, carb: 8, fat: 5.5 },
+        { name: "Taro Net (Seaweed / BBQ)", cat: "Kudapan", serving: "1 Genggam (15g)", cal: 75, pro: 1, carb: 10, fat: 3.5 },
+        { name: "Chiki Balls (Keju / Coklat)", cat: "Kudapan", serving: "1 Genggam (15g)", cal: 80, pro: 1, carb: 9, fat: 4 },
+        { name: "Cheetos / Chiki Twist (Jagung Bakar)", cat: "Kudapan", serving: "1 Genggam (15g)", cal: 85, pro: 1, carb: 9, fat: 4.5 },
+        { name: "Kusuka Keripik Singkong", cat: "Kudapan", serving: "1 Genggam (15g)", cal: 75, pro: 0.5, carb: 10, fat: 3.5 },
+        { name: "Qtela Singkong (Balado)", cat: "Kudapan", serving: "1 Genggam (15g)", cal: 75, pro: 0.5, carb: 10, fat: 4 },
+        { name: "Qtela Tempe (Daun Jeruk)", cat: "Kudapan", serving: "1 Genggam (15g)", cal: 80, pro: 3, carb: 7, fat: 4.5 },
+        { name: "Japota (Honey Butter / Umami)", cat: "Kudapan", serving: "1 Genggam (15g)", cal: 80, pro: 1, carb: 8, fat: 5 },
+        { name: "Potabee (Seaweed / BBQ)", cat: "Kudapan", serving: "1 Genggam (15g)", cal: 80, pro: 1, carb: 8, fat: 5 },
+        { name: "French Fries 2000 (Ciki + Saus Sambal)", cat: "Kudapan", serving: "1 Genggam (15g)", cal: 75, pro: 0.5, carb: 9, fat: 4 },
+        { name: "Tic Tac (Kacang Pilus)", cat: "Kudapan", serving: "1 Bungkus Kecil (20g)", cal: 100, pro: 1, carb: 12, fat: 5 },
+        { name: "Pilus Garuda", cat: "Kudapan", serving: "1 Genggam (20g)", cal: 105, pro: 1.5, carb: 11, fat: 6 },
+        { name: "Kacang Garuda (Kacang Kulit Garing)", cat: "Kudapan", serving: "1 Genggam (25g Kulit)", cal: 120, pro: 4, carb: 6, fat: 9 },
+        { name: "Kacang Sukro / Dua Kelinci", cat: "Kudapan", serving: "1 Genggam (20g)", cal: 110, pro: 2, carb: 11, fat: 6 },
+        { name: "Kacang Atom Shanghai", cat: "Kudapan", serving: "1 Genggam (20g)", cal: 105, pro: 2.5, carb: 10, fat: 5.5 },
+        { name: "Kuaci Rebo (Bunga Matahari - Kupas)", cat: "Kudapan", serving: "1 Genggam (15g Tanpa Kulit)", cal: 90, pro: 3, carb: 3, fat: 8 },
+
+        // PERMEN & JELLY MINIMARKET
+        { name: "Inaco Mini Jelly", cat: "Kudapan", serving: "3 Cup Kecil", cal: 45, pro: 0, carb: 11, fat: 0 },
+        { name: "Yupi Gummy Bears / Aneka Yupi", cat: "Kudapan", serving: "1 Sachet Kecil (15g)", cal: 55, pro: 1, carb: 12, fat: 0 },
+        { name: "Yupi Strawberry Kiss", cat: "Kudapan", serving: "3 Butir", cal: 35, pro: 0.5, carb: 8, fat: 0 },
+        { name: "Permen Mentos / Relaxa", cat: "Kudapan", serving: "3 Butir", cal: 40, pro: 0, carb: 10, fat: 0 },
+        { name: "Kopiko (Permen Kopi)", cat: "Kudapan", serving: "3 Butir", cal: 45, pro: 0, carb: 10, fat: 0.5 },
+
+        // NASI & MIE GORENG WARTEG (KARBO UTAMA)
+        { name: "Nasi Putih Porsi Kuli (Warteg Jumbo)", cat: "Makanan", serving: "1 Piring Penuh (250g)", cal: 325, pro: 7, carb: 70, fat: 1 },
+        { name: "Nasi Putih Setengah Porsi (Warteg)", cat: "Makanan", serving: "1 Porsi Kecil (100g)", cal: 130, pro: 3, carb: 28, fat: 0.5 },
+        { name: "Mie Goreng Jawa Warteg (Coklat Kecap)", cat: "Makanan", serving: "1 Porsi / Sendok Sayur (100g)", cal: 190, pro: 4, carb: 28, fat: 7 },
+        { name: "Bihun Goreng Warteg (Kecap)", cat: "Makanan", serving: "1 Porsi / Sendok Sayur (100g)", cal: 170, pro: 2, carb: 26, fat: 6 },
+        { name: "Soun Goreng / Tumis Soun Kecap", cat: "Makanan", serving: "1 Porsi / Sendok Sayur (100g)", cal: 160, pro: 1, carb: 28, fat: 5 },
+
+        // LAUK TELUR, TAHU & TEMPE
+        { name: "Telur Dadar Warteg (Tebal & Crispy)", cat: "Lauk", serving: "1 Potong Sedang", cal: 160, pro: 8, carb: 2, fat: 13 },
+        { name: "Telur Balado (Telur Rebus Goreng Bumbu Merah)", cat: "Lauk", serving: "1 Butir", cal: 140, pro: 7, carb: 4, fat: 11 },
+        { name: "Telur Ceplok Balado / Kecap", cat: "Lauk", serving: "1 Butir", cal: 150, pro: 7, carb: 5, fat: 11 },
+        { name: "Telur Asin Rebus (Warteg)", cat: "Lauk", serving: "1 Butir", cal: 130, pro: 9, carb: 1, fat: 10 },
+        { name: "Orek Tempe Basah (Kecap Cabai Iris)", cat: "Lauk", serving: "1 Sendok Sayur (50g)", cal: 120, pro: 6, carb: 12, fat: 6 },
+        { name: "Orek Tempe Kering (Kering Tempe Warteg)", cat: "Lauk", serving: "1 Sendok Sayur (40g)", cal: 160, pro: 7, carb: 15, fat: 9 },
+        { name: "Tempe Goreng Tepung / Mendoan Warteg", cat: "Lauk", serving: "1 Potong Sedang", cal: 110, pro: 5, carb: 10, fat: 6 },
+        { name: "Tempe Goreng Garit (Bumbu Kuning)", cat: "Lauk", serving: "1 Potong Sedang", cal: 85, pro: 6, carb: 5, fat: 5 },
+        { name: "Tahu Kuning Goreng Bumbu Kuning", cat: "Lauk", serving: "1 Potong Sedang", cal: 75, pro: 5, carb: 2, fat: 5 },
+        { name: "Tahu Kulit Segitiga Goreng", cat: "Lauk", serving: "1 Buah", cal: 80, pro: 5, carb: 2, fat: 6 },
+        { name: "Semur Tahu Kulit Warteg", cat: "Lauk", serving: "1 Buah", cal: 100, pro: 5, carb: 6, fat: 6 },
+        { name: "Perkedel Kentang Warteg", cat: "Lauk", serving: "1 Buah", cal: 110, pro: 3, carb: 12, fat: 6 },
+        { name: "Dadar Jagung / Bakwan Jagung Warteg", cat: "Lauk", serving: "1 Buah", cal: 130, pro: 3, carb: 15, fat: 7 },
+        { name: "Bala-Bala / Bakwan Sayur Warteg", cat: "Lauk", serving: "1 Buah Sedang", cal: 140, pro: 3, carb: 16, fat: 8 },
+
+        // LAUK AYAM & DAGING
+        { name: "Ayam Goreng Serundeng Warteg", cat: "Lauk", serving: "1 Potong (Paha/Dada)", cal: 260, pro: 20, carb: 6, fat: 16 },
+        { name: "Ayam Kecap Warteg", cat: "Lauk", serving: "1 Potong", cal: 240, pro: 18, carb: 12, fat: 13 },
+        { name: "Ayam Bumbu Kuning (Ungkep / Goreng Kuah)", cat: "Lauk", serving: "1 Potong", cal: 230, pro: 18, carb: 4, fat: 15 },
+        { name: "Semur Daging Sapi Warteg", cat: "Lauk", serving: "1 Potong Kecil (50g) + Kuah", cal: 180, pro: 12, carb: 10, fat: 10 },
+        { name: "Rendang Sapi Warteg (Bumbu Medok)", cat: "Lauk", serving: "1 Potong (50g)", cal: 210, pro: 12, carb: 8, fat: 14 },
+        { name: "Kikil Bumbu Kuning / Oseng Kikil", cat: "Lauk", serving: "1 Sendok Sayur (50g)", cal: 130, pro: 8, carb: 4, fat: 9 },
+        { name: "Kikil Cabe Ijo (Kecap)", cat: "Lauk", serving: "1 Sendok Sayur (50g)", cal: 140, pro: 8, carb: 6, fat: 9 },
+
+        // JEROAN & LAUK KERING (KERINGAN)
+        { name: "Oseng Usus Ayam Kuning / Pedas", cat: "Lauk", serving: "1 Sendok Sayur (50g)", cal: 150, pro: 7, carb: 2, fat: 12 },
+        { name: "Hati Ampela Goreng / Bumbu Rujak", cat: "Lauk", serving: "1 Pasang", cal: 180, pro: 16, carb: 4, fat: 10 },
+        { name: "Semur Jengkol Warteg", cat: "Lauk", serving: "3 Keping / Sendok Sayur", cal: 160, pro: 6, carb: 18, fat: 6 },
+        { name: "Balado Jengkol Warteg", cat: "Lauk", serving: "3 Keping / Sendok Sayur", cal: 170, pro: 6, carb: 15, fat: 8 },
+        { name: "Paru Goreng Kering", cat: "Lauk", serving: "1 Potong Sedang (40g)", cal: 180, pro: 12, carb: 1, fat: 14 },
+        { name: "Kering Kentang Mustofa (Balado Kacang)", cat: "Lauk", serving: "1 Sendok Sayur / Makan (30g)", cal: 150, pro: 2, carb: 18, fat: 8 },
+        { name: "Teri Kacang Balado", cat: "Lauk", serving: "1 Sendok Sayur (30g)", cal: 165, pro: 8, carb: 10, fat: 10 },
+        { name: "Serundeng Kelapa (Tabur Nasi)", cat: "Kudapan", serving: "1 SDM (15g)", cal: 70, pro: 1, carb: 5, fat: 5 },
+
+        // LAUK IKAN & SEAFOOD
+        { name: "Ikan Tongkol Balado (Irisan)", cat: "Lauk", serving: "1 Potong", cal: 150, pro: 14, carb: 4, fat: 8 },
+        { name: "Tongkol Suwir Pedas Kemangi", cat: "Lauk", serving: "1 Sendok Sayur (50g)", cal: 130, pro: 12, carb: 3, fat: 7 },
+        { name: "Ikan Kembung Goreng Warteg", cat: "Lauk", serving: "1 Ekor Sedang", cal: 190, pro: 18, carb: 0, fat: 12 },
+        { name: "Ikan Kembung Pesmol (Bumbu Kuning/Acar)", cat: "Lauk", serving: "1 Ekor Sedang", cal: 220, pro: 18, carb: 6, fat: 13 },
+        { name: "Ikan Lele Goreng (Porsi Warteg)", cat: "Lauk", serving: "1 Ekor", cal: 210, pro: 15, carb: 2, fat: 15 },
+        { name: "Ikan Bandeng Presto Goreng (Kecil)", cat: "Lauk", serving: "1 Ekor", cal: 230, pro: 18, carb: 4, fat: 14 },
+        { name: "Ikan Mujair Goreng Warteg", cat: "Lauk", serving: "1 Ekor Sedang", cal: 200, pro: 17, carb: 0, fat: 14 },
+        { name: "Udang Goreng Tepung Warteg", cat: "Lauk", serving: "3 Ekor Sedang", cal: 140, pro: 8, carb: 10, fat: 7 },
+        { name: "Tumis Cumi Asin Cabe Ijo", cat: "Lauk", serving: "1 Sendok Sayur (50g)", cal: 120, pro: 10, carb: 4, fat: 6 },
+        { name: "Tumis Kerang Kupas Balado/Kecap", cat: "Lauk", serving: "1 Sendok Sayur (50g)", cal: 110, pro: 9, carb: 5, fat: 5 },
+
+        // SAYUR-MAYUR WARTEG (Minyak & Santannya Berasa!)
+        { name: "Sayur Sop Warteg (Macaroni, Kubis, Kuah Kaldu)", cat: "Sayur", serving: "1 Mangkuk / 2 Sendok Sayur", cal: 70, pro: 2, carb: 10, fat: 2 },
+        { name: "Sayur Asem Warteg (Manis Gurih)", cat: "Sayur", serving: "1 Mangkuk", cal: 80, pro: 2, carb: 15, fat: 1 },
+        { name: "Sayur Lodeh Warteg (Labu Siam, Tahu Tempe, Santan)", cat: "Sayur", serving: "1 Mangkuk", cal: 140, pro: 4, carb: 12, fat: 9 },
+        { name: "Sayur Daun Singkong Santan (Gulai)", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 120, pro: 3, carb: 6, fat: 9 },
+        { name: "Sayur Nangka Muda (Gulai Nangka)", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 110, pro: 2, carb: 10, fat: 7 },
+        { name: "Capcay Warteg (Kuah Kental Kemepyar)", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 85, pro: 2, carb: 8, fat: 5 },
+        { name: "Tumis Kangkung Warteg (Terasi)", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 70, pro: 2, carb: 5, fat: 4.5 },
+        { name: "Tumis Kacang Panjang (Oseng Tempe Kacang)", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 90, pro: 3, carb: 8, fat: 5 },
+        { name: "Tumis Buncis Wortel", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 75, pro: 2, carb: 7, fat: 4 },
+        { name: "Tumis Buncis Sosis / Bakso", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 110, pro: 4, carb: 8, fat: 7 },
+        { name: "Tumis Sawi Putih", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 50, pro: 1, carb: 4, fat: 3 },
+        { name: "Tumis Sawi Hijau / Caisim & Tahu", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 65, pro: 2, carb: 4, fat: 4 },
+        { name: "Tumis Jamur Tiram Warteg", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 70, pro: 2, carb: 5, fat: 4.5 },
+        { name: "Sayur Bayam Bening Jagung", cat: "Sayur", serving: "1 Mangkuk", cal: 50, pro: 2, carb: 9, fat: 0.5 },
+        { name: "Tumis Daun Pepaya Teri", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 90, pro: 4, carb: 6, fat: 6 },
+        { name: "Tumis Pare / Oseng Pare Teri", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 85, pro: 3, carb: 6, fat: 5.5 },
+        { name: "Tumis Labu Siam Ebi", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 65, pro: 1, carb: 7, fat: 3.5 },
+        { name: "Tumis Toge Tahu", cat: "Sayur", serving: "1 Sendok Sayur (80g)", cal: 75, pro: 4, carb: 5, fat: 4.5 },
+        { name: "Krecek Pedas Warteg (Rambak Sayur)", cat: "Sayur", serving: "1 Sendok Sayur (50g)", cal: 140, pro: 4, carb: 6, fat: 11 },
+        { name: "Buntil Daun Singkong / Pepaya (Isi Kelapa Teri)", cat: "Lauk", serving: "1 Buah (Besar)", cal: 190, pro: 6, carb: 14, fat: 12 },
+        { name: "Pete Goreng", cat: "Sayur", serving: "1 Papan (Goreng)", cal: 90, pro: 4, carb: 10, fat: 4 },
+
+        // SAMBAL & PELENGKAP WARTEG
+        { name: "Sambal Terasi Goreng Warteg", cat: "Kudapan", serving: "1 SDM (15g)", cal: 40, pro: 0.5, carb: 3, fat: 3 },
+        { name: "Sambal Tomat Warteg", cat: "Kudapan", serving: "1 SDM (15g)", cal: 35, pro: 0.2, carb: 3, fat: 2.5 },
+        { name: "Sambal Ijo Warteg", cat: "Kudapan", serving: "1 SDM (15g)", cal: 45, pro: 0.5, carb: 2, fat: 4 },
+        { name: "Kuah Sayur / Bumbu Guyur (Kuah Kari/Gulai)", cat: "Kudapan", serving: "2 SDM Guyuran", cal: 35, pro: 0.5, carb: 2, fat: 3 },
+        { name: "Teh Tawar Hangat (Gratisan Warteg)", cat: "Minuman", serving: "1 Gelas", cal: 2, pro: 0, carb: 0.5, fat: 0 },
+
+        // DAGING PANGGANG (YAKINIKU / BBQ) - Porsi 1 Tray / Piring Kecil (±100g)
+        { name: "US Short Plate Beef / Karubi (Lemak Tinggi)", cat: "Lauk", serving: "1 Piring AYCE (100g)", cal: 350, pro: 14, carb: 0, fat: 32 },
+        { name: "Lean Beef Slice / Rosu (Rendah Lemak)", cat: "Lauk", serving: "1 Piring AYCE (100g)", cal: 180, pro: 22, carb: 0, fat: 9 },
+        { name: "Wagyu Saikoro Beef (Dadu Berlemak)", cat: "Lauk", serving: "1 Porsi (100g)", cal: 320, pro: 13, carb: 0, fat: 28 },
+        { name: "Gyutan (Lidah Sapi Iris Tipis)", cat: "Lauk", serving: "1 Piring AYCE (100g)", cal: 280, pro: 15, carb: 0, fat: 23 },
+        { name: "Harami (Skirt Steak Sapi)", cat: "Lauk", serving: "1 Piring AYCE (100g)", cal: 240, pro: 19, carb: 0, fat: 17 },
+        { name: "Yakiniku Chicken Thigh (Paha Ayam Fillet)", cat: "Lauk", serving: "1 Porsi (100g)", cal: 210, pro: 17, carb: 0, fat: 15 },
+        { name: "Yakiniku Squid / Cumi Panggang", cat: "Lauk", serving: "1 Porsi (100g)", cal: 95, pro: 16, carb: 3, fat: 1.5 },
+        { name: "Yakiniku Gindara / Ikan Gindara Panggang", cat: "Lauk", serving: "1 Potong (100g)", cal: 200, pro: 14, carb: 0, fat: 15 },
+        { name: "Daging Marinated Sweet Bulgogi Sapi", cat: "Lauk", serving: "1 Piring AYCE (100g)", cal: 260, pro: 18, carb: 10, fat: 15 },
+        { name: "Daging Marinated Spicy Miso Sapi", cat: "Lauk", serving: "1 Piring AYCE (100g)", cal: 270, pro: 18, carb: 8, fat: 17 },
+        { name: "Daging Marinated Blackpepper Sapi", cat: "Lauk", serving: "1 Piring AYCE (100g)", cal: 250, pro: 19, carb: 6, fat: 16 },
+        { name: "Daging Marinated Garlic Sapi", cat: "Lauk", serving: "1 Piring AYCE (100g)", cal: 240, pro: 19, carb: 4, fat: 16 },
+        { name: "Lamb Chop / Daging Domba Panggang", cat: "Lauk", serving: "1 Porsi (100g)", cal: 290, pro: 18, carb: 0, fat: 23 },
+        { name: "Arabiki Sausage / Sosis Jepang Yakiniku", cat: "Lauk", serving: "3 Buah Kecil (60g)", cal: 190, pro: 8, carb: 3, fat: 16 },
+        { name: "Sate Yakitori Ayam & Daun Bawang", cat: "Lauk", serving: "2 Tusuk", cal: 160, pro: 14, carb: 4, fat: 9 },
+
+        // DAGING REBUS (SHABU-SHABU / HOTPOT) - Porsi 1 Tray (±80g)
+        { name: "Shabu Beef Slice (Fatty / Lemak)", cat: "Lauk", serving: "1 Tray AYCE (80g)", cal: 280, pro: 11, carb: 0, fat: 25 },
+        { name: "Shabu Beef Slice (Low Fat)", cat: "Lauk", serving: "1 Tray AYCE (80g)", cal: 140, pro: 17, carb: 0, fat: 7 },
+        { name: "Shabu Wagyu Beef Slice", cat: "Lauk", serving: "1 Tray AYCE (80g)", cal: 250, pro: 12, carb: 0, fat: 22 },
+        { name: "Shabu Chicken Breast Slice", cat: "Lauk", serving: "1 Tray AYCE (80g)", cal: 90, pro: 18, carb: 0, fat: 1.5 },
+        { name: "Shabu Lamb / Kambing Slice", cat: "Lauk", serving: "1 Tray AYCE (80g)", cal: 220, pro: 14, carb: 0, fat: 17 },
+        { name: "Dory Fish Slice (Fillet Rebus Shabu)", cat: "Lauk", serving: "1 Tray AYCE (80g)", cal: 70, pro: 12, carb: 0, fat: 2 },
+        { name: "Udang Segar Rebus Shabu", cat: "Lauk", serving: "5 Ekor (80g Kupas)", cal: 80, pro: 19, carb: 0, fat: 0.2 },
+        { name: "Kerang Hijau / Macan (Rebus Shabu)", cat: "Lauk", serving: "1 Piring Kecil (80g Daging)", cal: 75, pro: 12, carb: 3, fat: 1.5 },
+        { name: "Seafood Tofu / Tahu Seafood Rebus", cat: "Lauk", serving: "3 Potong (60g)", cal: 90, pro: 6, carb: 6, fat: 4.5 },
+        { name: "Fuzhu / Kembang Tahu Roll (Rebus)", cat: "Lauk", serving: "2 Roll (40g Kering)", cal: 160, pro: 18, carb: 6, fat: 7 },
+
+        // KUAH SHABU / HOTPOT BROTH (Hitungan Per Mangkuk Sup / 250ml)
+        { name: "Kuah Konbu / Dashi (Bening Original)", cat: "Makanan", serving: "1 Mangkuk (250ml)", cal: 15, pro: 1, carb: 2, fat: 0 },
+        { name: "Kuah Sukiyaki (Manis Gurih Gula Kecap)", cat: "Makanan", serving: "1 Mangkuk (250ml)", cal: 120, pro: 2, carb: 24, fat: 1 },
+        { name: "Kuah Tom Yum (Pedas Asam)", cat: "Makanan", serving: "1 Mangkuk (250ml)", cal: 95, pro: 2, carb: 10, fat: 5 },
+        { name: "Kuah Chicken Collagen / Tori Paitan", cat: "Makanan", serving: "1 Mangkuk (250ml)", cal: 150, pro: 8, carb: 4, fat: 11 },
+        { name: "Kuah Spicy Miso", cat: "Makanan", serving: "1 Mangkuk (250ml)", cal: 85, pro: 4, carb: 8, fat: 4 },
+        { name: "Kuah Mala / Szechuan (Sangat Berminyak)", cat: "Makanan", serving: "1 Mangkuk (250ml Kuah & Minyak)", cal: 280, pro: 2, carb: 6, fat: 28 },
+        { name: "Kuah Beef Broth / Sup Sapi", cat: "Makanan", serving: "1 Mangkuk (250ml)", cal: 60, pro: 4, carb: 2, fat: 4 },
+        { name: "Kuah Sup Jamur / Mushroom Broth", cat: "Makanan", serving: "1 Mangkuk (250ml)", cal: 35, pro: 2, carb: 4, fat: 1 },
+
+        // PENDAMPING PANGGANG & SAYURAN
+        { name: "Bawang Bombay Panggang (Yakiniku)", cat: "Sayur", serving: "1 Genggam (50g)", cal: 25, pro: 0.5, carb: 5, fat: 0.2 },
+        { name: "Jamur Enoki Panggang Butter (Foil)", cat: "Sayur", serving: "1 Bungkus Foil (50g Jamur)", cal: 85, pro: 1, carb: 4, fat: 7 },
+        { name: "Jamur Shitake Panggang / Rebus", cat: "Sayur", serving: "3 Buah Sedang (50g)", cal: 20, pro: 1, carb: 4, fat: 0 },
+        { name: "Jamur Shimeji Rebus", cat: "Sayur", serving: "1 Genggam (50g)", cal: 18, pro: 1.5, carb: 3, fat: 0 },
+        { name: "Jamur King Oyster Panggang (Iris Tebal)", cat: "Sayur", serving: "1 Genggam (50g)", cal: 25, pro: 1.5, carb: 4, fat: 0.2 },
+        { name: "Jagung Manis Panggang Mentega", cat: "Sayur", serving: "2 Potong Kecil", cal: 110, pro: 2, carb: 15, fat: 5 },
+        { name: "Selada Pembungkus Daging (Ssam - Segar)", cat: "Sayur", serving: "5 Lembar", cal: 10, pro: 0.5, carb: 2, fat: 0 },
+
+        // APPETIZER & BUFFET MATANG AYCE
+        { name: "Japchae (Soun Tumis Korea AYCE)", cat: "Makanan", serving: "1 Piring Kecil (100g)", cal: 170, pro: 2, carb: 30, fat: 5 },
+        { name: "Tteokbokki (Korean Buffet AYCE)", cat: "Kudapan", serving: "1 Sendok Sayur (80g)", cal: 150, pro: 3, carb: 32, fat: 1.5 },
+        { name: "Sushi Roll Basic (California Roll Buffet)", cat: "Makanan", serving: "3 Potong", cal: 140, pro: 4, carb: 22, fat: 4 },
+        { name: "Chawanmushi (Telur Kukus Jepang)", cat: "Lauk", serving: "1 Cup Kecil", cal: 80, pro: 7, carb: 2, fat: 5 },
+        { name: "Miso Soup (Tahu Tofu & Wakame)", cat: "Makanan", serving: "1 Mangkuk", cal: 45, pro: 3, carb: 4, fat: 2 },
+        { name: "Gyoza Panggang (Pan-seared Jepang)", cat: "Kudapan", serving: "3 Buah", cal: 160, pro: 7, carb: 16, fat: 7 },
+        { name: "Gyoza Goreng (Deep Fried Buffet)", cat: "Kudapan", serving: "3 Buah", cal: 210, pro: 7, carb: 16, fat: 12 },
+        { name: "Kimchi Sawi Putih (Fermentasi)", cat: "Sayur", serving: "1 Piring Kecil (50g)", cal: 15, pro: 1, carb: 3, fat: 0 },
+        { name: "Namul (Bayam Rebus Minyak Wijen Korea)", cat: "Sayur", serving: "1 Piring Kecil (50g)", cal: 45, pro: 1.5, carb: 2, fat: 4 },
+        { name: "Takoyaki Premium (AYCE Buffet)", cat: "Kudapan", serving: "3 Bola", cal: 190, pro: 6, carb: 24, fat: 8 },
+        { name: "Okonomiyaki (Irisan Kecil Buffet)", cat: "Kudapan", serving: "1 Iris (80g)", cal: 170, pro: 5, carb: 20, fat: 8 },
+        { name: "Sweet Potato Fries (Ubi Goreng Manis AYCE)", cat: "Kudapan", serving: "1 Piring Kecil (80g)", cal: 190, pro: 2, carb: 28, fat: 8 },
+        { name: "Onion Ring Goreng Tepung (Buffet)", cat: "Kudapan", serving: "5 Ring (80g)", cal: 220, pro: 3, carb: 26, fat: 12 },
+        { name: "Beef Croquette / Korokke Jepang", cat: "Kudapan", serving: "1 Buah (70g)", cal: 180, pro: 5, carb: 20, fat: 9 },
+
+        // SAUS & CELUPAN (CONDIMENTS AYCE) - Hitungan 1 SDM (15ml / 15g)
+        { name: "Tare Sauce / Saus Yakiniku (Manis Kedelai)", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 25, pro: 0.5, carb: 5, fat: 0 },
+        { name: "Ponzu Sauce (Asam Segar Jeruk Kecap)", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 15, pro: 0.5, carb: 3, fat: 0 },
+        { name: "Gomatare (Saus Kacang Wijen Shabu)", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 50, pro: 1, carb: 4, fat: 3.5 },
+        { name: "Ssamjang (Saus Pasta Korea)", cat: "Kudapan", serving: "1 SDM (15g)", cal: 35, pro: 1, carb: 5, fat: 1 },
+        { name: "Celupan Minyak Wijen & Garam (Sesame Oil Dip)", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 120, pro: 0, carb: 0, fat: 14 },
+        { name: "Garlic Butter (Lelehan Mentega Bawang Celupan)", cat: "Kudapan", serving: "1 SDM (15g)", cal: 105, pro: 0.2, carb: 1, fat: 11 },
+        { name: "Saus Shabu Hachi (Sweet Spicy Thai Style)", cat: "Kudapan", serving: "1 SDM (15g)", cal: 30, pro: 0, carb: 7, fat: 0 },
+        { name: "Celupan Telur Mentah Omega (Sukiyaki)", cat: "Lauk", serving: "1 Butir", cal: 70, pro: 6, carb: 0.5, fat: 5 },
+
+        // KARBO EKSTRA & DESSERT KHUSUS AYCE
+        { name: "Garlic Fried Rice (Nasi Goreng Bawang Yakiniku)", cat: "Makanan", serving: "1 Mangkuk Kecil (100g)", cal: 190, pro: 4, carb: 26, fat: 7 },
+        { name: "Bibimbap (Nasi Campur Korea Daging Baur)", cat: "Makanan", serving: "1 Mangkuk", cal: 380, pro: 14, carb: 55, fat: 11 },
+        { name: "Udon Rebus (Tambahan Karbo Shabu)", cat: "Makanan", serving: "1 Porsi Kecil (100g)", cal: 130, pro: 3, carb: 28, fat: 0.5 },
+        { name: "Ramen / Soun Rebus (Tambahan Karbo Shabu)", cat: "Makanan", serving: "1 Porsi Kecil (80g)", cal: 110, pro: 3, carb: 22, fat: 0.5 },
+        { name: "Es Krim Ogura / Kacang Merah (AYCE)", cat: "Kudapan", serving: "1 Scoop", cal: 130, pro: 3, carb: 18, fat: 5 },
+        { name: "Es Krim Matcha Premium (AYCE)", cat: "Kudapan", serving: "1 Scoop", cal: 140, pro: 3, carb: 19, fat: 6 },
+        { name: "Panna Cotta (Dessert Cup AYCE)", cat: "Kudapan", serving: "1 Cup Kecil", cal: 180, pro: 3, carb: 18, fat: 11 },
+        { name: "Creme Brulee (Dessert Cup AYCE)", cat: "Kudapan", serving: "1 Cup Kecil", cal: 210, pro: 3, carb: 22, fat: 12 },
+        { name: "Singkong Thailand (Dessert Manis AYCE)", cat: "Kudapan", serving: "1 Porsi Cup Kecil", cal: 190, pro: 1, carb: 35, fat: 5 },
+        { name: "Kakigori / Es Serut Jepang (Sirup & Susu AYCE)", cat: "Kudapan", serving: "1 Mangkuk", cal: 160, pro: 2, carb: 38, fat: 1 },
+
+        // SUSU UHT, PASTEURISASI & YOGURT RTD (Porsi per Kemasan Standard)
+        { name: "Ultra Milk Coklat UHT", cat: "Minuman", serving: "1 Kotak (250ml)", cal: 200, pro: 8, carb: 28, fat: 6 },
+        { name: "Ultra Milk Full Cream UHT", cat: "Minuman", serving: "1 Kotak (250ml)", cal: 160, pro: 8, carb: 12, fat: 9 },
+        { name: "Ultra Milk Low Fat (Coklat/Vanilla)", cat: "Minuman", serving: "1 Kotak (250ml)", cal: 120, pro: 9, carb: 18, fat: 2 },
+        { name: "Bear Brand (Susu Beruang)", cat: "Minuman", serving: "1 Kaleng (189ml)", cal: 120, pro: 6, carb: 9, fat: 7 },
+        { name: "Indomilk Kids UHT (Coklat/Strawberry)", cat: "Minuman", serving: "1 Kotak Kecil (115ml)", cal: 90, pro: 3, carb: 14, fat: 2.5 },
+        { name: "Frisian Flag UHT Coklat / Swiss Chocolate", cat: "Minuman", serving: "1 Kotak (225ml)", cal: 170, pro: 6, carb: 24, fat: 5 },
+        { name: "Greenfields UHT Full Cream", cat: "Minuman", serving: "1 Kotak (250ml)", cal: 160, pro: 8, carb: 12, fat: 9 },
+        { name: "Greenfields Choco Malt UHT", cat: "Minuman", serving: "1 Kotak (250ml)", cal: 190, pro: 8, carb: 26, fat: 6 },
+        { name: "Cimory Yogurt Drink (Semua Rasa Buah)", cat: "Minuman", serving: "1 Botol (250ml)", cal: 190, pro: 5, carb: 32, fat: 4 },
+        { name: "Cimory Squeeze (Pouch)", cat: "Minuman", serving: "1 Pouch (120g)", cal: 120, pro: 3, carb: 18, fat: 4 },
+        { name: "Kin Bulgarian Yogurt (Botol)", cat: "Minuman", serving: "1 Botol (200ml)", cal: 150, pro: 5, carb: 24, fat: 3.5 },
+        { name: "Yakult (Probiotik)", cat: "Minuman", serving: "1 Botol Kecil (65ml)", cal: 50, pro: 1, carb: 11, fat: 0 },
+        { name: "Yakult Light (Less Sugar)", cat: "Minuman", serving: "1 Botol Kecil (65ml)", cal: 25, pro: 1, carb: 6, fat: 0 },
+        { name: "V-Soy Original (Susu Kedelai Botol Kaca)", cat: "Minuman", serving: "1 Botol (300ml)", cal: 160, pro: 9, carb: 20, fat: 5 },
+        { name: "Oatside Oat Milk (Barista Blend Kemasan Kecil)", cat: "Minuman", serving: "1 Kotak (200ml)", cal: 130, pro: 2, carb: 16, fat: 6 },
+
+        // TEH KEMASAN (KOTAK, BOTOL & GELAS)
+        { name: "Teh Botol Sosro (Original Kaca/Kotak)", cat: "Minuman", serving: "1 Botol/Kotak (250ml)", cal: 100, pro: 0, carb: 25, fat: 0 },
+        { name: "Teh Botol Sosro Less Sugar", cat: "Minuman", serving: "1 Botol (250ml)", cal: 50, pro: 0, carb: 13, fat: 0 },
+        { name: "Teh Kotak Jasmine (Ultrajaya)", cat: "Minuman", serving: "1 Kotak (300ml)", cal: 120, pro: 0, carb: 30, fat: 0 },
+        { name: "Teh Pucuk Harum (Original)", cat: "Minuman", serving: "1 Botol (350ml)", cal: 140, pro: 0, carb: 35, fat: 0 },
+        { name: "Teh Pucuk Harum Sugar Free / Less Sugar", cat: "Minuman", serving: "1 Botol (350ml)", cal: 60, pro: 0, carb: 15, fat: 0 },
+        { name: "Nu Green Tea (Original)", cat: "Minuman", serving: "1 Botol (450ml)", cal: 160, pro: 0, carb: 40, fat: 0 },
+        { name: "Nu Green Tea Honey (Madu)", cat: "Minuman", serving: "1 Botol (450ml)", cal: 180, pro: 0, carb: 45, fat: 0 },
+        { name: "Ichi Ocha Green Tea", cat: "Minuman", serving: "1 Botol (350ml)", cal: 110, pro: 0, carb: 28, fat: 0 },
+        { name: "Frestea Jasmine / Apel", cat: "Minuman", serving: "1 Botol (350ml)", cal: 140, pro: 0, carb: 35, fat: 0 },
+        { name: "Fruit Tea (Apel / Blackcurrant / Freeze)", cat: "Minuman", serving: "1 Botol (350ml)", cal: 160, pro: 0, carb: 40, fat: 0 },
+        { name: "Teh Javana", cat: "Minuman", serving: "1 Botol (350ml)", cal: 130, pro: 0, carb: 33, fat: 0 },
+        { name: "Teh Gelas (Cup Plastik)", cat: "Minuman", serving: "1 Cup (170ml)", cal: 70, pro: 0, carb: 17, fat: 0 },
+        { name: "Mytea Oolong Tea", cat: "Minuman", serving: "1 Botol (450ml)", cal: 110, pro: 0, carb: 28, fat: 0 },
+        { name: "Ichitan Thai Milk Tea", cat: "Minuman", serving: "1 Botol (310ml)", cal: 170, pro: 2, carb: 30, fat: 5 },
+        { name: "Ichitan Brown Sugar Milk", cat: "Minuman", serving: "1 Botol (310ml)", cal: 190, pro: 2, carb: 34, fat: 5 },
+
+        // KOPI RTD (READY TO DRINK) MINIMARKET
+        { name: "Kopiko 78°C Coffee Latte", cat: "Minuman", serving: "1 Botol (240ml)", cal: 150, pro: 3, carb: 24, fat: 4.5 },
+        { name: "Kopi Kenangan Hanya Untukmu (Botol Black Aren)", cat: "Minuman", serving: "1 Botol (220ml)", cal: 140, pro: 3, carb: 23, fat: 4 },
+        { name: "Kopi Kenangan Hanya Untukmu (Mantanccino)", cat: "Minuman", serving: "1 Botol (220ml)", cal: 160, pro: 4, carb: 25, fat: 5 },
+        { name: "Nescafe Kaleng (Original / Latte)", cat: "Minuman", serving: "1 Kaleng (240ml)", cal: 110, pro: 2, carb: 19, fat: 3 },
+        { name: "Nescafe UHT (French Vanilla / Black)", cat: "Minuman", serving: "1 Kotak (200ml)", cal: 100, pro: 2, carb: 17, fat: 2.5 },
+        { name: "Good Day Kopi Botol (Funtastic Mocacinno)", cat: "Minuman", serving: "1 Botol (250ml)", cal: 170, pro: 3, carb: 28, fat: 5 },
+        { name: "Golda Coffee (Dolce / Cappuccino)", cat: "Minuman", serving: "1 Botol (200ml)", cal: 130, pro: 2.5, carb: 22, fat: 3.5 },
+        { name: "Kopi Luwak White Koffie (Botol)", cat: "Minuman", serving: "1 Botol (220ml)", cal: 150, pro: 2, carb: 26, fat: 4 },
+        { name: "ABC Kopi Susu Kemasan Botol", cat: "Minuman", serving: "1 Botol (200ml)", cal: 120, pro: 2, carb: 20, fat: 3 },
+        { name: "Caffino Ice (Botol)", cat: "Minuman", serving: "1 Botol (200ml)", cal: 140, pro: 2.5, carb: 22, fat: 4 },
+
+        // JUS KOTAK & MINUMAN RASA BUAH
+        { name: "Buavita Jambu (Guava)", cat: "Minuman", serving: "1 Kotak (250ml)", cal: 120, pro: 0, carb: 29, fat: 0 },
+        { name: "Buavita Apel / Mangga", cat: "Minuman", serving: "1 Kotak (250ml)", cal: 110, pro: 0, carb: 27, fat: 0 },
+        { name: "Jus Jeruk Madu Kemasan (Sari Buah Asli)", cat: "Minuman", serving: "1 Kotak (250ml)", cal: 115, pro: 1, carb: 28, fat: 0 },
+        { name: "Floridina (Orange / Coco)", cat: "Minuman", serving: "1 Botol (350ml)", cal: 160, pro: 0, carb: 40, fat: 0 },
+        { name: "Minute Maid Pulpy Orange", cat: "Minuman", serving: "1 Botol (300ml)", cal: 130, pro: 0, carb: 33, fat: 0 },
+        { name: "ABC Kacang Hijau (Kotak)", cat: "Minuman", serving: "1 Kotak (250ml)", cal: 140, pro: 2, carb: 30, fat: 1 },
+        { name: "NutriBoost (Susu Rasa Buah)", cat: "Minuman", serving: "1 Botol (300ml)", cal: 180, pro: 3, carb: 33, fat: 3 },
+        { name: "ABC Squash Delight (Sirup Cair Belum Seduh)", cat: "Minuman", serving: "1 SDM (15ml)", cal: 45, pro: 0, carb: 11, fat: 0 },
+        { name: "Marjan Syrup (Cocopandan/Melon Belum Seduh)", cat: "Minuman", serving: "1 SDM (15ml)", cal: 50, pro: 0, carb: 12, fat: 0 },
+        { name: "Country Choice (Semua Rasa Jus)", cat: "Minuman", serving: "1 Kotak (250ml)", cal: 115, pro: 0, carb: 28, fat: 0 },
+
+        // ISOTONIK, VITAMIN WATER & FUNGSIONAL
+        { name: "Pocari Sweat", cat: "Minuman", serving: "1 Botol (330ml)", cal: 80, pro: 0, carb: 20, fat: 0 },
+        { name: "Pocari Sweat Ion Water (Low Calorie)", cat: "Minuman", serving: "1 Botol (350ml)", cal: 40, pro: 0, carb: 10, fat: 0 },
+        { name: "Mizone (Semua Rasa)", cat: "Minuman", serving: "1 Botol (500ml)", cal: 120, pro: 0, carb: 30, fat: 0 },
+        { name: "You C1000 (Orange / Lemon / Apple)", cat: "Minuman", serving: "1 Botol Kaca (140ml)", cal: 70, pro: 0, carb: 17, fat: 0 },
+        { name: "You C1000 Water (Isotonik Botol Plastik)", cat: "Minuman", serving: "1 Botol (500ml)", cal: 140, pro: 0, carb: 35, fat: 0 },
+        { name: "Hemaviton C1000", cat: "Minuman", serving: "1 Kaleng (330ml)", cal: 150, pro: 0, carb: 38, fat: 0 },
+        { name: "Gatorade (Blue Bolt / Lemon)", cat: "Minuman", serving: "1 Botol (500ml)", cal: 125, pro: 0, carb: 31, fat: 0 },
+        { name: "Hydro Coco (Air Kelapa Asli Kemasan)", cat: "Minuman", serving: "1 Kotak (250ml)", cal: 50, pro: 0, carb: 12, fat: 0 },
+        { name: "Coolant", cat: "Minuman", serving: "1 Botol (350ml)", cal: 90, pro: 0, carb: 23, fat: 0 },
+        { name: "Adem Sari Ching Ku (Kaleng/Botol)", cat: "Minuman", serving: "1 Kaleng (320ml)", cal: 110, pro: 0, carb: 28, fat: 0 },
+
+        // SODA, KARBONASI & MINUMAN RINGAN LAINNYA
+        { name: "Coca Cola (Original)", cat: "Minuman", serving: "1 Kaleng (330ml)", cal: 140, pro: 0, carb: 35, fat: 0 },
+        { name: "Coca Cola Zero / Diet Coke", cat: "Minuman", serving: "1 Kaleng (330ml)", cal: 0, pro: 0, carb: 0, fat: 0 },
+        { name: "Sprite (Original)", cat: "Minuman", serving: "1 Kaleng (330ml)", cal: 140, pro: 0, carb: 34, fat: 0 },
+        { name: "Sprite Waterlymon", cat: "Minuman", serving: "1 Botol (425ml)", cal: 110, pro: 0, carb: 28, fat: 0 },
+        { name: "Fanta (Strawberry / Orange)", cat: "Minuman", serving: "1 Kaleng (330ml)", cal: 150, pro: 0, carb: 38, fat: 0 },
+        { name: "Tebs Tea with Soda", cat: "Minuman", serving: "1 Botol (330ml)", cal: 160, pro: 0, carb: 40, fat: 0 },
+        { name: "A&W Root Beer / Sarsaparilla", cat: "Minuman", serving: "1 Kaleng (330ml)", cal: 160, pro: 0, carb: 40, fat: 0 },
+        { name: "Schweppes Tonic Water", cat: "Minuman", serving: "1 Kaleng (330ml)", cal: 120, pro: 0, carb: 30, fat: 0 },
+        { name: "Schweppes Ginger Ale", cat: "Minuman", serving: "1 Kaleng (330ml)", cal: 115, pro: 0, carb: 29, fat: 0 },
+        { name: "Big Cola", cat: "Minuman", serving: "1 Botol (300ml)", cal: 120, pro: 0, carb: 30, fat: 0 },
+        { name: "Badak (Sarsaparilla Khas Medan)", cat: "Minuman", serving: "1 Botol Kaca (300ml)", cal: 140, pro: 0, carb: 35, fat: 0 },
+        { name: "Larutan Penyegar Cap Kaki Tiga (Semua Rasa)", cat: "Minuman", serving: "1 Kaleng (320ml)", cal: 120, pro: 0, carb: 30, fat: 0 },
+        { name: "Larutan Cap Badak (Polos / Plain)", cat: "Minuman", serving: "1 Botol", cal: 0, pro: 0, carb: 0, fat: 0 },
+        { name: "Yeo's Cincau / Grass Jelly", cat: "Minuman", serving: "1 Kaleng (300ml)", cal: 110, pro: 0, carb: 28, fat: 0 },
+        { name: "Kratingdaeng (Energy Drink Red Bull Botol Kaca)", cat: "Minuman", serving: "1 Botol (150ml)", cal: 100, pro: 1, carb: 24, fat: 0 },
+
+        // KELUARGA SHIRATAKI, KONJAC & PENGGANTI NASI
+        { name: "Nasi Porang / Fukumi (Seduh)", cat: "Makanan", serving: "1 Porsi (Beras 40g Kering)", cal: 140, pro: 1, carb: 34, fat: 0 },
+        { name: "Mie Shirataki Basah", cat: "Makanan", serving: "1 Bungkus (200g)", cal: 15, pro: 0, carb: 3, fat: 0 },
+        { name: "Mie Shirataki Kering (Dry Konjac)", cat: "Makanan", serving: "1 Keping Kering (50g)", cal: 170, pro: 1, carb: 40, fat: 0 },
+        { name: "Kwetiau Shirataki Basah", cat: "Makanan", serving: "1 Bungkus (200g)", cal: 15, pro: 0, carb: 3, fat: 0 },
+        { name: "Macaroni Shirataki", cat: "Makanan", serving: "1 Porsi (100g Basah)", cal: 10, pro: 0, carb: 2, fat: 0 },
+        { name: "Konnyaku Block (Jelly Konjac)", cat: "Makanan", serving: "1 Blok (250g)", cal: 20, pro: 0, carb: 4, fat: 0 },
+        { name: "Boba Konjac / Shirataki Pearl", cat: "Kudapan", serving: "1 SDM (15g)", cal: 5, pro: 0, carb: 1, fat: 0 },
+        { name: "Nasi Jagung (Ampok Seduh/Kukus)", cat: "Makanan", serving: "1 Porsi (100g)", cal: 145, pro: 3, carb: 32, fat: 0.5 },
+        { name: "Nasi Tiwul (Singkong Kukus)", cat: "Makanan", serving: "1 Porsi (100g)", cal: 160, pro: 1, carb: 38, fat: 0.5 },
+        { name: "Rolled Oats / Havermut (Utuh Murni)", cat: "Makanan", serving: "4 SDM (35g Kering)", cal: 135, pro: 5, carb: 23, fat: 2.5 },
+
+        // SALAD DRESSING, KONDIMEN DIET & EKSTRA (Hitungan 1 SDM = ±15g)
+        { name: "Kewpie Wijen Sangrai (Roasted Sesame Original)", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 65, pro: 0.5, carb: 1.5, fat: 6 },
+        { name: "Kewpie Wijen Sangrai (Half / Kurang Lemak)", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 40, pro: 0.5, carb: 2, fat: 3 },
+        { name: "Kewpie Thousand Island", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 55, pro: 0.2, carb: 2, fat: 5 },
+        { name: "Kewpie Caesar Dressing", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 60, pro: 0.5, carb: 1, fat: 6 },
+        { name: "Kewpie Soy Sauce (Kecap Ala Jepang)", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 40, pro: 0.5, carb: 3, fat: 3 },
+        { name: "Italian Vinaigrette Dressing", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 45, pro: 0, carb: 1, fat: 5 },
+        { name: "Kecap Manis Tropicana Slim (Diet)", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 30, pro: 0, carb: 7, fat: 0 },
+        { name: "Sirup Tropicana Slim (Zero Calorie)", cat: "Minuman", serving: "1 SDM (15ml)", cal: 0, pro: 0, carb: 0, fat: 0 },
+        { name: "Gula Stevia / Sweetener", cat: "Kudapan", serving: "1 Sachet (2g)", cal: 0, pro: 0, carb: 1, fat: 0 },
+        { name: "Selai Kacang Diet (Skippy Natural / 100% Peanut)", cat: "Kudapan", serving: "1 SDM (15g)", cal: 95, pro: 4, carb: 3, fat: 8 },
+        { name: "Selai Buah (St. Dalfour / No Added Sugar)", cat: "Kudapan", serving: "1 SDM (15g)", cal: 35, pro: 0, carb: 8, fat: 0 },
+        { name: "Susu Kental Manis (SKM / Bendera / Indomilk)", cat: "Kudapan", serving: "1 SDM (15g)", cal: 50, pro: 1, carb: 8, fat: 1.5 },
+        { name: "Susu Evaporasi (Carnation / Tiga Sapi)", cat: "Kudapan", serving: "1 SDM (15ml)", cal: 25, pro: 1, carb: 2, fat: 1.5 },
+        { name: "Madu Murni Asli (Raw Honey)", cat: "Kudapan", serving: "1 SDM (15g)", cal: 65, pro: 0, carb: 17, fat: 0 },
+        { name: "Madu Diet (Tropicana Slim Sugar Free Honey)", cat: "Kudapan", serving: "1 SDM (15g)", cal: 10, pro: 0, carb: 5, fat: 0 },
+
+        // SUPERFOODS & PENAMBAH SERAT
+        { name: "Chia Seeds (Biji Chia Murni)", cat: "Kudapan", serving: "1 SDM (12g)", cal: 60, pro: 2, carb: 5, fat: 4 },
+        { name: "Flaxseed (Biji Rami)", cat: "Kudapan", serving: "1 SDM (10g)", cal: 55, pro: 2, carb: 3, fat: 4.5 },
+        { name: "Granola Panggang (Campuran Utuh + Madu)", cat: "Kudapan", serving: "3 SDM (30g)", cal: 140, pro: 4, carb: 20, fat: 5 },
+        { name: "Muesli (Oat, Buah Kering, Kacang Tanpa Panggang)", cat: "Kudapan", serving: "3 SDM (30g)", cal: 115, pro: 3.5, carb: 21, fat: 2 },
+        { name: "Beras Sorghum / Cantel (Matang)", cat: "Makanan", serving: "1 Porsi (100g)", cal: 125, pro: 4, carb: 26, fat: 1 },
+        { name: "Bubuk Cincau Hitam (Jelly Powder No Sugar)", cat: "Kudapan", serving: "1 Sachet (15g)", cal: 10, pro: 0, carb: 2, fat: 0 },
+        { name: "Sarang Burung Walet (Bird Nest Mentah/Murni)", cat: "Kudapan", serving: "1 Mangkok Seduh (Tanpa Gula)", cal: 25, pro: 4, carb: 1, fat: 0 },
+        { name: "Peach Gum (Dessert Mentah/Murni)", cat: "Kudapan", serving: "1 Porsi (10g Kering)", cal: 35, pro: 1, carb: 8, fat: 0 },
+
+        // FINAL BOSS: KULINER BERAT NUSANTARA (Daerah Spesifik)
+        { name: "Nasi Krawu (Gresik - Daging Suwir + Serundeng)", cat: "Makanan", serving: "1 Porsi", cal: 480, pro: 20, carb: 55, fat: 20 },
+        { name: "Nasi Gandul (Pati - Kuah Santan Daging)", cat: "Makanan", serving: "1 Porsi", cal: 520, pro: 18, carb: 50, fat: 26 },
+        { name: "Nasi Jinggo (Bali - Porsi Bungkus Daun Mini)", cat: "Makanan", serving: "1 Bungkus Daun (Kecil)", cal: 260, pro: 8, carb: 35, fat: 9 },
+        { name: "Nasi Megono (Pekalongan - Nasi + Cacahan Nangka Kelapa)", cat: "Makanan", serving: "1 Porsi", cal: 380, pro: 10, carb: 60, fat: 12 },
+        { name: "Mie Celor (Palembang - Kuah Kental Udang Santan)", cat: "Makanan", serving: "1 Porsi", cal: 490, pro: 16, carb: 60, fat: 21 },
+        { name: "Mie Ongklok (Wonosobo - Kuah Kanji Kental & Kol)", cat: "Makanan", serving: "1 Porsi", cal: 380, pro: 10, carb: 65, fat: 8 },
+        { name: "Mie Cakalang (Manado - Kuah Kaldu Ikan)", cat: "Makanan", serving: "1 Porsi", cal: 410, pro: 22, carb: 55, fat: 10 },
+        { name: "Mie Koclok (Cirebon - Kuah Santan Ayam)", cat: "Makanan", serving: "1 Porsi", cal: 520, pro: 18, carb: 60, fat: 24 },
+        { name: "Sate Klatak (Jogja - Kambing Polos Tusuk Besi)", cat: "Lauk", serving: "2 Tusuk Besar", cal: 240, pro: 22, carb: 0, fat: 16 },
+        { name: "Sate Lilit Ayam (Bali - Campur Kelapa Parut)", cat: "Lauk", serving: "3 Tusuk", cal: 210, pro: 15, carb: 8, fat: 12 },
+        { name: "Sate Lilit Ikan / Tenggiri (Bali)", cat: "Lauk", serving: "3 Tusuk", cal: 180, pro: 16, carb: 7, fat: 9 },
+        { name: "Sate Matang (Aceh - Bumbu Kacang & Kuah Kaldu)", cat: "Makanan", serving: "1 Porsi (Lengkap)", cal: 450, pro: 25, carb: 15, fat: 32 },
+        { name: "Sate Buntel (Solo - Kambing Cincang Bungkus Lemak)", cat: "Lauk", serving: "1 Tusuk Besar", cal: 280, pro: 18, carb: 5, fat: 21 },
+        { name: "Coto Makassar (Kuah Kental Daging & Jeroan)", cat: "Makanan", serving: "1 Mangkuk", cal: 420, pro: 25, carb: 10, fat: 30 },
+        { name: "Pallubasa (Makassar - Kuah Kelapa Sangrai + Telur)", cat: "Makanan", serving: "1 Mangkuk", cal: 480, pro: 26, carb: 12, fat: 35 },
+        { name: "Sop Konro (Makassar - Iga Sapi Kuah Hitam Kluwek)", cat: "Makanan", serving: "1 Mangkuk", cal: 550, pro: 35, carb: 15, fat: 38 },
+        { name: "Konro Bakar (Makassar - Bumbu Kacang)", cat: "Lauk", serving: "1 Porsi (Iga Bakar)", cal: 620, pro: 38, carb: 20, fat: 42 },
+        { name: "Sop Saudara (Makassar - Kuah Daging Bihun Perkedel)", cat: "Makanan", serving: "1 Mangkuk", cal: 410, pro: 20, carb: 30, fat: 24 },
+        { name: "Empal Gentong (Cirebon - Kuah Santan Kuning Daging Jeroan)", cat: "Makanan", serving: "1 Mangkuk", cal: 460, pro: 22, carb: 10, fat: 36 },
+        { name: "Rabeg Banten (Semur Manis Pedas Daging Kambing)", cat: "Lauk", serving: "1 Mangkuk", cal: 380, pro: 24, carb: 15, fat: 25 },
+        { name: "Tahu Campur Lamongan (Kuah Petis, Daging, Selada)", cat: "Makanan", serving: "1 Porsi", cal: 410, pro: 18, carb: 45, fat: 18 },
+        { name: "Tahu Tek / Tahu Telur (Surabaya - Lontong Bumbu Petis)", cat: "Makanan", serving: "1 Porsi", cal: 550, pro: 20, carb: 58, fat: 26 },
+        { name: "Lontong Balap (Surabaya - Kuah Toge & Lento)", cat: "Makanan", serving: "1 Porsi", cal: 380, pro: 12, carb: 65, fat: 8 },
+        { name: "Rujak Cingur (Jatim - Buah, Sayur, Cingur Bumbu Petis)", cat: "Makanan", serving: "1 Porsi", cal: 420, pro: 15, carb: 60, fat: 16 },
+        { name: "Nasi Pecel Madiun (Bumbu Medok + Rempeyek)", cat: "Makanan", serving: "1 Porsi", cal: 580, pro: 18, carb: 75, fat: 25 },
+        { name: "Nasi Liwet Solo (Nasi Gurih, Ayam Suwir, Areh Santan)", cat: "Makanan", serving: "1 Porsi", cal: 520, pro: 20, carb: 60, fat: 22 },
+        { name: "Ayam Betutu (Bali - Kuah Bumbu Genep Pedas)", cat: "Lauk", serving: "1 Potong (Paha/Dada)", cal: 280, pro: 22, carb: 8, fat: 17 },
+        { name: "Ayam Taliwang (Lombok - Ayam Bakar Pedas)", cat: "Lauk", serving: "1/2 Ekor (Ayam Kampung)", cal: 320, pro: 35, carb: 5, fat: 18 },
+        { name: "Bebek Sinjay (Madura - Bebek Goreng + Serundeng)", cat: "Lauk", serving: "1 Potong (Paha/Dada)", cal: 480, pro: 26, carb: 6, fat: 38 },
+
+        // ES TRADISIONAL LEGENDARIS & PENUTUP MANIS (Porsi Mangkuk / Gelas)
+        { name: "Rujak Es Krim (Jogja - Rujak Serut + Es Puter)", cat: "Kudapan", serving: "1 Mangkuk", cal: 210, pro: 2, carb: 45, fat: 3 },
+        { name: "Es Oyen (Bandung - Mutiara, Kelapa, Alpukat, SKM)", cat: "Kudapan", serving: "1 Mangkuk", cal: 320, pro: 3, carb: 55, fat: 10 },
+        { name: "Es Nona (Pontianak - Kacang Merah, Pepaya, Santan)", cat: "Kudapan", serving: "1 Gelas Besar", cal: 280, pro: 4, carb: 50, fat: 8 },
+        { name: "Es Pisang Ijo (Makassar - Pisang, Kulit Dadar, Vla, Sirup)", cat: "Kudapan", serving: "1 Porsi", cal: 420, pro: 5, carb: 75, fat: 12 },
+        { name: "Es Pallubutung (Makassar - Pisang Potong, Vla, Sirup)", cat: "Kudapan", serving: "1 Porsi", cal: 380, pro: 4, carb: 68, fat: 10 },
+        { name: "Es Laksamana Mengamuk (Riau - Mangga Kuini, Santan)", cat: "Kudapan", serving: "1 Gelas", cal: 260, pro: 2, carb: 45, fat: 8 },
+        { name: "Es Selendang Mayang (Betawi - Kue Kanji, Santan Gula Merah)", cat: "Kudapan", serving: "1 Mangkuk", cal: 290, pro: 2, carb: 52, fat: 9 },
+        { name: "Es Teler 77 (Porsi Resto - Alpukat, Nangka, Kelapa)", cat: "Kudapan", serving: "1 Porsi", cal: 410, pro: 4, carb: 60, fat: 18 },
+        { name: "Es Podeng (Kaki Lima - Es Puter, Roti, Kacang, Mutiara)", cat: "Kudapan", serving: "1 Porsi Gelas/Mangkok", cal: 280, pro: 4, carb: 42, fat: 10 },
+        { name: "Es Krim Zangrandi / Tip Top (Es Krim Jadul 1 Scoop)", cat: "Kudapan", serving: "1 Scoop Reguler", cal: 140, pro: 3, carb: 16, fat: 7 },
+        ];
+
+        // Script untuk me-render data ke dalam tabel secara otomatis
+        const tbody = document.getElementById('table-body');
+        foodDatabasePart3.forEach(food => {
+            const row = `<tr>
+                <td>${food.name}</td>
+                <td>${food.cat}</td>
+                <td>${food.serving}</td>
+                <td>${food.cal}</td>
+                <td>${food.pro}</td>
+                <td>${food.carb}</td>
+                <td>${food.fat}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    </script>
+
+</body>
+</html>

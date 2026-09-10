@@ -30,3 +30,10 @@ dist-ssr
 
 # Local Netlify folder
 .netlify
+
+# Local-only ad creative assets (video/paid traffic) — never commit/push, too heavy for the repo
+ads creative/
+
+# Supabase CLI local cache
+supabase/.temp/
+

@@ -28,7 +28,32 @@ export const PAYWALL_TRIGGERS = {
 // Blueprint §13. Plan ids are kept stable (schema/type change is out of P0 scope);
 // only their display name/price/recommended flag changed.
 export const PRO_PLANS = [
-  { id: 'pro_monthly', name: '1 Bulan', priceLabel: '49rb', recommended: false },
-  { id: 'pro_annual', name: '3 Bulan', priceLabel: '119rb', recommended: true },
-  { id: 'pro_lifetime', name: '12 Bulan', priceLabel: '399rb', recommended: false },
+  {
+    id: 'pro_monthly',
+    name: '1 Bulan',
+    priceLabel: '49rb',
+    priceDisplay: 'Rp 49.000',
+    rawPrice: 49000,
+    saveBadge: null,
+    recommended: false,
+  },
+  {
+    id: 'pro_annual',
+    name: '3 Bulan',
+    priceLabel: '119rb',
+    priceDisplay: 'Rp 119.000',
+    rawPrice: 119000,
+    saveBadge: 'Hemat 20%',
+    recommended: true,
+  },
+  {
+    id: 'pro_lifetime',
+    name: '12 Bulan',
+    priceLabel: '399rb',
+    priceDisplay: 'Rp 399.000',
+    rawPrice: 399000,
+    saveBadge: 'Hemat 35%',
+    recommended: false,
+  },
 ] as const
+
