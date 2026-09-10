@@ -1,7 +1,7 @@
 -- FitKu: payment transactions table for Midtrans integration
 -- Tracks all payment attempts, snap tokens, status transitions, and audit logs.
 
-create table public.payment_transactions (
+create table if not exists public.payment_transactions (
   id uuid primary key default gen_random_uuid(),
   order_id text unique not null,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -16,13 +16,14 @@ create table public.payment_transactions (
   updated_at timestamptz not null default now()
 );
 
-create index payment_transactions_user_id_idx on public.payment_transactions (user_id);
-create index payment_transactions_order_id_idx on public.payment_transactions (order_id);
+create index if not exists payment_transactions_user_id_idx on public.payment_transactions (user_id);
+create index if not exists payment_transactions_order_id_idx on public.payment_transactions (order_id);
 
 -- Enable RLS
 alter table public.payment_transactions enable row level security;
 
 -- Users can view their own transactions
+drop policy if exists "users can view own transactions" on public.payment_transactions;
 create policy "users can view own transactions" on public.payment_transactions
   for select using (auth.uid() = user_id);
 
@@ -30,5 +31,7 @@ create policy "users can view own transactions" on public.payment_transactions
 -- authenticated users may only SELECT their subscription row.
 -- Inserts/updates are restricted to backend service_role (e.g. Midtrans webhook handler).
 drop policy if exists "own rows only" on public.subscription_status;
+drop policy if exists "own rows only select" on public.subscription_status;
 create policy "own rows only select" on public.subscription_status
   for select using (auth.uid() = user_id);
+
